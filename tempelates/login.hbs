@@ -3,212 +3,218 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Quizer</title>
-    <!-- Import SF Pro Display font for iOS-like typography -->
-    <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600&display=swap" rel="stylesheet">
+    <title>Login</title>
     <style>
-        /* Reset default browser styles */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
         }
-
-        /* Main container styling */
+        
         body {
-            background-color: #f5f5f7; /* iOS light gray background */
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
         }
-
-        /* Card container for the login form */
+        
         .container {
-            background: white;
-            padding: 2rem;
-            border-radius: 20px; /* iOS-style rounded corners */
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12); /* Subtle shadow for depth */
+            background: rgba(255, 255, 255, 0.95);  
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 40px 30px;
             width: 100%;
-            max-width: 400px;
-            animation: fadeIn 0.5s ease-out; /* Smooth entrance animation */
+            max-width: 460px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
-
-        /* Entrance animation keyframes */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Header section styling */
-        .header {
+        
+        h1 {
             text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        .header h1 {
-            color: #1d1d1f; /* iOS dark text color */
-            font-size: 2rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .header p {
-            color: #86868b; /* iOS secondary text color */
-            font-size: 1rem;
-        }
-
-        /* Form group styling */
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
             color: #1d1d1f;
-            font-size: 0.9rem;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #6d6d70;
+            font-size: 16px;
+            margin-bottom: 30px;
+            font-weight: 400;
+        }
+        
+        .toggle-container {
+            display: flex;
+            background: #d0d0db;
+            border-radius: 12px;
+            padding: 2px;
+            margin-bottom: 25px;
+            position: relative;
+        }
+        
+        .toggle-option {
+            flex: 1;
+            padding: 12px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-size: 15px;
+            font-weight: 500;
+            color: #1a1a1b;
+            border-radius: 10px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .toggle-option.active {
+            background: #007aff;
+            color: rgb(252, 250, 250);
+            transform: scale(1.02);
+            box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #1d1d1f;
+            font-size: 15px;
             font-weight: 500;
         }
-
-        /* Input field styling */
-        .form-group input {
+        
+        input[type="text"], input[type="password"] {
             width: 100%;
-            padding: 1rem;
-            border: 1px solid #d2d2d7; /* iOS light border color */
+            padding: 16px;
+            border: 1px solid #d1d1d6;
             border-radius: 12px;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            background: #f5f5f7; /* iOS input background color */
+            font-size: 16px;
+            background: #ffffff;
+            transition: all 0.2s ease;
+            -webkit-appearance: none;
         }
-
-        /* Input focus state */
-        .form-group input:focus {
+        
+        input[type="text"]:focus, input[type="password"]:focus {
             outline: none;
-            border-color: #0071e3; /* iOS blue accent color */
-            box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.1); /* iOS-style focus ring */
+            border-color: #007aff;
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+            transform: translateY(-2px);
         }
-
-        /* Submit button styling */
-        .submit-btn {
+        
+        button {
             width: 100%;
-            padding: 1rem;
-            background: #0071e3; /* iOS blue button color */
+            padding: 16px;
+            background: #007aff;
             color: white;
             border: none;
             border-radius: 12px;
-            font-size: 1rem;
-            font-weight: 500;
             cursor: pointer;
-            transition: all 0.3s ease;
+            font-size: 17px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            margin-top: 10px;
         }
-
-        /* Button hover state */
-        .submit-btn:hover {
-            background: #0077ed;
-            transform: translateY(-1px); /* Subtle lift effect */
+        
+        button:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 122, 255, 0.3);
         }
-
-        /* Button active state */
-        .submit-btn:active {
+        
+        button:active {
             transform: translateY(0);
         }
-
-        /* Sign up link section */
+        
         .signup-link {
             text-align: center;
-            margin-top: 1.5rem;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #f2f2f7;
         }
-
+        
+        .signup-link p {
+            color: #6d6d70;
+            font-size: 15px;
+        }
+        
         .signup-link a {
-            color: #0071e3;
+            color: #007aff;
             text-decoration: none;
             font-weight: 500;
-            transition: color 0.3s ease;
+            transition: color 0.2s ease;
         }
-
+        
         .signup-link a:hover {
-            color: #0077ed;
+            color: #0056b3;
         }
-
-        /* Error message styling */
-        .error-message {
-            background: #ff3b30; /* iOS red color for errors */
-            color: white;
-            padding: 1rem;
-            border-radius: 12px;
-            margin-bottom: 1rem;
-            font-size: 0.9rem;
-            display: none; /* Hidden by default */
-        }
-
-        /* Mobile responsiveness */
+        
         @media (max-width: 480px) {
             .container {
-                padding: 1.5rem;
+                margin: 20px;
+                padding: 30px 25px;
             }
-
-            .header h1 {
-                font-size: 1.75rem;
+            
+            h1 {
+                font-size: 24px;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Main container -->
     <div class="container">
-        <!-- Header section -->
-        <div class="header">
-            <h1>Welcome Back</h1>
-            <p>Sign in to continue</p>
-        </div>
+        <h1>Welcome Back</h1>
+        <p class="subtitle">Sign in to your account</p>
         
-        <!-- Error message container (hidden by default) -->
-        <div class="error-message" id="error-message"></div>
-        
-        <!-- Login form -->
-        <form action="/login" method="post" id="loginForm">
-            <!-- Username input -->
-            <div class="form-group">
-                <label for="name">Username</label>
-                <input type="text" id="name" name="name" placeholder="Enter your username" required>
+        <form action="/login" method="post">
+            <!-- Toggle for Student/Teacher -->
+            <div class="toggle-container">
+                <div class="toggle-option active" onclick="selectUserType('student')">
+                    Student
+                </div>
+                <div class="toggle-option" onclick="selectUserType('teacher')">
+                    Teacher
+                </div>
             </div>
             
-            <!-- Password input -->
+            <input type="hidden" name="userType" id="userType" value="student">
+            
             <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                <label for="name">Enrollment No.:</label>
+                <input type="text" name="name" id="name" required>
             </div>
             
-            <!-- Submit button -->
-            <button type="submit" class="submit-btn">Sign In</button>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" name="password" id="password" required>
+            </div>
+            
+            <button type="submit">Login</button>
         </form>
         
-        <!-- Sign up link -->
         <div class="signup-link">
-            Don't have an account? <a href="/signup">Sign up</a>
+            <p>Don't have an account? <a href="/signup">Sign up here</a></p>
         </div>
     </div>
 
     <script>
-        // Form submission handler
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            // Update button state during submission
-            const submitBtn = this.querySelector('.submit-btn');
-            submitBtn.textContent = 'Signing in...';
-            submitBtn.style.opacity = '0.7';
-            submitBtn.style.cursor = 'not-allowed';
-        });
-
-        // Error message handler
-        const urlParams = new URLSearchParams(window.location.search);
-        const error = urlParams.get('error');
-        if (error) {
-            const errorMessage = document.getElementById('error-message');
-            errorMessage.style.display = 'block';
-            errorMessage.textContent = decodeURIComponent(error);
+        function selectUserType(type) {
+            // Remove active class from all options
+            const options = document.querySelectorAll('.toggle-option');
+            options.forEach(option => option.classList.remove('active'));
+            
+            // Add active class to selected option
+            event.target.classList.add('active');
+            
+            // Update hidden input value
+            document.getElementById('userType').value = type;
         }
     </script>
 </body>
