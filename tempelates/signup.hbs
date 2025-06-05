@@ -3,236 +3,221 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up - Quizer</title>
-    <!-- Import SF Pro Display font for iOS-like typography -->
-    <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600&display=swap" rel="stylesheet">
+    <title>Sign Up</title>
     <style>
-        /* Reset default browser styles */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
         }
-
-        /* Main container styling */
+        
         body {
-            background-color: #f5f5f7; /* iOS light gray background */
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
         }
-
-        /* Card container for the signup form */
+        
         .container {
-            background: white;
-            padding: 2rem;
-            border-radius: 20px; /* iOS-style rounded corners */
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12); /* Subtle shadow for depth */
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 40px 30px;
             width: 100%;
-            max-width: 400px;
-            animation: fadeIn 0.5s ease-out; /* Smooth entrance animation */
+            max-width: 460px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
-
-        /* Entrance animation keyframes */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Header section styling */
-        .header {
+        
+        h1 {
             text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        .header h1 {
-            color: #1d1d1f; /* iOS dark text color */
-            font-size: 2rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .header p {
-            color: #86868b; /* iOS secondary text color */
-            font-size: 1rem;
-        }
-
-        /* Form group styling */
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
             color: #1d1d1f;
-            font-size: 0.9rem;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #6d6d70;
+            font-size: 16px;
+            margin-bottom: 30px;
+            font-weight: 400;
+        }
+        
+        .toggle-container {
+            display: flex;
+            background: #d0d0db;
+            border-radius: 12px;
+            padding: 2px;
+            margin-bottom: 25px;
+            position: relative;
+        }
+        
+        .toggle-option {
+            flex: 1;
+            padding: 12px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-size: 15px;
+            font-weight: 500;
+            color: #262627;
+            border-radius: 10px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .toggle-option.active {
+            background: #1da8d6;
+            color: white;
+            transform: scale(1.02);
+            box-shadow: 0 2px 8px rgba(52, 199, 89, 0.3);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #1d1d1f;
+            font-size: 15px;
             font-weight: 500;
         }
-
-        /* Input field styling */
-        .form-group input {
+        
+        input[type="text"], input[type="password"] {
             width: 100%;
-            padding: 1rem;
-            border: 1px solid #d2d2d7; /* iOS light border color */
+            padding: 16px;
+            border: 1px solid #d1d1d6;
             border-radius: 12px;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            background: #f5f5f7; /* iOS input background color */
+            font-size: 16px;
+            background: #ffffff;
+            transition: all 0.2s ease;
+            -webkit-appearance: none;
         }
-
-        /* Input focus state */
-        .form-group input:focus {
+        
+        input[type="text"]:focus, input[type="password"]:focus {
             outline: none;
-            border-color: #0071e3; /* iOS blue accent color */
-            box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.1); /* iOS-style focus ring */
+            border-color: #1da8d6;
+            box-shadow: 0 0 0 3px rgba(52, 199, 89, 0.1);
+            transform: translateY(-2px);
         }
-
-        /* Submit button styling */
-        .submit-btn {
+        
+        button {
             width: 100%;
-            padding: 1rem;
-            background: #0071e3; /* iOS blue button color */
+            padding: 16px;
+            background: #1da8d6;
             color: white;
             border: none;
             border-radius: 12px;
-            font-size: 1rem;
-            font-weight: 500;
             cursor: pointer;
-            transition: all 0.3s ease;
+            font-size: 17px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            margin-top: 10px;
         }
-
-        /* Button hover state */
-        .submit-btn:hover {
-            background: #0077ed;
-            transform: translateY(-1px); /* Subtle lift effect */
+        
+        button:hover {
+            background: #1da8d6;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(52, 199, 89, 0.3);
         }
-
-        /* Button active state */
-        .submit-btn:active {
+        
+        button:active {
             transform: translateY(0);
         }
-
-        /* Login link section */
+        
         .login-link {
             text-align: center;
-            margin-top: 1.5rem;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #f2f2f7;
         }
-
+        
+        .login-link p {
+            color: #6d6d70;
+            font-size: 15px;
+        }
+        
         .login-link a {
-            color: #0071e3;
+            color: #1da8d6;
             text-decoration: none;
             font-weight: 500;
-            transition: color 0.3s ease;
+            transition: color 0.2s ease;
         }
-
+        
         .login-link a:hover {
-            color: #0077ed;
+            color: #1da8d6;
         }
-
-        /* Error message styling */
-        .error-message {
-            background: #ff3b30; /* iOS red color for errors */
-            color: white;
-            padding: 1rem;
-            border-radius: 12px;
-            margin-bottom: 1rem;
-            font-size: 0.9rem;
-            display: none; /* Hidden by default */
-        }
-
-        /* Password requirements styling */
-        .password-requirements {
-            font-size: 0.8rem;
-            color: #86868b; /* iOS secondary text color */
-            margin-top: 0.5rem;
-        }
-
-        /* Mobile responsiveness */
+        
         @media (max-width: 480px) {
             .container {
-                padding: 1.5rem;
+                margin: 20px;
+                padding: 30px 25px;
             }
-
-            .header h1 {
-                font-size: 1.75rem;
+            
+            h1 {
+                font-size: 24px;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Main container -->
     <div class="container">
-        <!-- Header section -->
-        <div class="header">
-            <h1>Create Account</h1>
-            <p>Join us to get started</p>
-        </div>
+        <h1>Create Account</h1>
+        <p class="subtitle">Join us today</p>
         
-        <!-- Error message container (hidden by default) -->
-        <div class="error-message" id="error-message"></div>
-        
-        <!-- Signup form -->
-        <form action="/signup" method="post" id="signupForm">
-            <!-- Username input -->
-            <div class="form-group">
-                <label for="name">Username</label>
-                <input type="text" id="name" name="name" placeholder="Choose a username" required>
-            </div>
-            
-            <!-- Password input with requirements -->
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" placeholder="Create a password" required>
-                <div class="password-requirements">
-                    Password must be at least 8 characters long
+        <form action="/signup" method="post">
+            <!-- Toggle for Student/Teacher -->
+            <div class="toggle-container">
+                <div class="toggle-option active" onclick="selectUserType('student')">
+                    Student
+                </div>
+                <div class="toggle-option" onclick="selectUserType('teacher')">
+                    Teacher
                 </div>
             </div>
             
-            <!-- Submit button -->
-            <button type="submit" class="submit-btn">Create Account</button>
+            <input type="hidden" name="userType" id="userType" value="student">
+            
+            {{!-- //name --}}
+            <div class="form-group">
+                <label for="name">Enrollment No.:</label>
+                <input type="text" name="name" id="name" required>
+            </div>
+           
+            {{!-- //password --}}
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" name="password" id="password" required>
+            </div>
+            
+            <button type="submit">Sign Up</button>
         </form>
         
-        <!-- Login link -->
         <div class="login-link">
-            Already have an account? <a href="/">Sign in</a>
+            <p>Already have an account? <a href="/login">Login here</a></p>
         </div>
     </div>
 
     <script>
-        // Form submission handler
-        document.getElementById('signupForm').addEventListener('submit', function(e) {
-            // Update button state during submission
-            const submitBtn = this.querySelector('.submit-btn');
-            submitBtn.textContent = 'Creating account...';
-            submitBtn.style.opacity = '0.7';
-            submitBtn.style.cursor = 'not-allowed';
-        });
-
-        // Error message handler
-        const urlParams = new URLSearchParams(window.location.search);
-        const error = urlParams.get('error');
-        if (error) {
-            const errorMessage = document.getElementById('error-message');
-            errorMessage.style.display = 'block';
-            errorMessage.textContent = decodeURIComponent(error);
+        function selectUserType(type) {
+            // Remove active class from all options
+            const options = document.querySelectorAll('.toggle-option');
+            options.forEach(option => option.classList.remove('active'));
+            
+            // Add active class to selected option
+            event.target.classList.add('active');
+            
+            // Update hidden input value
+            document.getElementById('userType').value = type;
         }
-
-        // Password validation handler
-        const passwordInput = document.getElementById('password');
-        passwordInput.addEventListener('input', function() {
-            // Get the requirements element
-            const requirements = this.nextElementSibling;
-            // Change color based on password length
-            if (this.value.length < 8) {
-                requirements.style.color = '#ff3b30'; // iOS red for invalid
-            } else {
-                requirements.style.color = '#34c759'; // iOS green for valid
-            }
-        });
     </script>
 </body>
 </html>
