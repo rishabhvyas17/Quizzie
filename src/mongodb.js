@@ -20,5 +20,11 @@ const LogInSchema = new mongoose.Schema({
     }
 })
 
-const collection= new mongoose.model("Collecion1",LogInSchema )
-module.exports = collection
+const studentCollection = new mongoose.model("StudentCollection",LogInSchema ) //Collection for students
+
+const teacherCollection = new mongoose.model("TeacherCollection",LogInSchema) // collection for teachers
+
+module.exports = {
+    studentCollection,
+    teacherCollection
+}
