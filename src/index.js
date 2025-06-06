@@ -32,6 +32,7 @@ app.get("/signup",(req,res)=>{
 
 app.post("/signup", async (req, res) => {
     try {
+
         const userType = req.body.userType; // 'student' or 'teacher'
 
         if (userType === 'teacher') { // Check the user type from the form and insert into appropriate collection
@@ -58,6 +59,7 @@ app.post("/signup", async (req, res) => {
     }
 });
 
+
 // app.get("/", (req, res) => {
 //     res.render("home");
 // });
@@ -67,6 +69,7 @@ app.post("/login", async (req, res) => {
     try {
         const { name, password, userType } = req.body;
         let user;
+
         // Check in appropriate collection based on user type
         if (userType === 'teacher') {
             const { email } = req.body;
@@ -97,6 +100,7 @@ app.post("/login", async (req, res) => {
         res.send("Login failed");
     }
 });
+
 
 
 app.listen(3000,()=>{

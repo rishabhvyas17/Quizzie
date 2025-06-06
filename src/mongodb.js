@@ -44,6 +44,7 @@ const studentCollection = new mongoose.model("StudentCollection",studentSchema )
 
 const teacherCollection = new mongoose.model("TeacherCollection",teacherSchema) // collection for teachers
 
+
 module.exports = {
     studentCollection,
     teacherCollection
