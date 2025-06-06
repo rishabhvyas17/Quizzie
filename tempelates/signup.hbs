@@ -91,7 +91,9 @@
             font-weight: 500;
         }
         
-        input[type="text"], input[type="password"] {
+
+        input[type="text"], input[type="password"],input[type="email"] {
+
             width: 100%;
             padding: 16px;
             border: 1px solid #d1d1d6;
@@ -102,7 +104,9 @@
             -webkit-appearance: none;
         }
         
-        input[type="text"]:focus, input[type="password"]:focus {
+
+        input[type="text"]:focus, input[type="password"]:focus,input[type="email"]:focus {
+
             outline: none;
             border-color: #1da8d6;
             box-shadow: 0 0 0 3px rgba(52, 199, 89, 0.1);
@@ -184,17 +188,24 @@
                 </div>
             </div>
             
+
+            <!-- //name -->
             <input type="hidden" name="userType" id="userType" value="student">
-            
-            {{!-- //name --}}
             <div class="form-group">
-                <label for="name">Enrollment No.:</label>
+                <label for="name">Name:</label>
                 <input type="text" name="name" id="name" required>
             </div>
+            <!-- //Enrollment No. (For Teacher - email)-->
+            <div class="form-group" id="user-identifier-group">
+                <!-- Default for Student(Enrollment)-->
+                <label for="name">Enrollment No.:</label>
+                <input type="text" style='text-transform:uppercase' name="enrollment" id="enrollment" required>
+            </div>
            
-            {{!-- //password --}}
+            <!-- //password -->
             <div class="form-group">
-                <label for="password">Password:</label>
+                <label for="password">Set Password:</label>
+
                 <input type="password" name="password" id="password" required>
             </div>
             
@@ -217,6 +228,22 @@
             
             // Update hidden input value
             document.getElementById('userType').value = type;
+
+
+            // Replace input field 
+            const container = document.getElementById('user-identifier-group');
+
+            if (type === 'student') {
+            container.innerHTML =`
+                <label for="enrollment">Enrollment No.:</label>
+                <input type="text" style="text-transform:uppercase" name="enrollment" id="enrollment" required>`;
+            } 
+            else {
+            container.innerHTML =`
+                <label for="email">Email:</label>
+                <input type="email" name="email" id="email" required>`;
+            }
+
         }
     </script>
 </body>
