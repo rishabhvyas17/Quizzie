@@ -1,4 +1,3 @@
-
 // TO run the codebase
 
 // npm i express 
@@ -7,8 +6,6 @@
 
 // npm i nodemon 
 // nodemon src/index.js  // it will keep runing the file so we dont need to runit again and again
-
-
 
 const express = require("express")
 const app = express()
@@ -35,30 +32,31 @@ app.get("/signup",(req,res)=>{
 
 app.post("/signup", async (req, res) => {
     try {
-        // Create a new user object with data from the request
-        const data = {
-            name: req.body.name,
-            enrollment: req.body.enrollment,
-            password: req.body.password
-        }
-
-        // Check the user type from the form and insert into appropriate collection
         const userType = req.body.userType; // 'student' or 'teacher'
-        
-        if (userType === 'teacher') {
-            await teacherCollection.insertMany([data])
+
+        if (userType === 'teacher') { // Check the user type from the form and insert into appropriate collection
+            const data = { // Create a new user object with data from the request
+                name: req.body.name,
+                email: req.body.email,
+                password: req.body.password
+            };
+            await teacherCollection.insertMany([data]);
+            res.render("homeTeacher", { userType: userType });// Redirect to home page after successful registration
         } else {
-            await studentCollection.insertMany([data])
-            res.render("home", { userType: userType })
+            const data = { // Create a new user object with data from the request
+                name: req.body.name,
+                enrollment: req.body.enrollment,
+                password: req.body.password
+            };
+            await studentCollection.insertMany([data]);
+            res.render("homeStudent", { userType: userType });// Redirect to home page after successful registration
         }
 
-        res.render("home", { userType: userType })
-        // Redirect to home page after successful registration
     } catch (error) {
-        console.log(error)
-        res.send("Error during registration")
+        console.log(error);
+        res.send("Error during registration");
     }
-})
+});
 
 // app.get("/", (req, res) => {
 //     res.render("home");
@@ -67,36 +65,38 @@ app.post("/signup", async (req, res) => {
 // Handle user login
 app.post("/login", async (req, res) => {
     try {
-        const { enrollment, password, userType } = req.body;
+        const { name, password, userType } = req.body;
         let user;
-
         // Check in appropriate collection based on user type
         if (userType === 'teacher') {
-            user = await teacherCollection.findOne({ enrollment: enrollment })
+            const { email } = req.body;
+            user = await teacherCollection.findOne({ email: email });
         } else {
-            user = await studentCollection.findOne({ enrollment: enrollment })
+            const { enrollment } = req.body;
+            user = await studentCollection.findOne({ enrollment: enrollment });
         }
-
         // Check if user exists and password matches
         if (user && user.password === password) {
-            if(userType==='Teacher'){res.render("homeTeacher", { 
-                userType: userType,
-                userEnrollment: user.enrollment 
-            })}
-            else{res.render("homeStudent", { 
-                userType: userType,
-                userEnrollment: user.enrollment 
-            })
-
+            if (userType === 'teacher') {
+                res.render("homeTeacher", {
+                    userType: userType,
+                    userName: user.name
+                });
+            } else {
+                res.render("homeStudent", {
+                    userType: userType,
+                    userName: user.name
+                });
             }
         } else {
-            res.send("Wrong credentials")
+            res.send("Wrong credentials");
         }
+
     } catch (error) {
-        console.log(error)
-        res.send("Login failed")
+        console.log(error);
+        res.send("Login failed");
     }
-})
+});
 
 
 app.listen(3000,()=>{

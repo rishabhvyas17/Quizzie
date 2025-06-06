@@ -9,7 +9,8 @@ mongoose.connect("mongodb://localhost:27017/LoginSignup")
     console.log("failed to connect");
 })
 
-const LogInSchema = new mongoose.Schema({
+// For Student
+const studentSchema = new mongoose.Schema({
     name:{
         type:String,
         require:true
@@ -23,10 +24,25 @@ const LogInSchema = new mongoose.Schema({
         require:true
     }
 })
+// For Teacher
+const teacherSchema = new mongoose.Schema({
+    name:{
+        type:String,
+        require:true
+    },
+    email:{
+        type:String,
+        require:true
+    },
+    password:{
+        type:String,
+        require:true
+    }
+})
 
-const studentCollection = new mongoose.model("StudentCollection",LogInSchema ) //Collection for students
+const studentCollection = new mongoose.model("StudentCollection",studentSchema ) //Collection for students
 
-const teacherCollection = new mongoose.model("TeacherCollection",LogInSchema) // collection for teachers
+const teacherCollection = new mongoose.model("TeacherCollection",teacherSchema) // collection for teachers
 
 module.exports = {
     studentCollection,

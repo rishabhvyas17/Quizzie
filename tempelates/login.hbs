@@ -91,7 +91,7 @@
             font-weight: 500;
         }
         
-        input[type="text"], input[type="password"] {
+        input[type="text"], input[type="password"] , input[type="email"]{
             width: 100%;
             padding: 16px;
             border: 1px solid #d1d1d6;
@@ -102,7 +102,7 @@
             -webkit-appearance: none;
         }
         
-        input[type="text"]:focus, input[type="password"]:focus {
+        input[type="text"]:focus, input[type="password"]:focus,input[type="email"]:focus {
             outline: none;
             border-color: #007aff;
             box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
@@ -187,8 +187,9 @@
             <input type="hidden" name="userType" id="userType" value="student">
             
             <div class="form-group" id="user-identifier-group">
-                <label for="enrollment"></label>
-                <input name="enrollment" id="enrollment" >
+                <!-- Default to Enrollment No. for Student -->
+                <label for="enrollment">Enrollment No.:</label>
+                <input type="text" style="text-transform:uppercase" name="enrollment" id="enrollment" required>
             </div>
             
             <div class="form-group">
@@ -220,13 +221,14 @@
             const container = document.getElementById('user-identifier-group');
 
             if (type === 'student') {
-            container.innerHTML = 
+            container.innerHTML =`
                 <label for="enrollment">Enrollment No.:</label>
-                <input type="text" style="text-transform:uppercase" name="enrollment" id="enrollment" required>;
-            } else {
-            container.innerHTML = 
+                <input type="text" style="text-transform:uppercase" name="enrollment" id="enrollment" required>`;
+            } 
+            else {
+            container.innerHTML =`
                 <label for="email">Email:</label>
-                <input type="text" name="email" id="email" required>;
+                <input type="email" name="email" id="email" required>`;
             }
         }
     </script>
