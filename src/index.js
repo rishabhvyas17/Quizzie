@@ -15,7 +15,6 @@ const {studentCollection, teacherCollection} =require("./mongodb") // added teac
 
 const templatePath=path.join(__dirname,'../tempelates')
 
-
 app.use(express.json())
 app.set("view engine", "hbs")
 app.set("views", templatePath)
@@ -26,7 +25,6 @@ app.use(express.urlencoded({extended:false}))
 app.get("/", (req, res) => {             // when you will at / will redirect to /login
     res.redirect("/login")
 })
-
 
 app.get("/login",(req,res)=>{
     res.render("login")
@@ -52,7 +50,6 @@ app.get("/homeTeacher", (req, res) => {    /// here when you will at /homeTeache
 
 app.post("/signup", async (req, res) => {
     try {
-
         const userType = req.body.userType; // 'student' or 'teacher'
 
         if (userType === 'teacher') { // Check the user type from the form and insert into appropriate collection
@@ -82,8 +79,6 @@ app.post("/signup", async (req, res) => {
     }
 });
 
-
-
 // Handle user login
 app.post("/login", async (req, res) => {
     try {
@@ -101,11 +96,8 @@ app.post("/login", async (req, res) => {
         // Check if user exists and password matches
         if (user && user.password === password) {
             if (userType === 'teacher') {
-
                 res.redirect(`/homeTeacher?userName=${encodeURIComponent(user.name)}`)
-
             } else {
-
                 res.redirect(`/homeStudent?userName=${encodeURIComponent(user.name)}`)
             }
         } else {
@@ -117,7 +109,6 @@ app.post("/login", async (req, res) => {
         res.send("Login failed");
     }
 });
-
 
 app.listen(3000,()=>{
     console.log("port-connected");    // this will connect and conform that port is connected
