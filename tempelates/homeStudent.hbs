@@ -3,9 +3,597 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student</title>
+    <title>Student Dashboard - QuizAI</title>
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+            line-height: 1.6;
+        }
+
+        /* Header Styles */
+        .header {
+            background: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.75rem;
+            font-weight: bold;
+            color: #3b82f6;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #64748b;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: #3b82f6;
+        }
+
+        .profile-section {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .profile-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .profile-info h3 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .profile-info p {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        /* Main Content */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .dashboard-title {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 2rem;
+        }
+
+        /* Stats Section */
+        .stats-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-card.blue { border-left: 4px solid #3b82f6; }
+        .stat-card.green { border-left: 4px solid #10b981; }
+        .stat-card.purple { border-left: 4px solid #8b5cf6; }
+        .stat-card.orange { border-left: 4px solid #f59e0b; }
+
+        .stat-value {
+            font-size: 2.25rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card.blue .stat-value { color: #3b82f6; }
+        .stat-card.green .stat-value { color: #10b981; }
+        .stat-card.purple .stat-value { color: #8b5cf6; }
+        .stat-card.orange .stat-value { color: #f59e0b; }
+
+        .stat-label {
+            color: #64748b;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* Section Styles */
+        .section {
+            margin-bottom: 3rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Classes Section */
+        .classes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .class-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .class-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .class-name {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+
+        .instructor {
+            color: #64748b;
+            margin-bottom: 0.75rem;
+            font-size: 0.9rem;
+        }
+
+        .next-quiz {
+            color: #3b82f6;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+
+        .btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            font-size: 0.9rem;
+        }
+
+        .btn:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: #10b981;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        /* Quizzes Section */
+        .quizzes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .quiz-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .quiz-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .quiz-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+
+        .quiz-course {
+            color: #64748b;
+            font-size: 0.85rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .quiz-details {
+            color: #64748b;
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Performance Section */
+        .performance-list {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .performance-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .performance-item:last-child {
+            border-bottom: none;
+        }
+
+        .performance-info h4 {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.25rem;
+        }
+
+        .performance-details {
+            color: #64748b;
+            font-size: 0.85rem;
+        }
+
+        .performance-stats {
+            text-align: right;
+        }
+
+        .score {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #10b981;
+            margin-bottom: 0.25rem;
+        }
+
+        .rank-badge {
+            background: #fef3c7;
+            color: #d97706;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .rank-badge.top-3 {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .nav-links {
+                gap: 1rem;
+            }
+
+            .dashboard-title {
+                font-size: 1.5rem;
+            }
+
+            .stats-section {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+            }
+
+            .classes-grid,
+            .quizzes-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .performance-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+
+            .performance-stats {
+                text-align: left;
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-content {
+                padding: 1rem 0.5rem;
+            }
+
+            .stat-card,
+            .class-card,
+            .quiz-card {
+                padding: 1rem;
+            }
+        }
+    </style>
 </head>
 <body>
-    <h1>Student Dashboard</h1>
+    <!-- Header Section -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">QuizAI</div>
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="#" onclick="showSection('classes')">My Classes</a></li>
+                    <li><a href="#" onclick="showSection('performance')">Performance</a></li>
+                </ul>
+            </nav>
+            <div class="profile-section">
+                <div class="profile-avatar">AS</div>
+                <div class="profile-info">
+                    <h3>Alex Smith</h3>
+                    <p>Student</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <h1 class="dashboard-title">Dashboard</h1>
+
+        <!-- Stats Section -->
+        <section class="stats-section">
+            <div class="stat-card blue">
+                <div class="stat-value">3</div>
+                <div class="stat-label">Enrolled Classes</div>
+            </div>
+            <div class="stat-card green">
+                <div class="stat-value">24</div>
+                <div class="stat-label">Quizzes Completed</div>
+            </div>
+            <div class="stat-card purple">
+                <div class="stat-value">85%</div>
+                <div class="stat-label">Average Score</div>
+            </div>
+            <div class="stat-card orange">
+                <div class="stat-value">#1</div>
+                <div class="stat-label">Best Rank</div>
+            </div>
+        </section>
+
+        <!-- My Classes Section -->
+        <section class="section">
+            <h2 class="section-title">My Classes</h2>
+            <div class="classes-grid">
+                <div class="class-card">
+                    <h3 class="class-name">Data Structures & Algorithms</h3>
+                    <p class="instructor">Dr. Sarah Johnson</p>
+                    <p class="next-quiz">Next quiz: June 6, 2024</p>
+                    <button class="btn" onclick="viewClass('dsa')">View Class</button>
+                </div>
+                <div class="class-card">
+                    <h3 class="class-name">Database Management Systems</h3>
+                    <p class="instructor">Prof. Michael Chen</p>
+                    <p class="next-quiz">Next quiz: June 8, 2024</p>
+                    <button class="btn" onclick="viewClass('dbms')">View Class</button>
+                </div>
+                <div class="class-card">
+                    <h3 class="class-name">Web Development</h3>
+                    <p class="instructor">Dr. Emily Rodriguez</p>
+                    <p class="next-quiz">Next quiz: June 10, 2024</p>
+                    <button class="btn" onclick="viewClass('webdev')">View Class</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Available Quizzes Section -->
+        <section class="section">
+            <h2 class="section-title">Available Quizzes</h2>
+            <div class="quizzes-grid">
+                <div class="quiz-card">
+                    <h3 class="quiz-title">Binary Trees Practice</h3>
+                    <p class="quiz-course">Data Structures</p>
+                    <p class="quiz-details">30 min · 15 questions</p>
+                    <button class="btn btn-success" onclick="startQuiz('binary-trees')">Start Quiz</button>
+                </div>
+                <div class="quiz-card">
+                    <h3 class="quiz-title">SQL Joins & Queries</h3>
+                    <p class="quiz-course">Database Management</p>
+                    <p class="quiz-details">45 min · 20 questions</p>
+                    <button class="btn btn-success" onclick="startQuiz('sql-joins')">Start Quiz</button>
+                </div>
+                <div class="quiz-card">
+                    <h3 class="quiz-title">JavaScript Fundamentals</h3>
+                    <p class="quiz-course">Web Development</p>
+                    <p class="quiz-details">25 min · 12 questions</p>
+                    <button class="btn btn-success" onclick="startQuiz('js-fundamentals')">Start Quiz</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recent Performance Section -->
+        <section class="section">
+            <h2 class="section-title">Recent Performance</h2>
+            <div class="performance-list">
+                <div class="performance-item">
+                    <div class="performance-info">
+                        <h4>Array Algorithms</h4>
+                        <p class="performance-details">Rank #3 of 45 · June 2, 2024</p>
+                    </div>
+                    <div class="performance-stats">
+                        <div class="score">85%</div>
+                        <span class="rank-badge top-3">Top 3</span>
+                    </div>
+                </div>
+                <div class="performance-item">
+                    <div class="performance-info">
+                        <h4>Linked Lists Basics</h4>
+                        <p class="performance-details">Rank #7 of 52 · May 28, 2024</p>
+                    </div>
+                    <div class="performance-stats">
+                        <div class="score">78%</div>
+                        <span class="rank-badge">Top 15</span>
+                    </div>
+                </div>
+                <div class="performance-item">
+                    <div class="performance-info">
+                        <h4>Stack & Queue Operations</h4>
+                        <p class="performance-details">Rank #1 of 38 · May 25, 2024</p>
+                    </div>
+                    <div class="performance-stats">
+                        <div class="score">92%</div>
+                        <span class="rank-badge top-3">Top 1</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Navigation functionality
+        function showSection(section) {
+            // This would typically handle navigation between different views
+            console.log(`Navigating to ${section} section`);
+            
+            // Add visual feedback for navigation
+            const navLinks = document.querySelectorAll('.nav-links a');
+            navLinks.forEach(link => {
+                link.style.color = '#64748b';
+            });
+            
+            event.target.style.color = '#3b82f6';
+        }
+
+        // Class management functions
+        function viewClass(classId) {
+            console.log(`Viewing class: ${classId}`);
+            // Add animation effect
+            event.target.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                event.target.style.transform = 'scale(1)';
+            }, 150);
+            
+            // Here you would typically navigate to class details page
+            alert(`Opening ${classId} class details...`);
+        }
+
+        // Quiz functionality
+        function startQuiz(quizId) {
+            console.log(`Starting quiz: ${quizId}`);
+            // Add visual feedback
+            event.target.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                event.target.style.transform = 'scale(1)';
+            }, 150);
+            
+            // Here you would typically start the quiz
+            alert(`Starting ${quizId} quiz...`);
+        }
+
+        // Add smooth scrolling for better UX
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add entrance animations for cards
+            const cards = document.querySelectorAll('.stat-card, .class-card, .quiz-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                
+                setTimeout(() => {
+                    card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+
+            // Add dynamic greeting based on time
+            const hour = new Date().getHours();
+            let greeting = 'Good evening';
+            if (hour < 12) greeting = 'Good morning';
+            else if (hour < 18) greeting = 'Good afternoon';
+            
+            const title = document.querySelector('.dashboard-title');
+            title.textContent = `${greeting}, Alex!`;
+        });
+
+        // Add interactive hover effects for performance items
+        document.querySelectorAll('.performance-item').forEach(item => {
+            item.addEventListener('mouseenter', function() {
+                this.style.backgroundColor = '#f8fafc';
+                this.style.transform = 'translateX(5px)';
+                this.style.transition = 'all 0.2s ease';
+            });
+            
+            item.addEventListener('mouseleave', function() {
+                this.style.backgroundColor = 'transparent';
+                this.style.transform = 'translateX(0)';
+            });
+        });
+
+        // Simulate real-time updates (in a real app, this would come from WebSocket)
+        setInterval(() => {
+            const statCards = document.querySelectorAll('.stat-value');
+            // Add subtle pulse animation to indicate live data
+            statCards.forEach(card => {
+                card.style.transform = 'scale(1.02)';
+                setTimeout(() => {
+                    card.style.transform = 'scale(1)';
+                }, 200);
+            });
+        }, 30000); // Every 30 seconds
+    </script>
 </body>
 </html>
