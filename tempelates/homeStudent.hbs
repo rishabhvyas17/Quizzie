@@ -382,10 +382,10 @@
                 </ul>
             </nav>
             <div class="profile-section">
-                <div class="profile-avatar">AS</div>
+                <div class="profile-avatar" id="profileAvatar"></div>
                 <div class="profile-info">
-                    <h3>Alex Smith</h3>
-                    <p>Student</p>
+                    <h3>{{userName}}</h3>
+                    <p>{{userType}}</p>
                 </div>
             </div>
         </div>
@@ -393,7 +393,7 @@
 
     <!-- Main Content -->
     <main class="main-content">
-        <h1 class="dashboard-title">Dashboard</h1>
+        <h1 class="dashboard-title" id="dashboardTitle"></h1>
 
         <!-- Stats Section -->
         <section class="stats-section">
@@ -440,31 +440,6 @@
             </div>
         </section>
 
-        <!-- Available Quizzes Section -->
-        <section class="section">
-            <h2 class="section-title">Available Quizzes</h2>
-            <div class="quizzes-grid">
-                <div class="quiz-card">
-                    <h3 class="quiz-title">Binary Trees Practice</h3>
-                    <p class="quiz-course">Data Structures</p>
-                    <p class="quiz-details">30 min · 15 questions</p>
-                    <button class="btn btn-success" onclick="startQuiz('binary-trees')">Start Quiz</button>
-                </div>
-                <div class="quiz-card">
-                    <h3 class="quiz-title">SQL Joins & Queries</h3>
-                    <p class="quiz-course">Database Management</p>
-                    <p class="quiz-details">45 min · 20 questions</p>
-                    <button class="btn btn-success" onclick="startQuiz('sql-joins')">Start Quiz</button>
-                </div>
-                <div class="quiz-card">
-                    <h3 class="quiz-title">JavaScript Fundamentals</h3>
-                    <p class="quiz-course">Web Development</p>
-                    <p class="quiz-details">25 min · 12 questions</p>
-                    <button class="btn btn-success" onclick="startQuiz('js-fundamentals')">Start Quiz</button>
-                </div>
-            </div>
-        </section>
-
         <!-- Recent Performance Section -->
         <section class="section">
             <h2 class="section-title">Recent Performance</h2>
@@ -504,9 +479,11 @@
     </main>
 
     <script>
+        // Get student name from server-side rendered template
+        const studentName = '{{{userName}}}'; // Using triple braces to avoid HTML escaping
+        
         // Navigation functionality
         function showSection(section) {
-            // This would typically handle navigation between different views
             console.log(`Navigating to ${section} section`);
             
             // Add visual feedback for navigation
@@ -544,8 +521,22 @@
             alert(`Starting ${quizId} quiz...`);
         }
 
-        // Add smooth scrolling for better UX
+        // Initialize dashboard when page loads
         document.addEventListener('DOMContentLoaded', function() {
+            // Set dynamic greeting based on time
+            const hour = new Date().getHours();
+            let greeting = 'Good evening';
+            if (hour < 12) greeting = 'Good morning';
+            else if (hour < 18) greeting = 'Good afternoon';
+            
+            const title = document.getElementById('dashboardTitle');
+            title.textContent = `${greeting}, ${studentName}!`;
+            
+            // Update avatar initials based on actual name
+            const avatar = document.getElementById('profileAvatar');
+            const initials = studentName.split(' ').map(name => name.charAt(0)).join('').toUpperCase();
+            avatar.textContent = initials;
+            
             // Add entrance animations for cards
             const cards = document.querySelectorAll('.stat-card, .class-card, .quiz-card');
             cards.forEach((card, index) => {
@@ -558,15 +549,6 @@
                     card.style.transform = 'translateY(0)';
                 }, index * 100);
             });
-
-            // Add dynamic greeting based on time
-            const hour = new Date().getHours();
-            let greeting = 'Good evening';
-            if (hour < 12) greeting = 'Good morning';
-            else if (hour < 18) greeting = 'Good afternoon';
-            
-            const title = document.querySelector('.dashboard-title');
-            title.textContent = `${greeting}, Alex!`;
         });
 
         // Add interactive hover effects for performance items
