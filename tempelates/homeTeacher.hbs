@@ -455,6 +455,7 @@
             {{!-- The form action will be handled by your backend Express route --}}
             <form action="/upload_lecture" method="POST" enctype="multipart/form-data" class="upload-input-group">
                 <input type="text" name="title" placeholder="Lecture Title (e.g., 'Introduction to Algorithms')" required>
+                <input type="hidden" name="userName" value="{{{userName}}}"> <!-- To pass the userName -->
                 <input type="file" name="lectureFile" accept=".pdf,.ppt,.pptx" required>
                 <button type="submit" class="btn btn-success">Upload Lecture & Prepare for Quiz</button>
             </form>
