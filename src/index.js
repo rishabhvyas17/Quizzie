@@ -15,12 +15,16 @@ const {studentCollection, teacherCollection} =require("./mongodb") // added teac
 
 const templatePath=path.join(__dirname,'../tempelates')
 
-
 app.use(express.json())
 app.set("view engine", "hbs")
 app.set("views", templatePath)
 
 app.use(express.urlencoded({extended:false}))
+
+// Root route - redirect to login
+app.get("/", (req, res) => {             // when you will at / will redirect to /login
+    res.redirect("/login")
+})
 
 app.get("/login",(req,res)=>{
     res.render("login")
@@ -30,9 +34,22 @@ app.get("/signup",(req,res)=>{
     res.render("signup")
 })
 
+app.get("/homeStudent", (req, res) => {   /// here when you will at /homeStudent then will render homeStudent
+    res.render("homeStudent", {
+        userType: "student",
+        userName: req.query.userName || "Student"
+    })
+})
+
+app.get("/homeTeacher", (req, res) => {    /// here when you will at /homeTeacher then will render hometeacher
+    res.render("homeTeacher", {
+        userType: "teacher", 
+        userName: req.query.userName || "Teacher"
+    })
+})
+
 app.post("/signup", async (req, res) => {
     try {
-
         const userType = req.body.userType; // 'student' or 'teacher'
 
         if (userType === 'teacher') { // Check the user type from the form and insert into appropriate collection
@@ -42,15 +59,18 @@ app.post("/signup", async (req, res) => {
                 password: req.body.password
             };
             await teacherCollection.insertMany([data]);
-            res.render("homeTeacher", { userType: userType });// Redirect to home page after successful registration
+
+            res.redirect(`/homeTeacher?userName=${encodeURIComponent(data.name)}`);// Redirect to home page after successful registration
+
         } else {
-            const data = { // Create a new user object with data from the request
+            const data = { // Create a new user object with data from the requestv
                 name: req.body.name,
                 enrollment: req.body.enrollment,
                 password: req.body.password
             };
             await studentCollection.insertMany([data]);
-            res.render("homeStudent", { userType: userType });// Redirect to home page after successful registration
+            
+            res.redirect(`/homeStudent?userName=${encodeURIComponent(data.name)}`);// Redirect to home page after successful registration
         }
 
     } catch (error) {
@@ -58,11 +78,6 @@ app.post("/signup", async (req, res) => {
         res.send("Error during registration");
     }
 });
-
-
-// app.get("/", (req, res) => {
-//     res.render("home");
-// });
 
 // Handle user login
 app.post("/login", async (req, res) => {
@@ -81,15 +96,9 @@ app.post("/login", async (req, res) => {
         // Check if user exists and password matches
         if (user && user.password === password) {
             if (userType === 'teacher') {
-                res.render("homeTeacher", {
-                    userType: userType,
-                    userName: user.name
-                });
+                res.redirect(`/homeTeacher?userName=${encodeURIComponent(user.name)}`)
             } else {
-                res.render("homeStudent", {
-                    userType: userType,
-                    userName: user.name
-                });
+                res.redirect(`/homeStudent?userName=${encodeURIComponent(user.name)}`)
             }
         } else {
             res.send("Wrong credentials");
@@ -100,8 +109,6 @@ app.post("/login", async (req, res) => {
         res.send("Login failed");
     }
 });
-
-
 
 app.listen(3000,()=>{
     console.log("port-connected");    // this will connect and conform that port is connected
