@@ -3,8 +3,636 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teacher</title>
+    <title>Professor Dashboard - QuizAI</title>
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+            line-height: 1.6;
+        }
+
+        /* Header Styles - Replicated from Student Dashboard */
+        .header {
+            background: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.75rem;
+            font-weight: bold;
+            color: #3b82f6;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #64748b;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: #3b82f6;
+        }
+
+        .profile-section {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .profile-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .profile-info h3 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .profile-info p {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        /* Logout button style */
+        .logout-btn {
+            background-color: #ef4444; /* Red color for logout */
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            font-size: 0.85rem;
+            text-decoration: none;
+            margin-left: 1rem;
+        }
+
+        .logout-btn:hover {
+            background-color: #dc2626;
+            transform: translateY(-1px);
+        }
+
+        /* Main Content */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .dashboard-title {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 2rem;
+        }
+
+        /* Stats Section - Replicated from Student Dashboard */
+        .stats-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-card.blue { border-left: 4px solid #3b82f6; }
+        .stat-card.green { border-left: 4px solid #10b981; }
+        .stat-card.purple { border-left: 4px solid #8b5cf6; }
+        .stat-card.orange { border-left: 4px solid #f59e0b; }
+
+        .stat-value {
+            font-size: 2.25rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card.blue .stat-value { color: #3b82f6; }
+        .stat-card.green .stat-value { color: #10b981; }
+        .stat-card.purple .stat-value { color: #8b5cf6; }
+        .stat-card.orange .stat-value { color: #f59e0b; }
+
+        .stat-label {
+            color: #64748b;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* Section Styles */
+        .section {
+            margin-bottom: 3rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 1.5rem;
+        }
+
+        /* General Button Styles - Replicated from Student Dashboard */
+        .btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            font-size: 0.9rem;
+            text-decoration: none; /* For link-styled buttons */
+            display: inline-block; /* For link-styled buttons */
+            text-align: center; /* For link-styled buttons */
+        }
+
+        .btn:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: #10b981;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        /* Professor-Specific Styles */
+        .lectures-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .lecture-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .lecture-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .lecture-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+
+        .lecture-details {
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .lecture-status {
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+            color: #3b82f6; /* Default status color */
+        }
+
+        .lecture-status.generated {
+            color: #10b981; /* Green for quiz generated */
+        }
+        .lecture-status.pending {
+            color: #f59e0b; /* Orange for quiz pending */
+        }
+
+        .lecture-actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+        }
+
+        /* Action button variations */
+        .action-button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            font-size: 0.85rem;
+            text-decoration: none; /* For link-styled buttons */
+            display: inline-block; /* For link-styled buttons */
+            text-align: center; /* For link-styled buttons */
+        }
+
+        .action-button:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .action-button.generate-btn {
+            background: #f59e0b; /* Orange for generate */
+        }
+        .action-button.generate-btn:hover {
+            background: #d97706;
+        }
+        .action-button.view-btn {
+            background: #10b981; /* Green for view */
+        }
+        .action-button.view-btn:hover {
+            background: #059669;
+        }
+        .action-button.delete-btn {
+            background: #ef4444; /* Red for delete */
+        }
+        .action-button.delete-btn:hover {
+            background: #dc2626;
+        }
+
+        /* Upload Section */
+        .upload-section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 3rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .upload-section h2 {
+            font-size: 1.5rem;
+            color: #1e293b;
+            margin-bottom: 1rem;
+        }
+
+        .upload-input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 500px;
+            gap: 1rem;
+        }
+
+        .upload-input-group input[type="text"],
+        .upload-input-group input[type="file"] {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 1rem;
+            color: #334155;
+        }
+
+        .upload-input-group input[type="file"] {
+            border: 2px dashed #cbd5e1; /* Dashed border for file input */
+            background-color: #f0f4f8;
+            cursor: pointer;
+            text-align: left; /* Align file input text to left */
+        }
+        /* Style for the file input button itself */
+        .upload-input-group input[type="file"]::file-selector-button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            margin-right: 1rem;
+        }
+        .upload-input-group input[type="file"]::file-selector-button:hover {
+            background: #2563eb;
+        }
+
+        /* Mobile Responsiveness - Replicated and adapted */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .nav-links {
+                gap: 1rem;
+            }
+
+            .dashboard-title {
+                font-size: 1.5rem;
+            }
+
+            .stats-section {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+            }
+
+            .lectures-grid { /* Changed from classes-grid for professor */
+                grid-template-columns: 1fr;
+            }
+
+            .lecture-actions { /* Specific for professor dashboard */
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            .action-button {
+                width: 100%; /* Make buttons full width on small screens */
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-content {
+                padding: 1rem 0.5rem;
+            }
+
+            .stat-card,
+            .lecture-card, /* Changed from class-card/quiz-card */
+            .upload-section {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
 <body>
-    <h1>Teacher Dashboard</h1>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">QuizAI</div>
+            <nav>
+                <ul class="nav-links">
+                    {{!-- You can add professor-specific navigation links here if needed --}}
+                    <li><a href="/professor_dashboard" onclick="showSection('lectures')">My Lectures</a></li>
+                </ul>
+            </nav>
+            <div class="profile-section">
+                <div class="profile-avatar" id="profileAvatar"></div>
+                <div class="profile-info">
+                    <h3>{{{userName}}}</h3> {{!-- userName passed from controller --}}
+                    <p>Professor</p> {{!-- Hardcoded user type for now --}}
+                </div>
+                <a href="/logout" class="logout-btn">Logout</a> {{!-- Logout button --}}
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <h1 class="dashboard-title" id="dashboardTitle"></h1>
+
+        <section class="stats-section">
+            <div class="stat-card blue">
+                <div class="stat-value">{{totalLectures}}</div> {{!-- Dynamic data --}}
+                <div class="stat-label">Total Lectures</div>
+            </div>
+            <div class="stat-card green">
+                <div class="stat-value">{{quizzesGenerated}}</div> {{!-- Dynamic data --}}
+                <div class="stat-label">Quizzes Generated</div>
+            </div>
+            <div class="stat-card purple">
+                <div class="stat-value">{{pendingLectures}}</div> {{!-- Dynamic data --}}
+                <div class="stat-label">Pending Quizzes</div>
+            </div>
+            <div class="stat-card orange">
+                <div class="stat-value">{{totalStudents}}</div> {{!-- Dynamic data --}}
+                <div class="stat-label">Total Students</div>
+            </div>
+        </section>
+
+        <section class="section upload-section">
+            <h2 class="section-title">Upload New Lecture for Quiz Generation</h2>
+            {{!-- The form action will be handled by your backend Express route --}}
+            <form action="/upload_lecture" method="POST" enctype="multipart/form-data" class="upload-input-group">
+                <input type="text" name="title" placeholder="Lecture Title (e.g., 'Introduction to Algorithms')" required>
+                <input type="file" name="lectureFile" accept=".pdf,.ppt,.pptx" required>
+                <button type="submit" class="btn btn-success">Upload Lecture & Prepare for Quiz</button>
+            </form>
+            <p style="margin-top: 1rem; font-size: 0.9rem; color: #64748b;">
+                Supported formats: PDF, PPT, PPTX. Our AI will process this to generate quiz questions.
+            </p>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">My Lectures</h2>
+            {{#if lectures}} {{!-- Handlebars conditional for empty lectures --}}
+                <div class="lectures-grid">
+                    {{#each lectures}} {{!-- Handlebars loop for each lecture --}}
+                        <div class="lecture-card">
+                            <h3 class="lecture-title">{{this.title}}</h3>
+                            <p class="lecture-details">Uploaded on: {{this.uploadDate}}</p>
+                            <p class="lecture-status {{#if this.quizGenerated}}generated{{else}}pending{{/if}}">
+                                Status: {{#if this.quizGenerated}}Quiz Generated{{else}}Quiz Pending{{/if}}
+                            </p>
+                            <div class="lecture-actions">
+                                {{!-- Assuming a /lectures/:id/view route for viewing the actual lecture content --}}
+                                <a href="/lectures/{{this.id}}/view" target="_blank" class="action-button view-btn">View Lecture</a>
+                                {{#unless this.quizGenerated}} {{!-- Only show if quiz not generated --}}
+                                    <button class="action-button generate-btn" onclick="generateQuiz('{{this.id}}')">Generate Quiz</button>
+                                {{else}}
+                                    <a href="/lectures/{{this.id}}/quizzes" class="action-button">View Quizzes</a> {{!-- Link to quizzes associated with this lecture --}}
+                                {{/unless}}
+                                <button class="action-button delete-btn" onclick="deleteLecture('{{this.id}}')">Delete</button>
+                            </div>
+                        </div>
+                    {{/each}}
+                </div>
+            {{else}}
+                <p>No lectures uploaded yet. Use the section above to upload your first lecture!</p>
+            {{/if}}
+        </section>
+    </main>
+
+    <script>
+        // Get professor name from server-side rendered template
+        // Using `userName` that's passed by the Express route
+        const professorName = '{{{userName}}}';
+        
+        // Navigation functionality (adapted for professor links)
+        function showSection(section) {
+            console.log(`Navigating to ${section} section`);
+            const navLinks = document.querySelectorAll('.nav-links a');
+            navLinks.forEach(link => {
+                link.style.color = '#64748b';
+            });
+            // This event.target check is a common pattern for inline onclick
+            // If navigating via Express routes, the page reload handles this
+            if (event && event.target) {
+                event.target.style.color = '#3b82f6';
+            }
+        }
+
+        // Lecture management functions
+        function viewLecture(lectureId) {
+            console.log(`Viewing lecture: ${lectureId}`);
+            alert(`Opening lecture ${lectureId}... (This would open the PDF/PPT in a new tab or modal)`);
+            // Example: window.open(`/lectures/${lectureId}/view`, '_blank');
+        }
+
+        function generateQuiz(lectureId) {
+            console.log(`Attempting to generate quiz for lecture: ${lectureId}`);
+            if (confirm('Are you sure you want to generate a quiz for this lecture? This might take a moment.')) {
+                // Perform a fetch request to your backend to trigger quiz generation
+                fetch(`/generate_quiz/${lectureId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // Include CSRF token if you're using one for security
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Quiz generation started! It may take a few minutes. The dashboard will update when complete.');
+                        window.location.reload(); // Reload to show updated status
+                    } else {
+                        alert('Failed to start quiz generation: ' + (data.message || 'Unknown error.'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error generating quiz:', error);
+                    alert('An error occurred during quiz generation.');
+                });
+            }
+        }
+
+        function viewQuizzes(lectureId) {
+            console.log(`Viewing quizzes for lecture: ${lectureId}`);
+            alert(`Opening quizzes for lecture ${lectureId}... (This would navigate to a quiz listing page)`);
+            // Example: window.location.href = `/lectures/${lectureId}/quizzes`;
+        }
+
+        function deleteLecture(lectureId) {
+            console.log(`Attempting to delete lecture: ${lectureId}`);
+            if (confirm('Are you sure you want to delete this lecture and all associated quizzes? This action cannot be undone.')) {
+                // Perform a fetch request to your backend to delete the lecture
+                fetch(`/delete_lecture/${lectureId}`, {
+                    method: 'POST', // Or 'DELETE' if your API supports it
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // Include CSRF token if you're using one
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Lecture deleted successfully!');
+                        window.location.reload(); // Reload to show updated list
+                    } else {
+                        alert('Failed to delete lecture: ' + (data.message || 'Unknown error.'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error deleting lecture:', error);
+                    alert('An error occurred during lecture deletion.');
+                });
+            }
+        }
+
+        // Initialize dashboard when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set dynamic greeting based on time
+            const hour = new Date().getHours();
+            let greeting = 'Good evening';
+            if (hour < 12) greeting = 'Good morning';
+            else if (hour < 18) greeting = 'Good afternoon';
+            
+            const title = document.getElementById('dashboardTitle');
+            title.textContent = `${greeting}, Professor ${professorName}!`;
+            
+            // Update avatar initials based on actual name
+            const avatar = document.getElementById('profileAvatar');
+            const initials = professorName.split(' ').map(name => name.charAt(0)).join('').toUpperCase();
+            avatar.textContent = initials;
+            
+            // Add entrance animations for cards
+            const cards = document.querySelectorAll('.stat-card, .lecture-card, .upload-section');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                
+                setTimeout(() => {
+                    card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+
+        // Add interactive hover effects for lecture cards (similar to student performance)
+        document.querySelectorAll('.lecture-card').forEach(item => {
+            item.addEventListener('mouseenter', function() {
+                this.style.backgroundColor = '#f8fafc';
+                this.style.transform = 'translateY(-5px)';
+                this.style.transition = 'all 0.2s ease';
+            });
+            
+            item.addEventListener('mouseleave', function() {
+                this.style.backgroundColor = 'white'; // Revert to white
+                this.style.transform = 'translateY(0)';
+            });
+        });
+
+        // Simulate real-time updates for stats (if you implement this in your backend)
+        setInterval(() => {
+            const statCards = document.querySelectorAll('.stat-value');
+            statCards.forEach(card => {
+                card.style.transform = 'scale(1.02)';
+                setTimeout(() => {
+                    card.style.transform = 'scale(1)';
+                }, 200);
+            });
+        }, 30000); // Every 30 seconds
+    </script>
 </body>
 </html>
