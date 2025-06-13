@@ -1,46 +1,68 @@
 const mongoose = require("mongoose")
 
-mongoose.connect("mongodb://localhost:27017/LoginSignup")
-.then(() => {
-    console.log("mongodb connected");
+// Separate databases for different purposes
+const loginDB = mongoose.createConnection("mongodb://localhost:27017/LoginSignup")
+const quizDB = mongoose.createConnection("mongodb://localhost:27017/QuizAI")
+
+// Connection event handlers for LoginSignup DB
+loginDB.on('connected', () => {
+    console.log("LoginSignup database connected");
 })
-.catch(() => {
-    console.log("failed to connect");
+loginDB.on('error', (err) => {
+    console.log("LoginSignup database connection failed:", err);
 })
 
-// For Student
+// Connection event handlers for QuizAI DB
+quizDB.on('connected', () => {
+    console.log("QuizAI database connected");
+})
+quizDB.on('error', (err) => {
+    console.log("QuizAI database connection failed:", err);
+})
+
+// For Student (LoginSignup DB)
 const studentSchema = new mongoose.Schema({
     name: {
         type: String,
-        require: true
+        required: true
     },
     enrollment: {
         type: String,
-        require: true
+        required: true,
+        unique: true
     },
     password: {
         type: String,
-        require: true
+        required: true
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
     }
 })
 
-// For Teacher
+// For Teacher (LoginSignup DB)
 const teacherSchema = new mongoose.Schema({
     name: {
         type: String,
-        require: true
+        required: true
     },
     email: {
         type: String,
-        require: true
+        required: true,
+        unique: true
     },
     password: {
         type: String,
-        require: true
+        required: true
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
     }
 })
 
-// For Lectures
+// For Lectures (QuizAI DB) - Optimized for AI processing
 const lectureSchema = new mongoose.Schema({
     title: {
         type: String,
@@ -49,17 +71,13 @@ const lectureSchema = new mongoose.Schema({
     teacherId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'TeacherCollection',
-        required: false // Made optional for now, you can make it required later
+        required: false // Made optional for now
     },
-    filename: {
+    teacherName: {
         type: String,
-        required: true
+        required: false // Store teacher name for easier queries
     },
-    originalName: {
-        type: String,
-        required: true
-    },
-    filePath: {
+    originalFileName: {
         type: String,
         required: true
     },
@@ -67,58 +85,113 @@ const lectureSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    textLength: {
+        type: Number,
+        default: 0 // Store text length for analytics
+    },
     uploadDate: {
         type: Date,
         default: Date.now
     },
-    fileSize: {
-        type: Number,
-        required: true
-    },
-    mimeType: {
+    fileType: {
         type: String,
-        required: true
+        required: true // 'pdf', 'docx', 'pptx', etc.
     },
     quizGenerated: {
         type: Boolean,
         default: false
     },
-    quizzes: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'QuizCollection'
-    }]
+    quizzesCount: {
+        type: Number,
+        default: 0
+    },
+    lastProcessed: {
+        type: Date,
+        default: null
+    },
+    processingStatus: {
+        type: String,
+        enum: ['pending', 'processing', 'completed', 'failed'],
+        default: 'pending'
+    }
 })
 
-// For Quizzes (for future use)
+// For Quizzes (QuizAI DB)
 const quizSchema = new mongoose.Schema({
     lectureId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'LectureCollection',
         required: true
     },
+    lectureTitle: {
+        type: String,
+        required: true
+    },
     questions: [{
-        question: String,
-        options: [String],
-        correctAnswer: Number,
-        explanation: String
+        question: {
+            type: String,
+            required: true
+        },
+        options: [{
+            type: String,
+            required: true
+        }],
+        correctAnswer: {
+            type: Number,
+            required: true,
+            min: 0,
+            max: 3
+        },
+        explanation: {
+            type: String,
+            default: ''
+        },
+        difficulty: {
+            type: String,
+            enum: ['easy', 'medium', 'hard'],
+            default: 'medium'
+        },
+        topic: {
+            type: String,
+            default: ''
+        }
     }],
     createdDate: {
         type: Date,
         default: Date.now
     },
-    difficulty: {
+    totalQuestions: {
+        type: Number,
+        default: 0
+    },
+    averageDifficulty: {
         type: String,
         enum: ['easy', 'medium', 'hard'],
         default: 'medium'
+    },
+    generatedBy: {
+        type: String,
+        default: 'AI' // Could be 'AI' or 'Manual'
+    },
+    isActive: {
+        type: Boolean,
+        default: true
     }
 })
 
-const studentCollection = new mongoose.model("StudentCollection", studentSchema) //Collection for students
-const teacherCollection = new mongoose.model("TeacherCollection", teacherSchema) // collection for teachers
-const lectureCollection = new mongoose.model("LectureCollection", lectureSchema) // collection for lectures
-const quizCollection = new mongoose.model("QuizCollection", quizSchema) // collection for quizzes
+// Create models with their respective database connections
+const studentCollection = loginDB.model("StudentCollection", studentSchema)
+const teacherCollection = loginDB.model("TeacherCollection", teacherSchema)
+const lectureCollection = quizDB.model("LectureCollection", lectureSchema)
+const quizCollection = quizDB.model("QuizCollection", quizSchema)
 
+// Export both connections and models
 module.exports = {
+    // Database connections
+    loginDB,
+    quizDB,
+    
+    // Models
     studentCollection,
     teacherCollection,
     lectureCollection,
