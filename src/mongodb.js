@@ -62,12 +62,15 @@ const teacherSchema = new mongoose.Schema({
     }
 })
 
+text-and-file
 // For Lectures (QuizAI DB) - Optimized for AI processing
+
 const lectureSchema = new mongoose.Schema({
     title: {
         type: String,
         required: true
     },
+  text-and-file
     teacherId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'TeacherCollection',
@@ -89,10 +92,12 @@ const lectureSchema = new mongoose.Schema({
         type: Number,
         default: 0 // Store text length for analytics
     },
+
     uploadDate: {
         type: Date,
         default: Date.now
     },
+text-and-file
     fileType: {
         type: String,
         required: true // 'pdf', 'docx', 'pptx', etc.
@@ -115,6 +120,7 @@ const lectureSchema = new mongoose.Schema({
         default: 'pending'
     }
 })
+
 
 // For Quizzes (QuizAI DB)
 const quizSchema = new mongoose.Schema({
@@ -179,11 +185,13 @@ const quizSchema = new mongoose.Schema({
     }
 })
 
+text-and-file
 // Create models with their respective database connections
 const studentCollection = loginDB.model("StudentCollection", studentSchema)
 const teacherCollection = loginDB.model("TeacherCollection", teacherSchema)
 const lectureCollection = quizDB.model("LectureCollection", lectureSchema)
 const quizCollection = quizDB.model("QuizCollection", quizSchema)
+
 
 // Export both connections and models
 module.exports = {
@@ -194,6 +202,8 @@ module.exports = {
     // Models
     studentCollection,
     teacherCollection,
+text-and-file
     lectureCollection,
     quizCollection
+
 }
