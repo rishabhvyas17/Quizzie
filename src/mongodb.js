@@ -1,209 +1,82 @@
 const mongoose = require("mongoose")
 
-// Separate databases for different purposes
-const loginDB = mongoose.createConnection("mongodb://localhost:27017/LoginSignup")
-const quizDB = mongoose.createConnection("mongodb://localhost:27017/QuizAI")
-
-// Connection event handlers for LoginSignup DB
-loginDB.on('connected', () => {
-    console.log("LoginSignup database connected");
-})
-loginDB.on('error', (err) => {
-    console.log("LoginSignup database connection failed:", err);
+mongoose.connect("mongodb://localhost:27017/LoginSignup")
+.then(()=>{
+    console.log("mongodb connected");
 })
 
-// Connection event handlers for QuizAI DB
-quizDB.on('connected', () => {
-    console.log("QuizAI database connected");
-})
-quizDB.on('error', (err) => {
-    console.log("QuizAI database connection failed:", err);
+.catch(()=>{
+    console.log("failed to connect");
 })
 
-// For Student (LoginSignup DB)
+// For Student
 const studentSchema = new mongoose.Schema({
-    name: {
-        type: String,
-        required: true
+    name:{
+        type:String,
+        require:true
     },
-    enrollment: {
-        type: String,
-        required: true,
-        unique: true
+    enrollment:{
+        type:String,
+        require:true
     },
-    password: {
-        type: String,
-        required: true
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
+    password:{
+        type:String,
+        require:true
     }
 })
-
-// For Teacher (LoginSignup DB)
+// For Teacher
 const teacherSchema = new mongoose.Schema({
-    name: {
-        type: String,
-        required: true
+    name:{
+        type:String,
+        require:true
     },
-    email: {
-        type: String,
-        required: true,
-        unique: true
+    email:{
+        type:String,
+        require:true
     },
-    password: {
-        type: String,
-        required: true
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
+    password:{
+        type:String,
+        require:true
     }
 })
 
-text-and-file
-// For Lectures (QuizAI DB) - Optimized for AI processing
-
+// For Lectures
 const lectureSchema = new mongoose.Schema({
     title: {
         type: String,
         required: true
     },
-  text-and-file
-    teacherId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'TeacherCollection',
-        required: false // Made optional for now
-    },
-    teacherName: {
-        type: String,
-        required: false // Store teacher name for easier queries
-    },
-    originalFileName: {
+    filePath: { // The path where the file is stored on your server
         type: String,
         required: true
     },
-    extractedText: {
-        type: String,
-        required: true
-    },
-    textLength: {
-        type: Number,
-        default: 0 // Store text length for analytics
-    },
-
+    originalFileName: String,
+    mimeType: String,
+    fileSize: Number,
     uploadDate: {
         type: Date,
         default: Date.now
     },
-text-and-file
-    fileType: {
-        type: String,
-        required: true // 'pdf', 'docx', 'pptx', etc.
-    },
-    quizGenerated: {
+    quizGenerated: { // A flag to indicate if a quiz has been generated for this lecture
         type: Boolean,
         default: false
     },
-    quizzesCount: {
-        type: Number,
-        default: 0
-    },
-    lastProcessed: {
-        type: Date,
-        default: null
-    },
-    processingStatus: {
-        type: String,
-        enum: ['pending', 'processing', 'completed', 'failed'],
-        default: 'pending'
-    }
-})
-
-
-// For Quizzes (QuizAI DB)
-const quizSchema = new mongoose.Schema({
-    lectureId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'LectureCollection',
-        required: true
-    },
-    lectureTitle: {
+    professorName: { // To link the lecture to the professor who uploaded it
         type: String,
         required: true
-    },
-    questions: [{
-        question: {
-            type: String,
-            required: true
-        },
-        options: [{
-            type: String,
-            required: true
-        }],
-        correctAnswer: {
-            type: Number,
-            required: true,
-            min: 0,
-            max: 3
-        },
-        explanation: {
-            type: String,
-            default: ''
-        },
-        difficulty: {
-            type: String,
-            enum: ['easy', 'medium', 'hard'],
-            default: 'medium'
-        },
-        topic: {
-            type: String,
-            default: ''
-        }
-    }],
-    createdDate: {
-        type: Date,
-        default: Date.now
-    },
-    totalQuestions: {
-        type: Number,
-        default: 0
-    },
-    averageDifficulty: {
-        type: String,
-        enum: ['easy', 'medium', 'hard'],
-        default: 'medium'
-    },
-    generatedBy: {
-        type: String,
-        default: 'AI' // Could be 'AI' or 'Manual'
-    },
-    isActive: {
-        type: Boolean,
-        default: true
     }
-})
-
-text-and-file
-// Create models with their respective database connections
-const studentCollection = loginDB.model("StudentCollection", studentSchema)
-const teacherCollection = loginDB.model("TeacherCollection", teacherSchema)
-const lectureCollection = quizDB.model("LectureCollection", lectureSchema)
-const quizCollection = quizDB.model("QuizCollection", quizSchema)
+});
 
 
-// Export both connections and models
+const studentCollection = new mongoose.model("StudentCollection",studentSchema ) //Collection for students
+
+const teacherCollection = new mongoose.model("TeacherCollection",teacherSchema) // collection for teachers
+
+const lectureCollection = new mongoose.model("LectureCollection", lectureSchema); // Collection for lectures
+
+
 module.exports = {
-    // Database connections
-    loginDB,
-    quizDB,
-    
-    // Models
     studentCollection,
     teacherCollection,
-text-and-file
-    lectureCollection,
-    quizCollection
-
+    lectureCollection // Export the new lectureCollection
 }
