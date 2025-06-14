@@ -40,12 +40,43 @@ const teacherSchema = new mongoose.Schema({
     }
 })
 
+// For Lectures
+const lectureSchema = new mongoose.Schema({
+    title: {
+        type: String,
+        required: true
+    },
+    filePath: { // The path where the file is stored on your server
+        type: String,
+        required: true
+    },
+    originalFileName: String,
+    mimeType: String,
+    fileSize: Number,
+    uploadDate: {
+        type: Date,
+        default: Date.now
+    },
+    quizGenerated: { // A flag to indicate if a quiz has been generated for this lecture
+        type: Boolean,
+        default: false
+    },
+    professorName: { // To link the lecture to the professor who uploaded it
+        type: String,
+        required: true
+    }
+});
+
+
 const studentCollection = new mongoose.model("StudentCollection",studentSchema ) //Collection for students
 
 const teacherCollection = new mongoose.model("TeacherCollection",teacherSchema) // collection for teachers
 
+const lectureCollection = new mongoose.model("LectureCollection", lectureSchema); // Collection for lectures
+
 
 module.exports = {
     studentCollection,
-    teacherCollection
+    teacherCollection,
+    lectureCollection // Export the new lectureCollection
 }
