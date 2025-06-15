@@ -1,3 +1,4 @@
+
 // QuizAI Server - Express.js Application
 // Dependencies to install:
 // npm i express hbs mongoose multer pdf-parse mammoth pptx2json @google/generative-ai dotenv nodemon
@@ -31,22 +32,31 @@ app.set("views", templatePath)
 // ==================== FILE UPLOAD CONFIGURATION ====================
 
 // Configure multer for temporary file storage
+
 const storage = multer.diskStorage({
+    // Define the destination folder for uploaded files
     destination: function (req, file, cb) {
+
         if (!fs.existsSync(TEMP_UPLOAD_DIR)) {
             fs.mkdirSync(TEMP_UPLOAD_DIR)
         }
         cb(null, TEMP_UPLOAD_DIR)
+
     },
+    // Define how the uploaded file will be named
     filename: function (req, file, cb) {
+
         const uniqueName = Date.now() + '-' + file.originalname
         cb(null, uniqueName)
+
     }
-})
+});
+
 
 // File type validation
+
 const fileFilter = (req, file, cb) => {
-    const allowedTypes = [
+    const allowedMimes = [
         'application/pdf',
         'application/vnd.ms-powerpoint',
         'application/vnd.openxmlformats-officedocument.presentationml.presentation',
@@ -56,10 +66,14 @@ const fileFilter = (req, file, cb) => {
     
     if (allowedTypes.includes(file.mimetype)) {
         cb(null, true)
+
     } else {
-        cb(new Error('Invalid file type. Only PDF, PPT, PPTX, DOC, DOCX allowed.'), false)
+        // Reject the file and attach a custom error message to the request object
+        req.fileError = new Error('Invalid file type. Only PDF, PPT, and PPTX files are allowed.');
+        cb(null, false); // Pass false to Multer to reject the file
     }
-}
+};
+
 
 // Multer configuration
 const upload = multer({
@@ -84,8 +98,11 @@ async function extractTextFromPDF(filePath) {
     } catch (error) {
         console.error('❌ PDF extraction error:', error)
         throw new Error('Failed to extract text from PDF')
+
     }
-}
+});
+// --- End Multer Configuration ---
+
 
 /**
  * Extract text from Word documents (.doc, .docx)
@@ -215,19 +232,25 @@ function cleanupTempFiles() {
 // ==================== AUTHENTICATION ROUTES ====================
 
 // Root route - redirect to login
+
 app.get("/", (req, res) => {
-    res.redirect("/login")
-})
+    res.redirect("/login");
+});
+
 
 // Render login page
+
 app.get("/login", (req, res) => {
-    res.render("login")
-})
+    res.render("login");
+});
+
 
 // Render signup page
+
 app.get("/signup", (req, res) => {
-    res.render("signup")
-})
+    res.render("signup");
+});
+
 
 // Handle user registration
 app.post("/signup", async (req, res) => {
@@ -283,14 +306,26 @@ app.get('/logout', (req, res) => {
 // Student dashboard
 app.get("/homeStudent", (req, res) => {
     res.render("homeStudent", {
+
         userType: "student",
-        userName: req.query.userName || "Student"
-    })
-})
+        userName: userName,
+        // Example: pass dynamic data here if you fetch it
+        // enrolledClasses: student.classes,
+    });
+});
+
 
 // Teacher dashboard with lecture statistics
+
 app.get("/homeTeacher", async (req, res) => {
+    const userName = req.query.userName || "Teacher"; // Get user name from query or default
+    let lectures = [];
+    let totalLectures = 0;
+    let quizzesGenerated = 0;
+    let pendingLectures = 0;
+
     try {
+
         const lectures = await lectureCollection.find({}).sort({ uploadDate: -1 })
         
         // Calculate dashboard statistics
@@ -319,19 +354,12 @@ app.get("/homeTeacher", async (req, res) => {
             ...stats,
             lectures: formattedLectures
         })
+
     } catch (error) {
-        console.error('❌ Error loading teacher dashboard:', error)
-        res.render("homeTeacher", {
-            userType: "teacher", 
-            userName: req.query.userName || "Teacher",
-            totalLectures: 0,
-            quizzesGenerated: 0,
-            pendingLectures: 0,
-            totalStudents: 0,
-            lectures: []
-        })
+        console.error("Error fetching lectures for teacher:", error);
+        // Handle database errors gracefully on the frontend
     }
-})
+
 
 // ==================== LECTURE MANAGEMENT ROUTES ====================
 
@@ -398,7 +426,19 @@ app.post("/upload_lecture", upload.single('lectureFile'), async (req, res) => {
             message: 'Failed to process uploaded file: ' + error.message 
         })
     }
-})
+});
+
+// --- Generate Quiz Route ---
+// Handles POST requests to initiate quiz generation for a specific lecture
+// *** IMPORTANT CHANGES: Now accepts lectureId as a URL parameter and responds with JSON ***
+app.post('/generate_quiz/:id', async (req, res) => { // CHANGED: Added /:id to route path
+    const lectureId = req.params.id; // CHANGED: Get lectureId from URL parameters
+    // Note: The client-side generateQuiz function does NOT send 'userName' in the body.
+    // So, `req.body.userName` would be undefined here. If userName is needed,
+    // it would have to be passed via the client-side fetch body or extracted from a session.
+
+    let extractedText = '';
+
 
 // Get lecture text content for AI processing
 app.get('/lectures/:id/text', async (req, res) => {
@@ -502,11 +542,19 @@ app.post('/generate_quiz/:id', async (req, res) => {
             message: 'Failed to generate quiz' 
         })
     }
-})
+});
+
 
 // Delete lecture and associated quizzes
+
 app.post('/delete_lecture/:id', async (req, res) => {
+    const lectureId = req.params.id; // Get lecture ID from URL parameters
+    const userName = req.body.userName; // This might be undefined as client doesn't send it in body for delete,
+                                        // but good to keep if you ever pass it via hidden field or session.
+                                        // For now, it's not strictly used in the delete logic itself.
+
     try {
+
         const lectureId = req.params.id
         const lecture = await lectureCollection.findById(lectureId)
         
