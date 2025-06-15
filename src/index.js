@@ -7,6 +7,8 @@
 // npm install pdf-parse
 // npm install mammoth
 // npm install pptx2json
+//npm install @google/generative-ai
+//npm install dotenv
 
 // npm i nodemon 
 // nodemon src/index.js  // it will keep runing the file so we dont need to runit again and again
@@ -541,7 +543,9 @@ function cleanupTempFiles() {
 app.listen(3000, () => {
     console.log("🚀 Server started on port 3000");
 
-    
     // Clean up any temp files from previous runs
     cleanupTempFiles();
+
+
+    //end
 })
