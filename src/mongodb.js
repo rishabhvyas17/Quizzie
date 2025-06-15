@@ -74,6 +74,8 @@ const teacherCollection = new mongoose.model("TeacherCollection",teacherSchema) 
 
 const lectureCollection = new mongoose.model("LectureCollection", lectureSchema); // Collection for lectures
 
+const quizCollection = new mongoose.model("LectureCollection", lectureSchema); // Collection for lectures
+
 
 module.exports = {
     studentCollection,
@@ -82,6 +84,5 @@ module.exports = {
     quizCollection
 
 
-    //end
 
 }
