@@ -78,5 +78,10 @@ const lectureCollection = new mongoose.model("LectureCollection", lectureSchema)
 module.exports = {
     studentCollection,
     teacherCollection,
-    lectureCollection // Export the new lectureCollection
+    lectureCollection,
+    quizCollection
+
+
+    //end
+
 }
