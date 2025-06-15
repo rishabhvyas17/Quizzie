@@ -196,4 +196,7 @@ module.exports = {
     teacherCollection,
     lectureCollection,
     quizCollection
+
+
+    //end
 }
