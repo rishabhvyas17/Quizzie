@@ -89,7 +89,11 @@ async function extractTextFromPDF(filePath) {
         console.error('❌ PDF extraction error:', error)
         throw new Error('Failed to extract text from PDF')
     }
-}
+
+};
+// --- End Multer Configuration ---
+
+
 
 /**
  * Extract text from Word documents (.doc, .docx)
@@ -409,6 +413,20 @@ app.post("/upload_lecture", upload.single('lectureFile'), async (req, res) => {
         })
     }
 });
+
+
+// --- Generate Quiz Route ---
+// Handles POST requests to initiate quiz generation for a specific lecture
+// *** IMPORTANT CHANGES: Now accepts lectureId as a URL parameter and responds with JSON ***
+app.post('/generate_quiz/:id', async (req, res) => { // CHANGED: Added /:id to route path
+    const lectureId = req.params.id; // CHANGED: Get lectureId from URL parameters
+    // Note: The client-side generateQuiz function does NOT send 'userName' in the body.
+    // So, `req.body.userName` would be undefined here. If userName is needed,
+    // it would have to be passed via the client-side fetch body or extracted from a session.
+
+    let extractedText = '';
+})
+
 
 // Get lecture text content for AI processing
 app.get('/lectures/:id/text', async (req, res) => {
