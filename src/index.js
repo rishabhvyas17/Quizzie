@@ -1,79 +1,72 @@
-// TO run the codebase
-// Make sure you have these packages installed:
-// npm i express
-// npm i hbs
-// npm i mongoose
-// npm i multer
-// npm i officeparser // REQUIRED for PPTX text extraction
-//
-// To run the server:
-// npm i nodemon (if you want auto-reloading)
-// nodemon src/index.js  // This will keep the file running and automatically restart on changes
 
-// --- Core Module Imports ---
-const express = require("express");
-const app = express();
-const path = require("path");
-const hbs = require("hbs");
-const fs = require("fs"); // File system module for directory creation and file deletion
+// QuizAI Server - Express.js Application
+// Dependencies to install:
+// npm i express hbs mongoose multer pdf-parse mammoth pptx2json @google/generative-ai dotenv nodemon
+// Run with: nodemon src/index.js
 
-// --- Database & File Upload Imports ---
-// Ensure './mongodb.js' exports studentCollection, teacherCollection, and lectureCollection
-const { studentCollection, teacherCollection, lectureCollection } = require("./mongodb");
-const multer = require("multer"); // Middleware for handling file uploads
+const express = require("express")
+const app = express()
+const path = require("path")
+const hbs = require("hbs")
+const multer = require("multer")
+const fs = require("fs")
+const pdfParse = require("pdf-parse")
+const mammoth = require("mammoth")
+const pptx2json = require("pptx2json")
 
-// --- Custom Utility Imports ---
-// Import the text extraction utility for parsing lecture files
-// This assumes 'textExtractor.js' is located in 'src/utils/' relative to index.js
-const textExtractor = require('./utils/textExtractor'); 
+// Import database collections
+const { studentCollection, teacherCollection, lectureCollection, quizCollection } = require("./mongodb")
 
-// --- Express App Configuration ---
-// Set the path to your HBS templates
-const templatePath = path.join(__dirname, '../tempelates');
-console.log("Resolved template path for views:", templatePath);
+// Configuration
+const PORT = 3000
+const TEMP_UPLOAD_DIR = './temp_uploads'
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+const templatePath = path.join(__dirname, '../tempelates')
 
-// Enable JSON body parsing for incoming requests
-app.use(express.json());
-// Set Handlebars as the view engine
-app.set("view engine", "hbs");
-// Set the directory where your view (HBS) files are located
-app.set("views", templatePath);
-// Enable URL-encoded body parsing for form submissions
-app.use(express.urlencoded({ extended: false }));
+// Express configuration
+app.use(express.json())
+app.use(express.urlencoded({ extended: false }))
+app.set("view engine", "hbs")
+app.set("views", templatePath)
 
-// --- Multer Configuration for File Uploads ---
-// Define the directory where uploaded lecture files will be stored
-const uploadDir = path.join(__dirname, '../uploads/lectures');
+// ==================== FILE UPLOAD CONFIGURATION ====================
 
-// Ensure the upload directory exists. If it doesn't, create it recursively.
-fs.mkdirSync(uploadDir, { recursive: true });
-console.log(`Ensured upload directory exists: ${uploadDir}`);
+// Configure multer for temporary file storage
 
-// Configure Multer's disk storage settings
 const storage = multer.diskStorage({
     // Define the destination folder for uploaded files
     destination: function (req, file, cb) {
-        cb(null, uploadDir); // Store files in the 'uploads/lectures' directory
+
+        if (!fs.existsSync(TEMP_UPLOAD_DIR)) {
+            fs.mkdirSync(TEMP_UPLOAD_DIR)
+        }
+        cb(null, TEMP_UPLOAD_DIR)
+
     },
     // Define how the uploaded file will be named
     filename: function (req, file, cb) {
-        // Generate a unique filename using timestamp, a random number, and original file extension
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const fileExtension = path.extname(file.originalname);
-        cb(null, file.fieldname + '-' + uniqueSuffix + fileExtension);
+
+        const uniqueName = Date.now() + '-' + file.originalname
+        cb(null, uniqueName)
+
     }
 });
 
-// Configure a file filter to allow only specific file types
+
+// File type validation
+
 const fileFilter = (req, file, cb) => {
     const allowedMimes = [
         'application/pdf',
-        'application/vnd.ms-powerpoint', // .ppt mime type
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation' // .pptx mime type
-    ];
+        'application/vnd.ms-powerpoint',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ]
+    
+    if (allowedTypes.includes(file.mimetype)) {
+        cb(null, true)
 
-    if (allowedMimes.includes(file.mimetype)) {
-        cb(null, true); // Accept the file
     } else {
         // Reject the file and attach a custom error message to the request object
         req.fileError = new Error('Invalid file type. Only PDF, PPT, and PPTX files are allowed.');
@@ -81,42 +74,239 @@ const fileFilter = (req, file, cb) => {
     }
 };
 
-// Initialize Multer with the defined storage, file filter, and file size limits
+
+// Multer configuration
 const upload = multer({
     storage: storage,
-    fileFilter: fileFilter,
-    limits: {
-        fileSize: 50 * 1024 * 1024 // Limit file size to 50MB (adjust as needed)
+    limits: { fileSize: MAX_FILE_SIZE },
+    fileFilter: fileFilter
+})
+
+// ==================== TEXT EXTRACTION FUNCTIONS ====================
+
+/**
+ * Extract text from PDF files
+ * @param {string} filePath - Path to the PDF file
+ * @returns {Promise<string>} - Extracted text content
+ */
+async function extractTextFromPDF(filePath) {
+    try {
+        const dataBuffer = fs.readFileSync(filePath)
+        const data = await pdfParse(dataBuffer)
+        console.log(`✅ PDF text extracted - Length: ${data.text.length} characters`)
+        return data.text
+    } catch (error) {
+        console.error('❌ PDF extraction error:', error)
+        throw new Error('Failed to extract text from PDF')
+
     }
 });
 // --- End Multer Configuration ---
 
-// Serve static files from the 'uploads' directory. This makes uploaded files accessible via URL.
-// E.g., if a file is at uploads/lectures/lecture-123.pptx, it can be accessed via /uploads/lectures/lecture-123.pptx
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-// --- Routes ---
+/**
+ * Extract text from Word documents (.doc, .docx)
+ * @param {string} filePath - Path to the Word document
+ * @returns {Promise<string>} - Extracted text content
+ */
+async function extractTextFromWord(filePath) {
+    try {
+        const result = await mammoth.extractRawText({ path: filePath })
+        console.log(`✅ Word text extracted - Length: ${result.value.length} characters`)
+        return result.value
+    } catch (error) {
+        console.error('❌ Word extraction error:', error)
+        throw new Error('Failed to extract text from Word document')
+    }
+}
 
-// Root route: Redirects to the login page
+/**
+ * Extract text from PowerPoint presentations (.ppt, .pptx)
+ * @param {string} filePath - Path to the PowerPoint file
+ * @returns {Promise<string>} - Extracted text content
+ */
+async function extractTextFromPowerPoint(filePath) {
+    try {
+        const data = await pptx2json.toJson(filePath)
+        let extractedText = ''
+        
+        if (data && data.slides) {
+            data.slides.forEach((slide, index) => {
+                extractedText += `\n--- Slide ${index + 1} ---\n`
+                
+                if (slide.content) {
+                    slide.content.forEach(content => {
+                        if (content.text) {
+                            extractedText += content.text + '\n'
+                        }
+                    })
+                }
+            })
+        }
+        
+        console.log(`✅ PowerPoint text extracted - Length: ${extractedText.length} characters`)
+        return extractedText || "No text found in PowerPoint file"
+    } catch (error) {
+        console.error('❌ PowerPoint extraction error:', error)
+        return "PowerPoint file uploaded successfully. Text extraction failed, but content is available."
+    }
+}
+
+/**
+ * Main text extraction function - routes to appropriate extractor
+ * @param {string} filePath - Path to the file
+ * @param {string} mimetype - MIME type of the file
+ * @returns {Promise<string>} - Extracted text content
+ */
+async function extractTextFromFile(filePath, mimetype) {
+    console.log(`🔄 Starting text extraction for: ${mimetype}`)
+    
+    switch (mimetype) {
+        case 'application/pdf':
+            return await extractTextFromPDF(filePath)
+        
+        case 'application/msword':
+        case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+            return await extractTextFromWord(filePath)
+        
+        case 'application/vnd.ms-powerpoint':
+        case 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
+            return await extractTextFromPowerPoint(filePath)
+        
+        default:
+            throw new Error('Unsupported file type')
+    }
+}
+
+// ==================== UTILITY FUNCTIONS ====================
+
+/**
+ * Get file type string from MIME type
+ * @param {string} mimetype - MIME type
+ * @returns {string} - File type string
+ */
+function getFileType(mimetype) {
+    const typeMap = {
+        'application/pdf': 'pdf',
+        'application/msword': 'docx',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+        'application/vnd.ms-powerpoint': 'pptx',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'pptx'
+    }
+    return typeMap[mimetype] || 'unknown'
+}
+
+/**
+ * Clean up temporary files after processing
+ * @param {string} filePath - Path to the temporary file
+ */
+function cleanupTempFile(filePath) {
+    try {
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath)
+            console.log(`🗑️ Temporary file deleted: ${filePath}`)
+        }
+    } catch (error) {
+        console.error('⚠️ Error cleaning up temporary file:', error)
+    }
+}
+
+/**
+ * Clean up all temporary files in the temp directory
+ */
+function cleanupTempFiles() {
+    if (fs.existsSync(TEMP_UPLOAD_DIR)) {
+        const files = fs.readdirSync(TEMP_UPLOAD_DIR)
+        files.forEach(file => {
+            const filePath = path.join(TEMP_UPLOAD_DIR, file)
+            try {
+                fs.unlinkSync(filePath)
+                console.log(`🗑️ Cleaned up old temp file: ${file}`)
+            } catch (error) {
+                console.error(`⚠️ Could not clean up temp file ${file}:`, error)
+            }
+        })
+    }
+}
+
+// ==================== AUTHENTICATION ROUTES ====================
+
+// Root route - redirect to login
+
 app.get("/", (req, res) => {
     res.redirect("/login");
 });
 
-// Login page route: Renders the login form
+
+// Render login page
+
 app.get("/login", (req, res) => {
     res.render("login");
 });
 
-// Signup page route: Renders the signup form
+
+// Render signup page
+
 app.get("/signup", (req, res) => {
     res.render("signup");
 });
 
-// Student home/dashboard route: Renders the student's personalized dashboard
-app.get("/homeStudent", async (req, res) => {
-    const userName = req.query.userName || "Student"; // Get user name from query or default
-    // TODO: In a real app, fetch actual student-specific data (e.g., enrolled classes, quizzes) from DB
-    res.render("studentDashboard", { // Renders the 'studentDashboard.hbs' view
+
+// Handle user registration
+app.post("/signup", async (req, res) => {
+    try {
+        const { userType, name, email, enrollment, password } = req.body
+
+        if (userType === 'teacher') {
+            const teacherData = { name, email, password }
+            await teacherCollection.insertMany([teacherData])
+            res.redirect(`/homeTeacher?userName=${encodeURIComponent(name)}`)
+        } else {
+            const studentData = { name, enrollment, password }
+            await studentCollection.insertMany([studentData])
+            res.redirect(`/homeStudent?userName=${encodeURIComponent(name)}`)
+        }
+    } catch (error) {
+        console.error('❌ Signup error:', error)
+        res.send("Error during registration")
+    }
+})
+
+// Handle user login
+app.post("/login", async (req, res) => {
+    try {
+        const { name, password, userType, email, enrollment } = req.body
+        let user
+
+        if (userType === 'teacher') {
+            user = await teacherCollection.findOne({ email: email })
+        } else {
+            user = await studentCollection.findOne({ enrollment: enrollment })
+        }
+
+        if (user && user.password === password) {
+            const redirectUrl = userType === 'teacher' ? '/homeTeacher' : '/homeStudent'
+            res.redirect(`${redirectUrl}?userName=${encodeURIComponent(user.name)}`)
+        } else {
+            res.send("Wrong credentials")
+        }
+    } catch (error) {
+        console.error('❌ Login error:', error)
+        res.send("Login failed")
+    }
+})
+
+// Logout route
+app.get('/logout', (req, res) => {
+    res.redirect('/login')
+})
+
+// ==================== DASHBOARD ROUTES ====================
+
+// Student dashboard
+app.get("/homeStudent", (req, res) => {
+    res.render("homeStudent", {
+
         userType: "student",
         userName: userName,
         // Example: pass dynamic data here if you fetch it
@@ -124,7 +314,9 @@ app.get("/homeStudent", async (req, res) => {
     });
 });
 
-// Teacher home/dashboard route: Renders the teacher's personalized dashboard with lecture list
+
+// Teacher dashboard with lecture statistics
+
 app.get("/homeTeacher", async (req, res) => {
     const userName = req.query.userName || "Teacher"; // Get user name from query or default
     let lectures = [];
@@ -133,146 +325,106 @@ app.get("/homeTeacher", async (req, res) => {
     let pendingLectures = 0;
 
     try {
-        // Fetch all lectures associated with the current teacher from the database
-        // 'professorName' in lectureCollection should match the teacher's name
-        lectures = await lectureCollection.find({ professorName: userName }).lean();
-        totalLectures = lectures.length;
-        // Calculate statistics based on fetched lectures
-        quizzesGenerated = lectures.filter(lec => lec.quizGenerated).length;
-        pendingLectures = lectures.filter(lec => !lec.quizGenerated).length;
+
+        const lectures = await lectureCollection.find({}).sort({ uploadDate: -1 })
+        
+        // Calculate dashboard statistics
+        const stats = {
+            totalLectures: lectures.length,
+            quizzesGenerated: lectures.filter(lecture => lecture.quizGenerated).length,
+            pendingLectures: lectures.filter(lecture => !lecture.quizGenerated).length,
+            totalStudents: await studentCollection.countDocuments()
+        }
+        
+        // Format lectures for display
+        const formattedLectures = lectures.map(lecture => ({
+            id: lecture._id,
+            title: lecture.title,
+            uploadDate: lecture.uploadDate.toLocaleDateString(),
+            quizGenerated: lecture.quizGenerated,
+            originalFileName: lecture.originalFileName,
+            fileType: lecture.fileType,
+            textLength: lecture.textLength,
+            processingStatus: lecture.processingStatus
+        }))
+
+        res.render("homeTeacher", {
+            userType: "teacher", 
+            userName: req.query.userName || "Teacher",
+            ...stats,
+            lectures: formattedLectures
+        })
+
     } catch (error) {
         console.error("Error fetching lectures for teacher:", error);
         // Handle database errors gracefully on the frontend
     }
 
-    res.render("homeTeacher", { // Renders the 'homeTeacher.hbs' view
-        userType: "teacher",
-        userName: userName,
-        totalLectures: totalLectures,
-        quizzesGenerated: quizzesGenerated,
-        pendingLectures: pendingLectures,
-        totalStudents: 150, // Placeholder: Replace with actual count if available
-        lectures: lectures, // Pass the array of lectures to the HBS template
-        // Pass success/error messages from query parameters (set after redirects)
-        successMessage: req.query.uploadSuccess ? 'Lecture uploaded successfully! Quiz generation can be initiated.' : null,
-        errorMessage: req.query.uploadError ? (req.query.message || 'An error occurred during upload.') : null
-    });
-});
 
-// Signup form submission route
-app.post("/signup", async (req, res) => {
-    try {
-        const userType = req.body.userType; // Determine if user is 'student' or 'teacher'
+// ==================== LECTURE MANAGEMENT ROUTES ====================
 
-        if (userType === 'teacher') {
-            const data = {
-                name: req.body.name,
-                email: req.body.email,
-                password: req.body.password
-            };
-            await teacherCollection.insertMany([data]); // Insert teacher data into teacherCollection
-            res.redirect(`/homeTeacher?userName=${encodeURIComponent(data.name)}`); // Redirect to teacher dashboard
-        } else {
-            const data = {
-                name: req.body.name,
-                enrollment: req.body.enrollment,
-                password: req.body.password
-            };
-            await studentCollection.insertMany([data]); // Insert student data into studentCollection
-            res.redirect(`/homeStudent?userName=${encodeURIComponent(data.name)}`); // Redirect to student dashboard
-        }
-    } catch (error) {
-        console.error("Error during signup:", error);
-        res.send("Error during registration. Please try again.");
-    }
-});
-
-// Login form submission route
-app.post("/login", async (req, res) => {
-    try {
-        const { name, password, userType } = req.body;
-        let user;
-
-        // Find user in the appropriate collection based on userType
-        if (userType === 'teacher') {
-            const { email } = req.body; // Teachers log in with email
-            user = await teacherCollection.findOne({ email: email });
-        } else {
-            const { enrollment } = req.body; // Students log in with enrollment number
-            user = await studentCollection.findOne({ enrollment: enrollment });
-        }
-
-        // Check if user exists and password matches
-        if (user && user.password === password) {
-            // Redirect to appropriate dashboard upon successful login
-            if (userType === 'teacher') {
-                res.redirect(`/homeTeacher?userName=${encodeURIComponent(user.name)}`);
-            } else {
-                res.redirect(`/homeStudent?userName=${encodeURIComponent(user.name)}`);
-            }
-        } else {
-            res.send("Wrong credentials. Please check your username/email and password.");
-        }
-    } catch (error) {
-        console.error("Error during login:", error);
-        res.send("Login failed due to a server error.");
-    }
-});
-
-// --- Lecture Upload Route ---
-// Handles POST requests to upload lecture files using Multer middleware
+// Upload and process lecture files
 app.post("/upload_lecture", upload.single('lectureFile'), async (req, res) => {
-    // 'lectureFile' must match the 'name' attribute of your file input in the HBS form
-
-    // 1. Handle file upload errors (e.g., invalid type, too large) caught by Multer's fileFilter or limits
-    if (req.fileError) {
-        // Redirect back to homeTeacher with an error message if file validation fails
-        return res.status(400).redirect(`/homeTeacher?userName=${encodeURIComponent(req.body.userName || 'Teacher')}&uploadError=true&message=${encodeURIComponent(req.fileError.message)}`);
-    }
-
-    if (!req.file) {
-        // If no file was uploaded despite no specific Multer error, return a generic error
-        return res.status(400).redirect(`/homeTeacher?userName=${encodeURIComponent(req.body.userName || 'Teacher')}&uploadError=true&message=${encodeURIComponent('No file uploaded or file is too large.')}`);
-    }
-
-    // If we reach here, the file has been successfully uploaded to the 'uploads/lectures/' directory
-    const { title, userName } = req.body; // Extract title and userName from the form body
-
-    const filePath = req.file.path; // Absolute path where Multer saved the file
-    const originalFileName = req.file.originalname;
-    const mimeType = req.file.mimetype;
-    const fileSize = req.file.size;
-
+    let tempFilePath = null
+    
     try {
-        // 2. Save lecture details to the MongoDB lectureCollection
-        const newLectureData = {
+        if (!req.file) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'No file uploaded' 
+            })
+        }
+
+        const { title } = req.body
+        const file = req.file
+        tempFilePath = file.path
+
+        console.log('📁 Processing file:', {
+            originalName: file.originalname,
+            size: file.size,
+            mimetype: file.mimetype,
+            tempPath: file.path
+        })
+
+        // Extract text from uploaded file
+        const extractedText = await extractTextFromFile(file.path, file.mimetype)
+        
+        console.log('📝 Text extraction completed:', {
+            totalLength: extractedText.length,
+            preview: extractedText.substring(0, 200) + '...'
+        })
+
+        // Save extracted text and metadata to database
+        const lectureData = {
             title: title,
-            filePath: filePath, // Store the server path to the file
-            originalFileName: originalFileName,
-            mimeType: mimeType,
-            fileSize: fileSize,
+            originalFileName: file.originalname,
+            extractedText: extractedText,
+            textLength: extractedText.length,
             uploadDate: new Date(),
-            quizGenerated: false, // Initial status: quiz not yet generated
-            professorName: userName // Associate the lecture with the uploading teacher
-        };
+            fileType: getFileType(file.mimetype),
+            quizGenerated: false,
+            processingStatus: 'completed'
+        }
 
-        await lectureCollection.insertMany([newLectureData]);
-        console.log('Lecture saved to DB:', newLectureData);
+        const savedLecture = await lectureCollection.create(lectureData)
+        console.log('✅ Lecture saved to database:', savedLecture._id)
 
-        // 3. Redirect back to the teacher dashboard with a success message
-        res.redirect(`/homeTeacher?userName=${encodeURIComponent(userName)}&uploadSuccess=true`);
+        // Clean up temporary file
+        cleanupTempFile(tempFilePath)
+
+        res.redirect('/homeTeacher?upload=success&title=' + encodeURIComponent(title))
 
     } catch (error) {
-        console.error('Error saving lecture to database:', error);
-
-        // 4. If saving to DB fails, clean up by deleting the uploaded file from the server
-        fs.unlink(filePath, (unlinkErr) => {
-            if (unlinkErr) console.error('Failed to delete uploaded file after DB error:', unlinkErr);
-            else console.log('Successfully deleted uploaded file due to DB error.');
-        });
-
-        // Redirect back to the teacher dashboard with a server error message
-        res.status(500).redirect(`/homeTeacher?userName=${encodeURIComponent(userName || 'Teacher')}&uploadError=true&message=${encodeURIComponent('Server error during lecture upload.')}`);
+        console.error('❌ Upload processing error:', error)
+        
+        if (tempFilePath) {
+            cleanupTempFile(tempFilePath)
+        }
+        
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to process uploaded file: ' + error.message 
+        })
     }
 });
 
@@ -287,49 +439,114 @@ app.post('/generate_quiz/:id', async (req, res) => { // CHANGED: Added /:id to r
 
     let extractedText = '';
 
+
+// Get lecture text content for AI processing
+app.get('/lectures/:id/text', async (req, res) => {
     try {
-        // 1. Fetch the lecture details from the database using its ID
-        const lecture = await lectureCollection.findById(lectureId);
-
+        const lecture = await lectureCollection.findById(req.params.id)
+            .select('extractedText title textLength')
+        
         if (!lecture) {
-            // CHANGED: Respond with JSON instead of redirect
-            return res.status(404).json({ success: false, message: 'Lecture not found for quiz generation.' });
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Lecture not found' 
+            })
         }
-
-        // 2. Determine file type and call the appropriate text extraction utility from textExtractor.js
-        if (lecture.mimeType === 'application/vnd.ms-powerpoint' ||
-            lecture.mimeType === 'application/vnd.openxmlformats-officedocument.presentationml.presentation') {
-
-            extractedText = await textExtractor.extractTextFromPptx(lecture.filePath);
-            console.log(`Extracted Text from PPTX (${lecture.originalFileName}):\n`, extractedText.substring(0, Math.min(extractedText.length, 500)) + '...');
-            
-
-            // TODO: Next Step: Send 'extractedText' to your AI model here (e.g., Google's Gemini API, OpenAI)
-            // TODO: Next Step: Store the generated quiz in your database, linked to this lecture
-            // Example: await lectureCollection.findByIdAndUpdate(lectureId, { quizGenerated: true, quizData: generatedQuiz });
-
-        } else if (lecture.mimeType === 'application/pdf') {
-            console.log(`PDF text extraction not yet implemented for ${lecture.originalFileName}.`);
-            // CHANGED: Respond with JSON for this specific error case too
-            return res.status(400).json({ success: false, message: 'PDF text extraction not yet implemented.' });
-        } else {
-            console.warn(`Unsupported file type for text extraction: ${lecture.mimeType}.`);
-            // CHANGED: Respond with JSON for unsupported file types
-            return res.status(400).json({ success: false, message: 'Unsupported file type for quiz generation.' });
-        }
-
-        // 3. If extraction initiated/successful, send a success JSON response
-        res.status(200).json({ success: true, message: 'Text extraction initiated. Quiz generation would happen next!' });
-
+        
+        res.json({
+            success: true,
+            data: {
+                id: lecture._id,
+                title: lecture.title,
+                textLength: lecture.textLength,
+                extractedText: lecture.extractedText
+            }
+        })
     } catch (error) {
-        console.error('Error during quiz generation process:', error);
-        // CHANGED: Send an error JSON response for server-side errors
-        res.status(500).json({ success: false, message: `Server error during quiz generation: ${error.message}` });
+        console.error('❌ Error fetching lecture text:', error)
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error loading lecture text' 
+        })
+    }
+})
+
+// Generate quiz from lecture content - AI integration point
+app.post('/generate_quiz/:id', async (req, res) => {
+    try {
+        const lectureId = req.params.id
+        const lecture = await lectureCollection.findById(lectureId)
+        
+        if (!lecture) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Lecture not found' 
+            })
+        }
+
+        // Update processing status
+        await lectureCollection.findByIdAndUpdate(lectureId, { 
+            processingStatus: 'processing',
+            lastProcessed: new Date()
+        })
+        
+        console.log('🤖 AI Quiz Generation Started:', {
+            lecture: lecture.title,
+            textLength: lecture.textLength
+        })
+        
+        // *** AI INTEGRATION POINT ***
+        // TODO: Replace this section with actual AI API call
+        /*
+        const aiResponse = await callAIAPI({
+            text: lecture.extractedText,
+            title: lecture.title,
+            requestType: 'quiz_generation'
+        });
+        
+        const generatedQuiz = {
+            lectureId: lectureId,
+            lectureTitle: lecture.title,
+            questions: aiResponse.questions,
+            totalQuestions: aiResponse.questions.length,
+            generatedDate: new Date()
+        };
+        
+        await quizCollection.create(generatedQuiz);
+        */
+        
+        // Temporary: Mark as generated (remove when AI is integrated)
+        await lectureCollection.findByIdAndUpdate(lectureId, { 
+            quizGenerated: true,
+            processingStatus: 'completed',
+            quizzesCount: 1
+        })
+        
+        console.log('✅ Quiz generation completed for:', lecture.title)
+        
+        res.json({ 
+            success: true, 
+            message: 'Quiz generated successfully',
+            textLength: lecture.textLength,
+            title: lecture.title
+        })
+    } catch (error) {
+        console.error('❌ Error generating quiz:', error)
+        
+        await lectureCollection.findByIdAndUpdate(req.params.id, { 
+            processingStatus: 'failed'
+        })
+        
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to generate quiz' 
+        })
     }
 });
 
-// --- Delete Lecture Route ---
-// Handles POST requests to delete a specific lecture by its ID
+
+// Delete lecture and associated quizzes
+
 app.post('/delete_lecture/:id', async (req, res) => {
     const lectureId = req.params.id; // Get lecture ID from URL parameters
     const userName = req.body.userName; // This might be undefined as client doesn't send it in body for delete,
@@ -337,45 +554,72 @@ app.post('/delete_lecture/:id', async (req, res) => {
                                         // For now, it's not strictly used in the delete logic itself.
 
     try {
-        // 1. Find the lecture in the database and delete it
-        // Ensure you delete all associated quizzes as well if you implement them later
-        const deletedLecture = await lectureCollection.findByIdAndDelete(lectureId);
 
-        if (!deletedLecture) {
-            console.warn(`Attempted to delete non-existent lecture with ID: ${lectureId}`);
-            // Respond with JSON since client expects it, even for not-found
-            return res.status(404).json({ success: false, message: 'Lecture not found.' });
+        const lectureId = req.params.id
+        const lecture = await lectureCollection.findById(lectureId)
+        
+        if (!lecture) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Lecture not found' 
+            })
         }
-
-        // 2. Delete the associated file from the server's file system
-        const filePath = deletedLecture.filePath;
-        if (filePath && fs.existsSync(filePath)) { // Check if path exists before attempting to unlink
-            fs.unlink(filePath, (err) => {
-                if (err) {
-                    console.error(`Failed to delete lecture file ${filePath}:`, err);
-                    // Continue even if file deletion fails, as DB record is gone
-                } else {
-                    console.log(`Successfully deleted file: ${filePath}`);
-                }
-            });
-        } else {
-            console.warn(`Lecture file not found on disk for ID: ${lectureId}. Path: ${filePath}`);
-        }
-
-        console.log(`Lecture ${lectureId} and its associated file deleted successfully.`);
-        // Respond with JSON for success
-        res.status(200).json({ success: true, message: 'Lecture deleted successfully!' });
-
+        
+        // Delete associated quizzes first
+        await quizCollection.deleteMany({ lectureId: lectureId })
+        
+        // Delete lecture record
+        await lectureCollection.findByIdAndDelete(lectureId)
+        
+        console.log('🗑️ Lecture and quizzes deleted:', lecture.title)
+        
+        res.json({ 
+            success: true, 
+            message: 'Lecture deleted successfully' 
+        })
     } catch (error) {
-        console.error('Error during lecture deletion process:', error);
-        // Respond with JSON for server errors
-        res.status(500).json({ success: false, message: `Server error during lecture deletion: ${error.message}` });
+        console.error('❌ Error deleting lecture:', error)
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to delete lecture' 
+        })
     }
-});
+})
 
+// ==================== ERROR HANDLING ====================
 
-// --- Server Start ---
-// Start the Express server and listen on port 3000
-app.listen(3000, () => {
-    console.log("Port connected on 3000!");
-});
+// Multer error handling middleware
+app.use((error, req, res, next) => {
+    if (error instanceof multer.MulterError) {
+        if (error.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({
+                success: false,
+                message: 'File too large. Maximum size is 10MB.'
+            })
+        }
+        return res.status(400).json({
+            success: false,
+            message: 'File upload error: ' + error.message
+        })
+    }
+    
+    if (error.message.includes('Invalid file type')) {
+        return res.status(400).json({
+            success: false,
+            message: error.message
+        })
+    }
+    
+    next(error)
+})
+
+// ==================== SERVER STARTUP ====================
+
+app.listen(PORT, () => {
+    console.log(`🚀 QuizAI Server started on port ${PORT}`)
+    
+    // Clean up any temporary files from previous runs
+    cleanupTempFiles()
+    
+    console.log('📚 Ready to process lecture uploads and generate quizzes!')
+})
