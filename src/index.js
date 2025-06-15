@@ -100,7 +100,7 @@ async function extractTextFromPDF(filePath) {
         throw new Error('Failed to extract text from PDF')
 
     }
-});
+};
 // --- End Multer Configuration ---
 
 
@@ -359,7 +359,7 @@ app.get("/homeTeacher", async (req, res) => {
         console.error("Error fetching lectures for teacher:", error);
         // Handle database errors gracefully on the frontend
     }
-
+})
 
 // ==================== LECTURE MANAGEMENT ROUTES ====================
 
@@ -438,7 +438,7 @@ app.post('/generate_quiz/:id', async (req, res) => { // CHANGED: Added /:id to r
     // it would have to be passed via the client-side fetch body or extracted from a session.
 
     let extractedText = '';
-
+})
 
 // Get lecture text content for AI processing
 app.get('/lectures/:id/text', async (req, res) => {
