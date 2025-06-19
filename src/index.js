@@ -11,14 +11,12 @@ const multer = require("multer")
 const fs = require("fs")
 const pdfParse = require("pdf-parse")
 const mammoth = require("mammoth")
-// --- SESSION CHANGE ---
 const session = require('express-session');
-// --- END SESSION CHANGE ---
 
 // Fix for pptx2json import/usage
-const { toJson } = require("pptx2json") // Correct import for pptx2json
+const { toJson } = require("pptx2json")
 
-// Load environment variables from .env file (for API keys, etc.)
+// Load environment variables from .env file
 require('dotenv').config()
 
 // Import database collections
@@ -27,7 +25,7 @@ const { studentCollection, teacherCollection, lectureCollection, quizCollection,
 // Google Gemini API setup
 const { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } = require('@google/generative-ai')
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
-const model = genAI.getGenerativeModel({ model: "gemini-pro" }) // "gemini-pro" for text-only
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
 
 // Configuration
 const PORT = 3000
@@ -35,35 +33,29 @@ const TEMP_UPLOAD_DIR = './temp_uploads'
 const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100MB
 const templatePath = path.join(__dirname, '../tempelates')
 
-// Removed: Define permanent upload directory (No longer needed as files are not stored permanently)
-// const UPLOADS_DIR = path.join(__dirname, '../uploads'); // Permanent storage location
-
 // Express configuration
-app.use(express.json()) // For parsing application/json
-app.use(express.urlencoded({ extended: false })) // For parsing application/x-www-form-urlencoded (form data)
-app.set("view engine", "hbs") // Set Handlebars as the view engine
-app.set("views", templatePath) // Set the directory for view files
+app.use(express.json())
+app.use(express.urlencoded({ extended: false }))
+app.set("view engine", "hbs")
+app.set("views", templatePath)
 
-// --- SESSION CHANGE ---
+// Session configuration
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'a_very_secret_key_for_quizai', // Use a strong, random string from .env
-    resave: false, // Don't save session if unmodified
-    saveUninitialized: false, // Don't create session until something stored
+    secret: process.env.SESSION_SECRET || 'a_very_secret_key_for_quizai',
+    resave: false,
+    saveUninitialized: false,
     cookie: {
-        maxAge: 1000 * 60 * 60 * 24, // 1 day in milliseconds
-        // secure: true, // Uncomment in production if using HTTPS
-        httpOnly: true // Prevents client-side JS from accessing the cookie
+        maxAge: 1000 * 60 * 60 * 24, // 1 day
+        httpOnly: true
     }
 }));
-// --- END SESSION CHANGE ---
 
-// Middleware to check if user is authenticated (simple example)
-// You might want more sophisticated role-based access control here
+// Middleware to check if user is authenticated
 const isAuthenticated = (req, res, next) => {
     if (req.session.userId) {
-        next(); // User is authenticated, proceed
+        next();
     } else {
-        res.redirect('/login?message=Please login to access this page.'); // Redirect to login
+        res.redirect('/login?message=Please login to access this page.');
     }
 };
 
@@ -87,10 +79,10 @@ const storage = multer.diskStorage({
 const fileFilter = (req, file, cb) => {
     const allowedMimes = [
         'application/pdf',
-        'application/vnd.ms-powerpoint', // .ppt
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
-        'application/msword', // .doc
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document' // .docx
+        'application/vnd.ms-powerpoint',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     ]
 
     if (allowedMimes.includes(file.mimetype)) {
@@ -110,11 +102,6 @@ const upload = multer({
 
 // ==================== TEXT EXTRACTION FUNCTIONS ====================
 
-/**
- * Extract text from PDF files
- * @param {string} filePath - Path to the PDF file
- * @returns {Promise<string>} - Extracted text content
- */
 async function extractTextFromPDF(filePath) {
     try {
         const dataBuffer = fs.readFileSync(filePath)
@@ -127,11 +114,6 @@ async function extractTextFromPDF(filePath) {
     }
 }
 
-/**
- * Extract text from Word documents (.doc, .docx)
- * @param {string} filePath - Path to the Word document
- * @returns {Promise<string>} - Extracted text content
- */
 async function extractTextFromWord(filePath) {
     try {
         const result = await mammoth.extractRawText({ path: filePath })
@@ -143,16 +125,9 @@ async function extractTextFromWord(filePath) {
     }
 }
 
-/**
- * Extract text from PowerPoint presentations (.ppt, .pptx)
- * @param {string} filePath - Path to the PowerPoint file
- * @returns {Promise<string>} - Extracted text content
- */
 async function extractTextFromPowerPoint(filePath) {
     try {
-        // --- SESSION CHANGE - pptx2json usage fix ---
-        const data = await toJson(filePath) // Use the destructured toJson
-        // --- END SESSION CHANGE ---
+        const data = await toJson(filePath)
         let extractedText = ''
 
         if (data && data.slides) {
@@ -176,12 +151,6 @@ async function extractTextFromPowerPoint(filePath) {
     }
 }
 
-/**
- * Main text extraction function - routes to appropriate extractor
- * @param {string} filePath - Path to the file
- * @param {string} mimetype - MIME type of the file
- * @returns {Promise<string>} - Extracted text content
- */
 async function extractTextFromFile(filePath, mimetype) {
     console.log(`🔄 Starting text extraction for: ${mimetype}`)
 
@@ -201,11 +170,6 @@ async function extractTextFromFile(filePath, mimetype) {
 
 // ==================== UTILITY FUNCTIONS ====================
 
-/**
- * Get file type string from MIME type
- * @param {string} mimetype - MIME type
- * @returns {string} - File type string
- */
 function getFileType(mimetype) {
     const typeMap = {
         'application/pdf': 'pdf',
@@ -217,10 +181,6 @@ function getFileType(mimetype) {
     return typeMap[mimetype] || 'unknown'
 }
 
-/**
- * Clean up temporary files after processing
- * @param {string} filePath - Path to the temporary file
- */
 function cleanupTempFile(filePath) {
     try {
         if (fs.existsSync(filePath)) {
@@ -232,9 +192,6 @@ function cleanupTempFile(filePath) {
     }
 }
 
-/**
- * Clean up all temporary files in the temp directory
- */
 function cleanupTempFiles() {
     if (fs.existsSync(TEMP_UPLOAD_DIR)) {
         const files = fs.readdirSync(TEMP_UPLOAD_DIR)
@@ -252,22 +209,18 @@ function cleanupTempFiles() {
 
 // ==================== AUTHENTICATION ROUTES ====================
 
-// Root route - redirect to login
 app.get("/", (req, res) => {
     res.redirect("/login")
 })
 
-// Render login page
 app.get("/login", (req, res) => {
-    res.render("login", { message: req.query.message }); // Pass message for display
+    res.render("login", { message: req.query.message });
 })
 
-// Render signup page
 app.get("/signup", (req, res) => {
     res.render("signup")
 })
 
-// Handle user registration
 app.post("/signup", async (req, res) => {
     try {
         const { userType, name, email, enrollment, password } = req.body
@@ -275,31 +228,26 @@ app.post("/signup", async (req, res) => {
         if (userType === 'teacher') {
             const teacherData = { name, email, password }
             await teacherCollection.insertMany([teacherData])
-            // --- SESSION CHANGE ---
-            const newTeacher = await teacherCollection.findOne({ email: email }); // Fetch the newly created teacher to get their _id
+            const newTeacher = await teacherCollection.findOne({ email: email });
             req.session.userId = newTeacher._id;
             req.session.userName = newTeacher.name;
-            req.session.userType = userType; // Store user type in session as well
+            req.session.userType = userType;
             res.redirect(`/homeTeacher?userName=${encodeURIComponent(newTeacher.name)}`);
-            // --- END SESSION CHANGE ---
         } else {
             const studentData = { name, enrollment, password }
             await studentCollection.insertMany([studentData])
-            // --- SESSION CHANGE ---
-            const newStudent = await studentCollection.findOne({ enrollment: enrollment }); // Fetch the newly created student
+            const newStudent = await studentCollection.findOne({ enrollment: enrollment });
             req.session.userId = newStudent._id;
             req.session.userName = newStudent.name;
-            req.session.userType = userType; // Store user type in session as well
+            req.session.userType = userType;
             res.redirect(`/homeStudent?userName=${encodeURIComponent(newStudent.name)}`);
-            // --- END SESSION CHANGE ---
         }
     } catch (error) {
         console.error('❌ Signup error:', error)
-        res.send("Error during registration")
+        res.send("Error during registration: " + error.message)
     }
 })
 
-// Handle user login
 app.post("/login", async (req, res) => {
     try {
         const { password, userType, email, enrollment } = req.body
@@ -307,16 +255,14 @@ app.post("/login", async (req, res) => {
 
         if (userType === 'teacher') {
             user = await teacherCollection.findOne({ email: email })
-        } else { // Student
+        } else {
             user = await studentCollection.findOne({ enrollment: enrollment })
         }
 
         if (user && user.password === password) {
-            // --- SESSION CHANGE ---
             req.session.userId = user._id;
             req.session.userName = user.name;
-            req.session.userType = userType; // Store user type in session as well
-            // --- END SESSION CHANGE ---
+            req.session.userType = userType;
 
             const redirectUrl = userType === 'teacher' ? '/homeTeacher' : '/homeStudent'
             res.redirect(`${redirectUrl}?userName=${encodeURIComponent(user.name)}`)
@@ -329,9 +275,7 @@ app.post("/login", async (req, res) => {
     }
 })
 
-// Logout route
 app.get('/logout', (req, res) => {
-    // --- SESSION CHANGE ---
     req.session.destroy(err => {
         if (err) {
             console.error('Error destroying session:', err);
@@ -339,48 +283,36 @@ app.get('/logout', (req, res) => {
         }
         res.redirect('/login?message=You have been logged out.');
     });
-    // --- END SESSION CHANGE ---
 })
 
 // ==================== DASHBOARD ROUTES ====================
 
-// Student dashboard
-// --- SESSION CHANGE - Add isAuthenticated middleware ---
 app.get("/homeStudent", isAuthenticated, async (req, res) => {
     res.render("homeStudent", {
-        userType: req.session.userType || "student", // Get from session
-        userName: req.session.userName || "Student", // Get from session
+        userType: req.session.userType || "student",
+        userName: req.session.userName || "Student",
     })
 })
-// --- END SESSION CHANGE ---
 
-// Teacher dashboard with lecture statistics
-// --- SESSION CHANGE - Add isAuthenticated middleware ---
 app.get("/homeTeacher", isAuthenticated, async (req, res) => {
     try {
-        // Ensure only teacher users can access this dashboard
         if (req.session.userType !== 'teacher') {
             return res.status(403).redirect('/login?message=Access denied. Not a teacher account.');
         }
 
-        // Get teacher's lectures from QuizAI database
-        // --- SESSION CHANGE - Filter lectures by professorId from session ---
         const lectures = await lectureCollection.find({ professorId: req.session.userId }).sort({ uploadDate: -1 }).lean()
-        // --- END SESSION CHANGE ---
 
-        // Calculate stats from actual data
         const stats = {
             totalLectures: lectures.length,
             quizzesGenerated: lectures.filter(lecture => lecture.quizGenerated).length,
             pendingLectures: lectures.filter(lecture => !lecture.quizGenerated).length,
-            totalStudents: await studentCollection.countDocuments() // This counts all students, not just teacher's
+            totalStudents: await studentCollection.countDocuments()
         }
 
-        // Format lectures for display
         const formattedLectures = lectures.map(lecture => ({
             id: lecture._id,
             title: lecture.title,
-            uploadDate: lecture.uploadDate ? lecture.uploadDate.toLocaleDateString() : 'N/A', // Added check for uploadDate
+            uploadDate: lecture.uploadDate ? lecture.uploadDate.toLocaleDateString() : 'N/A',
             quizGenerated: lecture.quizGenerated,
             originalFileName: lecture.originalFileName,
             fileType: lecture.fileType,
@@ -389,18 +321,18 @@ app.get("/homeTeacher", isAuthenticated, async (req, res) => {
         }))
 
         res.render("homeTeacher", {
-            userType: req.session.userType || "teacher", // Get from session
-            userName: req.session.userName || "Teacher", // Get from session
+            userType: req.session.userType || "teacher",
+            userName: req.session.userName || "Teacher",
             ...stats,
             lectures: formattedLectures,
-            uploadSuccess: req.query.upload === 'success', // For HBS template messages
+            uploadSuccess: req.query.upload === 'success',
             uploadError: req.query.uploadError === 'true',
             message: req.query.message,
-            uploadedTitle: req.query.title // Used to display uploaded title
+            uploadedTitle: req.query.title
         })
     } catch (error) {
         console.error('❌ Error loading teacher dashboard:', error)
-        res.status(500).render("homeTeacher", { // Render with error status
+        res.status(500).render("homeTeacher", {
             userType: req.session.userType || "teacher",
             userName: req.session.userName || "Teacher",
             totalLectures: 0,
@@ -414,22 +346,12 @@ app.get("/homeTeacher", isAuthenticated, async (req, res) => {
     }
 })
 
-
 // ==================== LECTURE MANAGEMENT ROUTES ====================
 
-// Upload and process lecture files
-// --- SESSION CHANGE - Add isAuthenticated middleware ---
 app.post("/upload_lecture", isAuthenticated, upload.single('lectureFile'), async (req, res) => {
     let tempFilePath = null;
-    // Removed: permanentFilePath variable as files are not stored permanently
 
     try {
-        // Removed: Ensure the permanent uploads directory exists (No longer needed)
-        // if (!fs.existsSync(UPLOADS_DIR)) {
-        //     fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-        // }
-
-        // Handle file upload errors from Multer's fileFilter
         if (req.fileError) {
             return res.status(400).redirect(`/homeTeacher?uploadError=true&message=${encodeURIComponent(req.fileError.message)}`);
         }
@@ -452,21 +374,17 @@ app.post("/upload_lecture", isAuthenticated, upload.single('lectureFile'), async
             tempPath: file.path
         });
 
-        // --- SESSION CHANGE - Get Professor Information from Session ---
         const professorId = req.session.userId;
         const professorName = req.session.userName;
 
         if (!professorId || !professorName || req.session.userType !== 'teacher') {
             console.warn('⚠️ User not identified as a teacher in session for lecture upload.');
-            // Destroy session and redirect to login if session data is missing or user type is wrong
             return req.session.destroy(err => {
                 const message = encodeURIComponent('Authentication required. Please log in as a teacher.');
                 res.status(401).redirect(`/login?message=${message}`);
             });
         }
-        // --- END SESSION CHANGE ---
 
-        // Extract text from uploaded file
         const extractedText = await extractTextFromFile(file.path, file.mimetype);
 
         console.log('📝 Text extraction completed:', {
@@ -474,20 +392,12 @@ app.post("/upload_lecture", isAuthenticated, upload.single('lectureFile'), async
             preview: extractedText.substring(0, 200) + '...'
         });
 
-        // --- NEW: Clean up temporary file IMMEDIATELY after extraction ---
         cleanupTempFile(tempFilePath);
         console.log(`🗑️ Temporary file cleaned up after extraction.`);
 
-        // Removed: Move the file to permanent storage (No longer needed)
-        // permanentFilePath = path.join(UPLOADS_DIR, file.filename);
-        // await fs.promises.rename(tempFilePath, permanentFilePath);
-        // console.log(`➡️ File moved to permanent storage: ${permanentFilePath}`);
-
-
-        // Save extracted text and metadata to database
         const lectureData = {
             title: title,
-            filePath: '', // filePath is now empty/null as the file is not stored permanently
+            filePath: '',
             originalFileName: file.originalname,
             mimeType: file.mimetype,
             fileSize: file.size,
@@ -497,8 +407,8 @@ app.post("/upload_lecture", isAuthenticated, upload.single('lectureFile'), async
             fileType: getFileType(file.mimetype),
             quizGenerated: false,
             processingStatus: 'completed',
-            professorName: professorName, // From session
-            professorId: professorId      // From session
+            professorName: professorName,
+            professorId: professorId
         };
 
         const savedLecture = await lectureCollection.create(lectureData);
@@ -509,24 +419,19 @@ app.post("/upload_lecture", isAuthenticated, upload.single('lectureFile'), async
     } catch (error) {
         console.error('❌ Upload processing error:', error);
 
-        // Still clean up temp file if error occurred before deletion
         if (tempFilePath && fs.existsSync(tempFilePath)) {
             cleanupTempFile(tempFilePath);
         }
-        // Removed: Cleanup for permanentFilePath as it's not created
 
         const currentUserName = req.session.userName || 'Teacher';
         res.status(500).redirect(`/homeTeacher?uploadError=true&message=${encodeURIComponent('Failed to process uploaded file: ' + error.message)}`);
     }
 });
-// --- END SESSION CHANGE ---
 
-// Get lecture text content for AI processing
-// --- SESSION CHANGE - Add isAuthenticated middleware ---
 app.get('/lectures/:id/text', isAuthenticated, async (req, res) => {
     try {
         const lecture = await lectureCollection.findById(req.params.id)
-            .select('extractedText title textLength professorId') // Select professorId to check ownership
+            .select('extractedText title textLength professorId')
 
         if (!lecture) {
             return res.status(404).json({
@@ -535,11 +440,9 @@ app.get('/lectures/:id/text', isAuthenticated, async (req, res) => {
             })
         }
 
-        // Optional: Add ownership check
         if (req.session.userType === 'teacher' && !lecture.professorId.equals(req.session.userId)) {
              return res.status(403).json({ success: false, message: 'Access denied. You do not own this lecture.' });
         }
-
 
         res.json({
             success: true,
@@ -558,13 +461,14 @@ app.get('/lectures/:id/text', isAuthenticated, async (req, res) => {
         })
     }
 })
-// --- END SESSION CHANGE ---
 
-// Generate quiz from lecture content - AI integration point
-// --- SESSION CHANGE - Add isAuthenticated middleware ---
+// ==================== IMPROVED QUIZ GENERATION ROUTE WITH DEBUG LOGGING ====================
+
 app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
     try {
         const lectureId = req.params.id
+        console.log(`🔄 Starting quiz generation for lecture ID: ${lectureId}`)
+        
         const lecture = await lectureCollection.findById(lectureId)
 
         if (!lecture) {
@@ -574,173 +478,285 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
             })
         }
 
-        // Optional: Add ownership check for quiz generation
+        // Check ownership
         if (req.session.userType === 'teacher' && !lecture.professorId.equals(req.session.userId)) {
              return res.status(403).json({ success: false, message: 'Access denied. You can only generate quizzes for your own lectures.' });
         }
 
+        // Check if quiz already exists
+        const existingQuiz = await quizCollection.findOne({ lectureId: lectureId })
+        if (existingQuiz) {
+            return res.status(400).json({
+                success: false,
+                message: 'Quiz already generated for this lecture'
+            })
+        }
 
+        // Update lecture status to processing
         await lectureCollection.findByIdAndUpdate(lectureId, {
             processingStatus: 'processing',
             lastProcessed: new Date()
         })
 
-        console.log('🤖 AI Quiz Generation Started:', {
-            lecture: lecture.title,
-            textLength: lecture.textLength
-        })
+        console.log('🤖 AI Quiz Generation Started for:', lecture.title)
 
         const extractedText = lecture.extractedText
+
+        // DEBUG: Log extracted text details
+        console.log('📊 Extracted text length:', extractedText.length);
+        console.log('📝 First 500 chars of text:', extractedText.substring(0, 500));
 
         if (!extractedText || extractedText.length < 50) {
             await lectureCollection.findByIdAndUpdate(lectureId, {
                 processingStatus: 'failed',
-                quizGenerated: false
+                quizGenerated: false,
+                quizGenerationError: 'Text too short for quiz generation'
             })
-            return res.status(400).json({ success: false, message: 'Extracted text is too short or missing for quiz generation.' })
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Extracted text is too short or missing for quiz generation.' 
+            })
         }
 
-        // --- PROMPT ENGINEERING ---
+        // Improved prompt for better quiz generation
         const prompt = `
-        You are an intelligent quiz generator. Your task is to create a multiple-choice quiz based on the following lecture content.
+        You are an expert quiz generator. Create a high-quality multiple-choice quiz based on the following lecture content.
 
-        **Instructions:**
-        1. Generate 5-7 multiple-choice questions.
-        2. Each question should have exactly 4 options (A, B, C, D).
-        3. Clearly indicate the correct answer for each question.
-        4. Ensure questions and options are directly based on the provided lecture content.
-        5. Format the output strictly as a JSON array of objects.
+        **STRICT REQUIREMENTS:**
+        1. Generate exactly 10 multiple-choice questions
+        2. Each question must have exactly 4 options (A, B, C, D)
+        3. Questions should test understanding, not just memorization
+        4. Mix difficulty levels: 3 easy, 4 medium, 3 hard questions
+        5. Ensure all questions are directly based on the lecture content
+        6. Make wrong options plausible but clearly incorrect
+        7. Output must be valid JSON only, no extra text
 
-        **Lecture Content:**
-        ${extractedText}
+        **LECTURE CONTENT:**
+        ${extractedText.substring(0, 4000)} // Limit text to avoid token limits
 
-        **JSON Output Format Example:**
+        **REQUIRED JSON FORMAT:**
         [
           {
-            "question": "What is the capital of France?",
+            "question": "Clear, complete question text here?",
             "options": {
-              "A": "Berlin",
-              "B": "Paris",
-              "C": "Rome",
-              "D": "Madrid"
-            },
-            "correct_answer": "B"
-          },
-          {
-            "question": "Which planet is known as the Red Planet?",
-            "options": {
-              "A": "Earth",
-              "B": "Mars",
-              "C": "Jupiter",
-              "D": "Venus"
+              "A": "First option",
+              "B": "Second option",
+              "C": "Third option",
+              "D": "Fourth option"
             },
             "correct_answer": "B"
           }
         ]
-        `
 
-        // Configure generation parameters
-        const generationConfig = {
-            temperature: 0.7,
-            topP: 0.95,
-            topK: 60,
-            maxOutputTokens: 2048,
-            responseMimeType: "application/json",
-        }
+        Generate exactly 10 questions following this format.`
 
-        // Safety settings
-        const safetySettings = [
-            {
-                category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-                threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-            },
-            {
-                category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-                threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-            },
-            {
-                category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-                threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-            },
-            {
-                category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-                threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-            },
-        ]
-
-        // Make the API call
-        const result = await model.generateContent({
-            contents: [{ role: "user", parts: [{ text: prompt }] }],
-            generationConfig,
-            safetySettings,
-        })
-
-        const response = result.response
-        let quizContent = response.text()
-
-        console.log('✅ Raw AI Response (Quiz Content):', quizContent.substring(0, 500) + '...')
-
-        let generatedQuiz = null
         try {
-            if (quizContent.startsWith('```json')) {
-                quizContent = quizContent.substring(7, quizContent.lastIndexOf('```')).trim()
+            // Configure generation parameters for consistency
+            const generationConfig = {
+                temperature: 0.3, // Lower temperature for more consistent output
+                topP: 0.8,
+                topK: 40,
+                maxOutputTokens: 4096,
+                responseMimeType: "application/json",
             }
-            generatedQuiz = JSON.parse(quizContent)
-            console.log('✅ Parsed Quiz (first question):', generatedQuiz[0])
-        } catch (parseError) {
-            console.error('❌ Failed to parse quiz JSON from AI response:', parseError)
-            console.error('Raw AI response was:', quizContent)
+
+            // Safety settings
+            const safetySettings = [
+                {
+                    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+                    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                },
+                {
+                    category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+                    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                },
+                {
+                    category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                },
+                {
+                    category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+                    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                },
+            ]
+
+            console.log('📤 Sending request to Gemini API...')
+            
+            // Make the API call
+            const result = await model.generateContent({
+                contents: [{ role: "user", parts: [{ text: prompt }] }],
+                generationConfig,
+                safetySettings,
+            })
+
+            const response = result.response
+            let quizContent = response.text()
+
+            console.log('✅ Received response from Gemini API')
+
+            // Parse the response
+            let generatedQuiz = null
+            try {
+                // Clean up the response if needed
+                quizContent = quizContent.trim()
+                if (quizContent.startsWith('```json')) {
+                    quizContent = quizContent.substring(7, quizContent.lastIndexOf('```')).trim()
+                }
+                
+                generatedQuiz = JSON.parse(quizContent)
+                
+                // Validate the quiz structure
+                if (!Array.isArray(generatedQuiz)) {
+                    throw new Error('Response is not an array')
+                }
+                
+                if (generatedQuiz.length === 0) {
+                    throw new Error('No questions generated')
+                }
+                
+                // Validate each question
+                generatedQuiz.forEach((q, index) => {
+                    if (!q.question || !q.options || !q.correct_answer) {
+                        throw new Error(`Question ${index + 1} is missing required fields`)
+                    }
+                    if (!['A', 'B', 'C', 'D'].includes(q.correct_answer)) {
+                        throw new Error(`Question ${index + 1} has invalid correct_answer`)
+                    }
+                })
+                
+                // DEBUG: Log parsed quiz details
+                console.log('🎯 Number of questions generated:', generatedQuiz.length);
+                console.log('📋 First question:', JSON.stringify(generatedQuiz[0], null, 2));
+                
+            } catch (parseError) {
+                console.error('❌ Failed to parse quiz JSON:', parseError)
+                console.error('Raw response:', quizContent.substring(0, 500) + '...')
+                
+                await lectureCollection.findByIdAndUpdate(lectureId, {
+                    processingStatus: 'failed',
+                    quizGenerated: false,
+                    quizGenerationError: 'AI response parsing failed: ' + parseError.message
+                })
+                
+                return res.status(500).json({ 
+                    success: false, 
+                    message: 'Failed to parse AI response. Please try again.' 
+                })
+            }
+
+            // Save the quiz to database
+            const newQuiz = {
+                lectureId: lectureId,
+                lectureTitle: lecture.title,
+                questions: generatedQuiz,
+                totalQuestions: generatedQuiz.length,
+                generatedDate: new Date(),
+                createdBy: req.session.userId
+            }
+
+            try {
+                const savedQuiz = await quizCollection.create(newQuiz)
+                console.log('✅ Quiz saved to database:', savedQuiz._id)
+                
+                // DEBUG: Verify the quiz was actually saved
+                const verifyQuiz = await quizCollection.findById(savedQuiz._id)
+                if (verifyQuiz) {
+                    console.log('✅ VERIFIED: Quiz exists in database with ID:', verifyQuiz._id)
+                    console.log('📊 Quiz has', verifyQuiz.questions.length, 'questions')
+                    
+                    // DEBUG: Log saved quiz details
+                    console.log('💾 Saved quiz details:', {
+                        _id: savedQuiz._id,
+                        lectureId: savedQuiz.lectureId,
+                        totalQuestions: savedQuiz.totalQuestions,
+                        questionsCount: savedQuiz.questions.length
+                    });
+                } else {
+                    console.log('❌ ERROR: Quiz not found after saving!')
+                    throw new Error('Quiz verification failed - not found in database after saving')
+                }
+                
+                // Update lecture status
+                await lectureCollection.findByIdAndUpdate(lectureId, {
+                    quizGenerated: true,
+                    processingStatus: 'completed',
+                    quizzesCount: 1,
+                    lastProcessed: new Date()
+                })
+
+                console.log('✅ Quiz generation completed successfully for:', lecture.title)
+
+                res.json({
+                    success: true,
+                    message: `Quiz generated successfully with ${generatedQuiz.length} questions!`,
+                    quizId: savedQuiz._id,
+                    totalQuestions: generatedQuiz.length,
+                    title: lecture.title
+                })
+                
+            } catch (saveError) {
+                console.error('❌ Error saving quiz to MongoDB:', saveError)
+                console.error('Full error details:', JSON.stringify(saveError, null, 2))
+                
+                await lectureCollection.findByIdAndUpdate(lectureId, {
+                    processingStatus: 'failed',
+                    quizGenerated: false,
+                    quizGenerationError: 'Database save error: ' + saveError.message
+                })
+                
+                return res.status(500).json({ 
+                    success: false, 
+                    message: 'Failed to save quiz to database: ' + saveError.message 
+                })
+            }
+
+        } catch (apiError) {
+            console.error('❌ Gemini API Error:', apiError)
+            console.error('Error details:', {
+                message: apiError.message,
+                stack: apiError.stack
+            })
+
             await lectureCollection.findByIdAndUpdate(lectureId, {
                 processingStatus: 'failed',
                 quizGenerated: false,
-                quizGenerationError: 'AI response was not valid JSON.'
+                quizGenerationError: 'AI API Error: ' + apiError.message
             })
-            return res.status(500).json({ success: false, message: 'AI failed to generate quiz in the correct format. Please try again or refine prompt.' })
+
+            // Check for specific API errors
+            if (apiError.message.includes('quota') || apiError.message.includes('limit')) {
+                return res.status(429).json({ 
+                    success: false, 
+                    message: 'API quota exceeded. Please try again later.' 
+                })
+            }
+
+            res.status(500).json({ 
+                success: false, 
+                message: 'Failed to generate quiz. Please check your API key and try again.' 
+            })
         }
-
-        const newQuiz = {
-            lectureId: lectureId,
-            lectureTitle: lecture.title,
-            questions: generatedQuiz,
-            totalQuestions: generatedQuiz.length,
-            generatedDate: new Date(),
-        }
-
-        await quizCollection.create(newQuiz)
-
-        await lectureCollection.findByIdAndUpdate(lectureId, {
-            quizGenerated: true,
-            processingStatus: 'completed',
-            quizzesCount: (lecture.quizzesCount || 0) + 1
-        })
-
-        console.log('✅ Quiz generation completed and saved for:', lecture.title)
-
-        res.json({
-            success: true,
-            message: 'Quiz generated successfully and saved!',
-            quizId: newQuiz._id,
-            totalQuestions: newQuiz.totalQuestions,
-            title: lecture.title
-        })
-
+    
     } catch (error) {
-        console.error('❌ Error generating quiz:', error)
+        console.error('❌ Quiz generation error:', error)
+        
+        if (req.params.id) {
+            await lectureCollection.findByIdAndUpdate(req.params.id, {
+                processingStatus: 'failed',
+                quizGenerated: false,
+                quizGenerationError: error.message
+            })
+        }
 
-        await lectureCollection.findByIdAndUpdate(req.params.id, {
-            processingStatus: 'failed',
-            quizGenerated: false,
-            quizGenerationError: error.message
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to generate quiz: ' + error.message 
         })
-
-        res.status(500).json({ success: false, message: 'Failed to generate quiz: ' + error.message })
     }
 })
-// --- END SESSION CHANGE ---
 
+// ==================== DELETE LECTURE ROUTE ====================
 
-// Delete lecture and associated quizzes
-// --- SESSION CHANGE - Add isAuthenticated middleware ---
 app.post('/delete_lecture/:id', isAuthenticated, async (req, res) => {
     try {
         const lectureId = req.params.id
@@ -753,22 +769,14 @@ app.post('/delete_lecture/:id', isAuthenticated, async (req, res) => {
             })
         }
 
-        // Optional: Add ownership check for deletion
         if (req.session.userType === 'teacher' && !lecture.professorId.equals(req.session.userId)) {
              return res.status(403).json({ success: false, message: 'Access denied. You can only delete your own lectures.' });
         }
-
 
         // Delete associated quizzes first
         await quizCollection.deleteMany({ lectureId: lectureId })
         // Delete associated quiz results
         await quizResultCollection.deleteMany({ lectureId: lectureId })
-
-        // Removed: Delete the actual file from the file system, as it's no longer stored permanently
-        // if (lecture.filePath && fs.existsSync(lecture.filePath)) {
-        //     fs.unlinkSync(lecture.filePath);
-        //     console.log(`🗑️ Deleted physical file: ${lecture.filePath}`);
-        // }
 
         // Delete lecture record
         await lectureCollection.findByIdAndDelete(lectureId)
@@ -787,20 +795,15 @@ app.post('/delete_lecture/:id', isAuthenticated, async (req, res) => {
         })
     }
 })
-// --- END SESSION CHANGE ---
 
 // ==================== STUDENT QUIZ ROUTES ====================
 
-// Route to get available quizzes for a student
-// --- SESSION CHANGE - Add isAuthenticated middleware ---
 app.get('/api/student/available-quizzes', isAuthenticated, async (req, res) => {
     try {
-        // Ensure only student users can access this
         if (req.session.userType !== 'student') {
             return res.status(403).json({ success: false, message: 'Access denied. Not a student account.' });
         }
 
-        // Find all quizzes that have been generated
         const quizzes = await quizCollection.find({})
                                             .select('lectureTitle totalQuestions lectureId')
                                             .sort({ generatedDate: -1 })
@@ -812,10 +815,7 @@ app.get('/api/student/available-quizzes', isAuthenticated, async (req, res) => {
         res.status(500).json({ success: false, message: 'Failed to load available quizzes.' });
     }
 });
-// --- END SESSION CHANGE ---
 
-// Route to render the quiz taking page
-// --- SESSION CHANGE - Add isAuthenticated middleware ---
 app.get('/take_quiz/:quizId', isAuthenticated, async (req, res) => {
     try {
         if (req.session.userType !== 'student') {
@@ -831,7 +831,7 @@ app.get('/take_quiz/:quizId', isAuthenticated, async (req, res) => {
 
         res.render('takeQuiz', {
             quiz: quiz,
-            userName: req.session.userName // Pass user name to the template
+            userName: req.session.userName
         });
 
     } catch (error) {
@@ -839,10 +839,7 @@ app.get('/take_quiz/:quizId', isAuthenticated, async (req, res) => {
         res.status(500).send('Failed to load quiz page.');
     }
 });
-// --- END SESSION CHANGE ---
 
-// Route to fetch quiz questions for a student (API for takeQuiz.hbs)
-// --- SESSION CHANGE - Add isAuthenticated middleware ---
 app.get('/api/quiz/:quizId', isAuthenticated, async (req, res) => {
     try {
         if (req.session.userType !== 'student') {
@@ -876,10 +873,7 @@ app.get('/api/quiz/:quizId', isAuthenticated, async (req, res) => {
         res.status(500).json({ success: false, message: 'Failed to load quiz questions.' });
     }
 });
-// --- END SESSION CHANGE ---
 
-// Route to submit student quiz answers and score it
-// --- SESSION CHANGE - Add isAuthenticated middleware ---
 app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
     try {
         if (req.session.userType !== 'student') {
@@ -889,10 +883,8 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
         const quizId = req.params.quizId;
         const { studentAnswers, timeTakenSeconds } = req.body;
 
-        // --- SESSION CHANGE - Get student info from session ---
         const studentId = req.session.userId;
         const studentName = req.session.userName;
-        // --- END SESSION CHANGE ---
 
         const quiz = await quizCollection.findById(quizId).lean();
         if (!quiz) {
@@ -953,12 +945,9 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
         res.status(500).json({ success: false, message: 'Failed to submit quiz: ' + error.message });
     }
 });
-// --- END SESSION CHANGE ---
 
 // ==================== TEACHER RESULTS ROUTES ====================
 
-// Route for Teacher to view quiz results for a specific lecture
-// --- SESSION CHANGE - Add isAuthenticated middleware ---
 app.get('/lecture_results/:lectureId', isAuthenticated, async (req, res) => {
     try {
         if (req.session.userType !== 'teacher') {
@@ -971,7 +960,6 @@ app.get('/lecture_results/:lectureId', isAuthenticated, async (req, res) => {
             return res.status(404).send('Lecture not found.');
         }
 
-        // Optional: Ensure teacher can only view results for their own lectures
         if (!lecture.professorId.equals(req.session.userId)) {
              return res.status(403).send('Access denied. You can only view results for your own lectures.');
         }
@@ -988,7 +976,7 @@ app.get('/lecture_results/:lectureId', isAuthenticated, async (req, res) => {
         res.render('lectureResults', {
             lectureTitle: lecture.title,
             quizResults: formattedResults,
-            userName: req.session.userName || "Teacher" // Get from session
+            userName: req.session.userName || "Teacher"
         });
 
     } catch (error) {
@@ -996,18 +984,14 @@ app.get('/lecture_results/:lectureId', isAuthenticated, async (req, res) => {
         res.status(500).send('Failed to load quiz results.');
     }
 });
-// --- END SESSION CHANGE ---
-
 
 // ==================== ERROR HANDLING ====================
 
-// Multer error handling middleware (should be placed after routes that use multer)
 app.use((error, req, res, next) => {
     if (error instanceof multer.MulterError) {
         if (error.code === 'LIMIT_FILE_SIZE') {
-            // Redirect with error message for dashboards, not JSON
             const redirectUrl = req.session.userType === 'teacher' ? '/homeTeacher' : '/login';
-            const message = encodeURIComponent('File too large. Maximum size is 10MB.');
+            const message = encodeURIComponent('File too large. Maximum size is 100MB.');
             return res.status(400).redirect(`${redirectUrl}?uploadError=true&message=${message}`);
         }
         const redirectUrl = req.session.userType === 'teacher' ? '/homeTeacher' : '/login';
@@ -1024,17 +1008,15 @@ app.use((error, req, res, next) => {
     next(error)
 })
 
-
 // ==================== SERVER STARTUP ====================
 
 app.listen(PORT, () => {
     console.log(`🚀 QuizAI Server started on port ${PORT}`)
+    console.log(`📌 Open http://localhost:${PORT} in your browser`)
 
     cleanupTempFiles()
-    // Removed: creation of UPLOADS_DIR (No longer needed)
-    // if (!fs.existsSync(UPLOADS_DIR)) {
-    //     fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-    // }
 
+    console.log('✅ Server initialization complete!')
     console.log('📚 Ready to process lecture uploads and generate quizzes!')
+    console.log(`🔑 Using Gemini model: gemini-1.5-flash (Free tier)`)
 })

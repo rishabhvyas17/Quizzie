@@ -55,6 +55,7 @@
             color: #64748b;
             font-weight: 500;
             transition: color 0.3s ease;
+            cursor: pointer;
         }
 
         .nav-links a:hover {
@@ -89,6 +90,25 @@
         .profile-info p {
             font-size: 0.75rem;
             color: #64748b;
+        }
+
+        .logout-btn {
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            font-size: 0.85rem;
+            text-decoration: none;
+            margin-left: 1rem;
+        }
+
+        .logout-btn:hover {
+            background-color: #dc2626;
+            transform: translateY(-1px);
         }
 
         /* Main Content */
@@ -160,71 +180,6 @@
             margin-bottom: 1.5rem;
         }
 
-        /* Classes Section */
-        .classes-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .class-card {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .class-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-        }
-
-        .class-name {
-            font-size: 1.25rem;
-            font-weight: bold;
-            color: #1e293b;
-            margin-bottom: 0.5rem;
-        }
-
-        .instructor {
-            color: #64748b;
-            margin-bottom: 0.75rem;
-            font-size: 0.9rem;
-        }
-
-        .next-quiz {
-            color: #3b82f6;
-            font-size: 0.85rem;
-            font-weight: 500;
-            margin-bottom: 1rem;
-        }
-
-        .btn {
-            background: #3b82f6;
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.2s ease, transform 0.1s ease;
-            font-size: 0.9rem;
-        }
-
-        .btn:hover {
-            background: #2563eb;
-            transform: translateY(-1px);
-        }
-
-        .btn-success {
-            background: #10b981;
-        }
-
-        .btn-success:hover {
-            background: #059669;
-        }
-
         /* Quizzes Section */
         .quizzes-grid {
             display: grid;
@@ -252,72 +207,57 @@
             margin-bottom: 0.5rem;
         }
 
-        .quiz-course {
-            color: #64748b;
-            font-size: 0.85rem;
-            margin-bottom: 0.75rem;
-        }
-
         .quiz-details {
             color: #64748b;
             font-size: 0.85rem;
             margin-bottom: 1rem;
         }
 
-        /* Performance Section */
-        .performance-list {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        .btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            font-size: 0.9rem;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
         }
 
-        .performance-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem 0;
-            border-bottom: 1px solid #e2e8f0;
+        .btn:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
         }
 
-        .performance-item:last-child {
-            border-bottom: none;
+        .btn-success {
+            background: #10b981;
         }
 
-        .performance-info h4 {
-            font-weight: 600;
-            color: #1e293b;
-            margin-bottom: 0.25rem;
+        .btn-success:hover {
+            background: #059669;
         }
 
-        .performance-details {
+        /* Loading and Empty States */
+        .loading {
+            text-align: center;
+            padding: 2rem;
             color: #64748b;
-            font-size: 0.85rem;
         }
 
-        .performance-stats {
-            text-align: right;
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #64748b;
         }
 
-        .score {
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: #10b981;
-            margin-bottom: 0.25rem;
-        }
-
-        .rank-badge {
-            background: #fef3c7;
-            color: #d97706;
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-        .rank-badge.top-3 {
-            background: #dcfce7;
-            color: #16a34a;
+        .empty-state h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: #1e293b;
         }
 
         /* Mobile Responsiveness */
@@ -340,20 +280,8 @@
                 gap: 1rem;
             }
 
-            .classes-grid,
             .quizzes-grid {
                 grid-template-columns: 1fr;
-            }
-
-            .performance-item {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 0.75rem;
-            }
-
-            .performance-stats {
-                text-align: left;
-                width: 100%;
             }
         }
 
@@ -363,7 +291,6 @@
             }
 
             .stat-card,
-            .class-card,
             .quiz-card {
                 padding: 1rem;
             }
@@ -377,8 +304,8 @@
             <div class="logo">QuizAI</div>
             <nav>
                 <ul class="nav-links">
-                    <li><a href="#" onclick="showSection('classes')">My Classes</a></li>
-                    <li><a href="#" onclick="showSection('performance')">Performance</a></li>
+                    <li><a onclick="showSection('quizzes')">Available Quizzes</a></li>
+                    <li><a onclick="showSection('performance')">My Performance</a></li>
                 </ul>
             </nav>
             <div class="profile-section">
@@ -387,6 +314,7 @@
                     <h3>{{userName}}</h3>
                     <p>{{userType}}</p>
                 </div>
+                <a href="/logout" class="logout-btn">Logout</a>
             </div>
         </div>
     </header>
@@ -398,81 +326,39 @@
         <!-- Stats Section -->
         <section class="stats-section">
             <div class="stat-card blue">
-                <div class="stat-value">3</div>
-                <div class="stat-label">Enrolled Classes</div>
+                <div class="stat-value" id="availableQuizzesCount">-</div>
+                <div class="stat-label">Available Quizzes</div>
             </div>
             <div class="stat-card green">
-                <div class="stat-value">24</div>
+                <div class="stat-value" id="completedQuizzesCount">-</div>
                 <div class="stat-label">Quizzes Completed</div>
             </div>
             <div class="stat-card purple">
-                <div class="stat-value">85%</div>
+                <div class="stat-value" id="averageScore">-</div>
                 <div class="stat-label">Average Score</div>
             </div>
             <div class="stat-card orange">
-                <div class="stat-value">#1</div>
+                <div class="stat-value" id="bestRank">-</div>
                 <div class="stat-label">Best Rank</div>
             </div>
         </section>
 
-        <!-- My Classes Section -->
+        <!-- Available Quizzes Section -->
         <section class="section">
-            <h2 class="section-title">My Classes</h2>
-            <div class="classes-grid">
-                <div class="class-card">
-                    <h3 class="class-name">Data Structures & Algorithms</h3>
-                    <p class="instructor">Dr. Sarah Johnson</p>
-                    <p class="next-quiz">Next quiz: June 6, 2024</p>
-                    <button class="btn" onclick="viewClass('dsa')">View Class</button>
-                </div>
-                <div class="class-card">
-                    <h3 class="class-name">Database Management Systems</h3>
-                    <p class="instructor">Prof. Michael Chen</p>
-                    <p class="next-quiz">Next quiz: June 8, 2024</p>
-                    <button class="btn" onclick="viewClass('dbms')">View Class</button>
-                </div>
-                <div class="class-card">
-                    <h3 class="class-name">Web Development</h3>
-                    <p class="instructor">Dr. Emily Rodriguez</p>
-                    <p class="next-quiz">Next quiz: June 10, 2024</p>
-                    <button class="btn" onclick="viewClass('webdev')">View Class</button>
+            <h2 class="section-title">Available Quizzes</h2>
+            <div id="quizzesContainer">
+                <div class="loading">
+                    <p>🔄 Loading available quizzes...</p>
                 </div>
             </div>
         </section>
 
         <!-- Recent Performance Section -->
-        <section class="section">
+        <section class="section" id="performanceSection" style="display: none;">
             <h2 class="section-title">Recent Performance</h2>
-            <div class="performance-list">
-                <div class="performance-item">
-                    <div class="performance-info">
-                        <h4>Array Algorithms</h4>
-                        <p class="performance-details">Rank #3 of 45 · June 2, 2024</p>
-                    </div>
-                    <div class="performance-stats">
-                        <div class="score">85%</div>
-                        <span class="rank-badge top-3">Top 3</span>
-                    </div>
-                </div>
-                <div class="performance-item">
-                    <div class="performance-info">
-                        <h4>Linked Lists Basics</h4>
-                        <p class="performance-details">Rank #7 of 52 · May 28, 2024</p>
-                    </div>
-                    <div class="performance-stats">
-                        <div class="score">78%</div>
-                        <span class="rank-badge">Top 15</span>
-                    </div>
-                </div>
-                <div class="performance-item">
-                    <div class="performance-info">
-                        <h4>Stack & Queue Operations</h4>
-                        <p class="performance-details">Rank #1 of 38 · May 25, 2024</p>
-                    </div>
-                    <div class="performance-stats">
-                        <div class="score">92%</div>
-                        <span class="rank-badge top-3">Top 1</span>
-                    </div>
+            <div id="performanceContainer">
+                <div class="loading">
+                    <p>🔄 Loading your performance data...</p>
                 </div>
             </div>
         </section>
@@ -480,49 +366,144 @@
 
     <script>
         // Get student name from server-side rendered template
-        const studentName = '{{{userName}}}'; // Using triple braces to avoid HTML escaping
+        const studentName = '{{{userName}}}';
+        let availableQuizzes = [];
+        let studentResults = [];
         
         // Navigation functionality
         function showSection(section) {
             console.log(`Navigating to ${section} section`);
             
-            // Add visual feedback for navigation
+            // Update navigation styles
             const navLinks = document.querySelectorAll('.nav-links a');
             navLinks.forEach(link => {
                 link.style.color = '#64748b';
             });
             
-            event.target.style.color = '#3b82f6';
+            if (event && event.target) {
+                event.target.style.color = '#3b82f6';
+            }
+
+            // Show/hide sections based on navigation
+            if (section === 'performance') {
+                document.getElementById('performanceSection').style.display = 'block';
+                loadStudentPerformance();
+            } else {
+                document.getElementById('performanceSection').style.display = 'none';
+            }
         }
 
-        // Class management functions
-        function viewClass(classId) {
-            console.log(`Viewing class: ${classId}`);
-            // Add animation effect
-            event.target.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                event.target.style.transform = 'scale(1)';
-            }, 150);
-            
-            // Here you would typically navigate to class details page
-            alert(`Opening ${classId} class details...`);
+        // Load available quizzes from backend
+        async function loadAvailableQuizzes() {
+            try {
+                console.log('🔄 Loading available quizzes...');
+                const response = await fetch('/api/student/available-quizzes');
+                const data = await response.json();
+                
+                console.log('📊 Available quizzes response:', data);
+                
+                if (data.success && data.quizzes) {
+                    availableQuizzes = data.quizzes;
+                    displayQuizzes(data.quizzes);
+                    updateQuizStats(data.quizzes.length);
+                } else {
+                    console.error('❌ Failed to load quizzes:', data.message);
+                    showEmptyQuizzes();
+                }
+            } catch (error) {
+                console.error('❌ Error loading quizzes:', error);
+                showErrorQuizzes();
+            }
         }
 
-        // Quiz functionality
-        function startQuiz(quizId) {
-            console.log(`Starting quiz: ${quizId}`);
-            // Add visual feedback
-            event.target.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                event.target.style.transform = 'scale(1)';
-            }, 150);
+        // Display quizzes in the UI
+        function displayQuizzes(quizzes) {
+            const container = document.getElementById('quizzesContainer');
             
-            // Here you would typically start the quiz
-            alert(`Starting ${quizId} quiz...`);
+            if (quizzes.length === 0) {
+                showEmptyQuizzes();
+                return;
+            }
+
+            const quizzesHTML = quizzes.map(quiz => `
+                <div class="quiz-card">
+                    <h3 class="quiz-title">${quiz.lectureTitle}</h3>
+                    <p class="quiz-details">
+                        📝 ${quiz.totalQuestions} questions
+                        <br>🆔 Quiz ID: ${quiz._id}
+                    </p>
+                    <button class="btn" onclick="takeQuiz('${quiz._id}', '${quiz.lectureTitle}')">
+                        Take Quiz
+                    </button>
+                </div>
+            `).join('');
+
+            container.innerHTML = `
+                <div class="quizzes-grid">
+                    ${quizzesHTML}
+                </div>
+            `;
+        }
+
+        // Show empty state when no quizzes available
+        function showEmptyQuizzes() {
+            const container = document.getElementById('quizzesContainer');
+            container.innerHTML = `
+                <div class="empty-state">
+                    <h3>📚 No Quizzes Available Yet</h3>
+                    <p>Check back later when your teachers upload new lectures and generate quizzes!</p>
+                </div>
+            `;
+        }
+
+        // Show error state
+        function showErrorQuizzes() {
+            const container = document.getElementById('quizzesContainer');
+            container.innerHTML = `
+                <div class="empty-state">
+                    <h3>❌ Error Loading Quizzes</h3>
+                    <p>There was a problem loading the available quizzes. Please try refreshing the page.</p>
+                    <button class="btn" onclick="loadAvailableQuizzes()" style="margin-top: 1rem;">
+                        Try Again
+                    </button>
+                </div>
+            `;
+        }
+
+        // Update quiz statistics
+        function updateQuizStats(availableCount) {
+            document.getElementById('availableQuizzesCount').textContent = availableCount;
+            // TODO: Load actual student performance data
+            document.getElementById('completedQuizzesCount').textContent = '0';
+            document.getElementById('averageScore').textContent = '-';
+            document.getElementById('bestRank').textContent = '-';
+        }
+
+        // Take quiz function
+        function takeQuiz(quizId, quizTitle) {
+            console.log(`🎯 Taking quiz: ${quizId} - ${quizTitle}`);
+            
+            if (confirm(`Are you ready to take the quiz: "${quizTitle}"?\n\nOnce started, the quiz timer will begin immediately.`)) {
+                // Redirect to quiz taking page
+                window.location.href = `/take_quiz/${quizId}`;
+            }
+        }
+
+        // Load student performance (placeholder for now)
+        function loadStudentPerformance() {
+            const container = document.getElementById('performanceContainer');
+            container.innerHTML = `
+                <div class="empty-state">
+                    <h3>📊 Performance Tracking</h3>
+                    <p>Your quiz results and performance analytics will appear here after you complete some quizzes.</p>
+                </div>
+            `;
         }
 
         // Initialize dashboard when page loads
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Student dashboard initializing...');
+            
             // Set dynamic greeting based on time
             const hour = new Date().getHours();
             let greeting = 'Good evening';
@@ -537,8 +518,11 @@
             const initials = studentName.split(' ').map(name => name.charAt(0)).join('').toUpperCase();
             avatar.textContent = initials;
             
+            // Load available quizzes
+            loadAvailableQuizzes();
+            
             // Add entrance animations for cards
-            const cards = document.querySelectorAll('.stat-card, .class-card, .quiz-card');
+            const cards = document.querySelectorAll('.stat-card, .quiz-card');
             cards.forEach((card, index) => {
                 card.style.opacity = '0';
                 card.style.transform = 'translateY(20px)';
@@ -551,31 +535,11 @@
             });
         });
 
-        // Add interactive hover effects for performance items
-        document.querySelectorAll('.performance-item').forEach(item => {
-            item.addEventListener('mouseenter', function() {
-                this.style.backgroundColor = '#f8fafc';
-                this.style.transform = 'translateX(5px)';
-                this.style.transition = 'all 0.2s ease';
-            });
-            
-            item.addEventListener('mouseleave', function() {
-                this.style.backgroundColor = 'transparent';
-                this.style.transform = 'translateX(0)';
-            });
-        });
-
-        // Simulate real-time updates (in a real app, this would come from WebSocket)
+        // Refresh quizzes periodically (every 30 seconds)
         setInterval(() => {
-            const statCards = document.querySelectorAll('.stat-value');
-            // Add subtle pulse animation to indicate live data
-            statCards.forEach(card => {
-                card.style.transform = 'scale(1.02)';
-                setTimeout(() => {
-                    card.style.transform = 'scale(1)';
-                }, 200);
-            });
-        }, 30000); // Every 30 seconds
+            console.log('🔄 Auto-refreshing available quizzes...');
+            loadAvailableQuizzes();
+        }, 30000);
     </script>
 </body>
-</html> 
+</html>
