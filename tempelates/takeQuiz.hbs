@@ -376,7 +376,7 @@
                 Processing your results...
             </div>
             <button class="btn" onclick="goToDashboard()">
-                Back to Dashboard
+                View Detailed Results
             </button>
         </div>
     </main>
@@ -390,6 +390,13 @@
         let timerInterval = null;
         const quizId = window.location.pathname.split('/').pop(); // Extract quiz ID from URL
         const QUIZ_TIME_LIMIT = 30 * 60; // 30 minutes in seconds
+
+        // Utility function to format time
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${minutes}m ${secs}s`;
+        }
 
         // Initialize quiz when page loads
         document.addEventListener('DOMContentLoaded', function() {
@@ -620,8 +627,22 @@
             }
         }
 
-        // Submit quiz
+        // Enhanced submit quiz function with better data handling
         async function submitQuiz() {
+            // Debug check
+            console.log('🔍 Quiz data check:', {
+                quizData: quizData,
+                studentAnswers: studentAnswers,
+                quizId: quizId
+            });
+
+            // Check if quizData exists and has questions
+            if (!quizData || !quizData.questions) {
+                console.error('❌ Quiz data is missing!');
+                alert('Quiz data is missing. Please refresh and try again.');
+                return;
+            }
+
             // Check if all questions are answered
             const unansweredCount = studentAnswers.filter(answer => answer === null).length;
             
@@ -639,7 +660,7 @@
             // Calculate time taken
             const timeTakenSeconds = Math.floor((Date.now() - startTime) / 1000);
             
-            // Prepare submission data
+            // Prepare submission data with question details
             const submissionData = {
                 studentAnswers: studentAnswers.map((answer, index) => ({
                     questionIndex: index,
@@ -649,7 +670,7 @@
                 timeTakenSeconds: timeTakenSeconds
             };
             
-            console.log('📤 Submitting quiz:', submissionData);
+            console.log('📤 Submitting quiz with enhanced data:', submissionData);
             
             // Show loading state
             showSubmissionLoading();
@@ -667,7 +688,14 @@
                 
                 if (result.success) {
                     console.log('✅ Quiz submitted successfully:', result);
-                    showResults(result);
+                    
+                    // Enhanced result object with lecture ID for explanations
+                    const enhancedResult = {
+                        ...result,
+                        lectureId: quizData.lectureId || null
+                    };
+                    
+                    showResults(enhancedResult);
                 } else {
                     console.error('❌ Quiz submission failed:', result.message);
                     alert('Failed to submit quiz: ' + result.message);
@@ -689,7 +717,10 @@
             `;
         }
 
-        // Show results
+        // Enhanced showResults function with detailed question data
+        // Replace the showResults function in your takeQuiz.hbs with this enhanced version
+
+        // Enhanced showResults function with proper data handling
         function showResults(result) {
             document.getElementById('loadingContainer').style.display = 'none';
             document.getElementById('resultsContainer').style.display = 'block';
@@ -703,13 +734,58 @@
                 <p><strong>Time Taken:</strong> ${timeFormatted}</p>
                 <p><strong>Percentage:</strong> ${percentage}%</p>
             `;
+
+            // Use the enhanced question details from server response
+            const detailedResults = {
+                quizId: quizId,
+                lectureId: result.lectureId || quizData.lectureId,
+                quizTitle: result.quizTitle || quizData.lectureTitle,
+                score: result.score,
+                totalQuestions: result.totalQuestions,
+                percentage: result.percentage,
+                timeTakenSeconds: result.timeTakenSeconds,
+                submissionDate: new Date().toISOString(),
+                questionDetails: result.questionDetails || prepareQuestionDetails() // Use server data if available
+            };
+
+            // Store results in localStorage for the results page
+            localStorage.setItem('quizResults', JSON.stringify(detailedResults));
+            console.log('📊 Results data prepared for detailed view:', detailedResults);
         }
 
-        // Utility functions
-        function formatTime(seconds) {
-            const minutes = Math.floor(seconds / 60);
-            const secs = seconds % 60;
-            return `${minutes}m ${secs}s`;
+        // New function to prepare detailed question data
+        function prepareQuestionDetails() {
+            if (!quizData || !quizData.questions) {
+                console.error('❌ Quiz data not available for detailed results');
+                return [];
+            }
+
+            return studentAnswers.map((studentAnswer, index) => {
+                const question = quizData.questions[index];
+                if (!question) return null;
+
+                return {
+                    questionIndex: index,
+                    questionText: question.question,
+                    options: question.options,
+                    studentAnswer: studentAnswer,
+                    correctAnswer: question.correct_answer,
+                    isCorrect: studentAnswer === question.correct_answer
+                };
+            }).filter(item => item !== null); // Remove any null entries
+        }
+
+        // Update the goToDashboard function to redirect to results page
+        function goToDashboard() {
+            // Check if we have detailed results to show
+            const storedResults = localStorage.getItem('quizResults');
+            if (storedResults) {
+                // Redirect to detailed results page
+                window.location.href = '/quiz-results';
+            } else {
+                // Fallback to dashboard
+                window.location.href = '/homeStudent';
+            }
         }
 
         function showError(message) {
@@ -720,10 +796,6 @@
                     Back to Dashboard
                 </button>
             `;
-        }
-
-        function goToDashboard() {
-            window.location.href = '/homeStudent';
         }
 
         // Prevent page reload/back button during quiz

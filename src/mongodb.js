@@ -122,6 +122,8 @@ const lectureSchema = new mongoose.Schema({
 });
 
 // For Quizzes generated from lectures
+// STEP 1: Replace your quizSchema in mongodb.js with this enhanced version
+
 const quizSchema = new mongoose.Schema({
     lectureId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -147,6 +149,17 @@ const quizSchema = new mongoose.Schema({
             type: String,
             enum: ['A', 'B', 'C', 'D'],
             required: true
+        },
+        // NEW: Add these explanation fields
+        explanations: {
+            A: { type: String, default: "" },
+            B: { type: String, default: "" }, 
+            C: { type: String, default: "" },
+            D: { type: String, default: "" }
+        },
+        correctAnswerExplanation: {
+            type: String,
+            default: ""
         }
     }],
     totalQuestions: {
@@ -239,6 +252,49 @@ const quizResultSchema = new mongoose.Schema({
     }]
 });
 
+// AI Explanations Cache Schema
+const explanationCacheSchema = new mongoose.Schema({
+    questionText: {
+        type: String,
+        required: true
+    },
+    correctAnswer: {
+        type: String,
+        required: true,
+        enum: ['A', 'B', 'C', 'D']
+    },
+    wrongAnswer: {
+        type: String,
+        required: true,
+        enum: ['A', 'B', 'C', 'D']
+    },
+    correctOption: {
+        type: String,
+        required: true
+    },
+    wrongOption: {
+        type: String,
+        required: true
+    },
+    lectureId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'LectureCollection',
+        required: true
+    },
+    explanation: {
+        type: String,
+        required: true
+    },
+    generatedDate: {
+        type: Date,
+        default: Date.now
+    },
+    usageCount: {
+        type: Number,
+        default: 1
+    }
+});
+
 // Create indexes for better performance
 studentSchema.index({ enrollment: 1 });
 teacherSchema.index({ email: 1 });
@@ -246,17 +302,27 @@ lectureSchema.index({ professorId: 1, uploadDate: -1 });
 quizSchema.index({ lectureId: 1, generatedDate: -1 });
 quizResultSchema.index({ studentId: 1, submissionDate: -1 });
 
-// Create Collections - Students and Teachers in LoginSignup, everything else in QuizAI
+// Create compound index for fast explanation lookups
+explanationCacheSchema.index({ 
+    questionText: 1, 
+    correctAnswer: 1, 
+    wrongAnswer: 1,
+    lectureId: 1 
+});
+
+// Create Collections - FIXED: Lectures now in QuizAI database with quizzes
 const studentCollection = loginSignupConnection.model("StudentCollection", studentSchema);
 const teacherCollection = loginSignupConnection.model("TeacherCollection", teacherSchema);
-const lectureCollection = loginSignupConnection.model("LectureCollection", lectureSchema);
+const lectureCollection = quizAIConnection.model("LectureCollection", lectureSchema); // MOVED TO QuizAI
 const quizCollection = quizAIConnection.model("QuizCollection", quizSchema);
 const quizResultCollection = quizAIConnection.model("QuizResultCollection", quizResultSchema);
+const explanationCacheCollection = quizAIConnection.model("ExplanationCache", explanationCacheSchema);
 
 module.exports = {
     studentCollection,
     teacherCollection,
     lectureCollection,
     quizCollection,
-    quizResultCollection
+    quizResultCollection,
+    explanationCacheCollection
 }
