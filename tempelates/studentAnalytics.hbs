@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Analytics - {{student.name}} - QuizAI</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+            line-height: 1.6;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.75rem;
+            font-weight: bold;
+            color: #3b82f6;
+        }
+
+        .breadcrumb {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .breadcrumb a {
+            color: #3b82f6;
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        .profile-section {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .profile-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .profile-info h3 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .profile-info p {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        /* Main Content */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+
+        .student-info {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .student-details h2 {
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+
+        .student-meta {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .back-btn {
+            background: #64748b;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .back-btn:hover {
+            background: #475569;
+        }
+
+        /* Stats Section */
+        .stats-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .stat-card.blue { border-left: 4px solid #3b82f6; }
+        .stat-card.green { border-left: 4px solid #10b981; }
+        .stat-card.purple { border-left: 4px solid #8b5cf6; }
+        .stat-card.orange { border-left: 4px solid #f59e0b; }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .stat-card.blue .stat-value { color: #3b82f6; }
+        .stat-card.green .stat-value { color: #10b981; }
+        .stat-card.purple .stat-value { color: #8b5cf6; }
+        .stat-card.orange .stat-value { color: #f59e0b; }
+
+        .stat-label {
+            color: #64748b;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .stat-comparison {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 0.25rem;
+        }
+
+        .trend-indicator {
+            font-size: 1.5rem;
+        }
+
+        /* Charts Grid */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 1rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        /* Detailed Results Table */
+        .results-table {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th,
+        .table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .table tr:hover {
+            background: #f8fafc;
+        }
+
+        .score-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .score-excellent { background: #dcfce7; color: #16a34a; }
+        .score-good { background: #dbeafe; color: #2563eb; }
+        .score-average { background: #fef3c7; color: #d97706; }
+        .score-poor { background: #fee2e2; color: #dc2626; }
+
+        /* Question Analysis */
+        .question-analysis {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-top: 2rem;
+        }
+
+        .question-item {
+            padding: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 1rem;
+        }
+
+        .question-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .question-text {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+
+        .answer-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+
+        .correct-answer { color: #16a34a; font-weight: 600; }
+        .wrong-answer { color: #dc2626; font-weight: 600; }
+
+        /* Loading States */
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #64748b;
+        }
+
+        .loading-spinner {
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .student-info {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .page-title {
+                font-size: 1.5rem;
+            }
+
+            .stats-section {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 1rem;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-container {
+                height: 250px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-content {
+                padding: 1rem 0.5rem;
+            }
+
+            .stat-card,
+            .chart-card,
+            .results-table {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">QuizAI</div>
+            <div class="breadcrumb">
+                <a href="/homeTeacher">Dashboard</a> → Student Analytics → {{student.name}}
+            </div>
+            <div class="profile-section">
+                <div class="profile-avatar" id="profileAvatar"></div>
+                <div class="profile-info">
+                    <h3>{{userName}}</h3>
+                    <p>Professor</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Student Info Header -->
+        <div class="student-info">
+            <div class="student-details">
+                <h2 class="page-title">{{student.name}}</h2>
+                <div class="student-meta">
+                    Enrollment: {{student.enrollment}} | Student ID: {{studentId}}
+                </div>
+            </div>
+            <a href="/homeTeacher" class="back-btn">← Back to Dashboard</a>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingContainer" class="loading">
+            <div class="loading-spinner"></div>
+            <h3>Loading Student Analytics...</h3>
+            <p>Please wait while we gather performance data.</p>
+        </div>
+
+        <!-- Analytics Content -->
+        <div id="analyticsContent" style="display: none;">
+            <!-- Stats Section -->
+            <section class="stats-section">
+                <div class="stat-card blue">
+                    <div class="stat-value">
+                        <span id="totalQuizzes">-</span>
+                        <span class="trend-indicator" id="trendIndicator">→</span>
+                    </div>
+                    <div class="stat-label">Total Quizzes</div>
+                    <div class="stat-comparison" id="quizComparison">Last 15 days</div>
+                </div>
+                <div class="stat-card green">
+                    <div class="stat-value" id="averageScore">-%</div>
+                    <div class="stat-label">Average Score</div>
+                    <div class="stat-comparison" id="scoreComparison">Class avg: -%</div>
+                </div>
+                <div class="stat-card purple">
+                    <div class="stat-value" id="averageTime">-m</div>
+                    <div class="stat-label">Avg Time per Quiz</div>
+                    <div class="stat-comparison">Per quiz completion</div>
+                </div>
+                <div class="stat-card orange">
+                    <div class="stat-value" id="lastQuizScore">-%</div>
+                    <div class="stat-label">Latest Quiz Score</div>
+                    <div class="stat-comparison" id="lastQuizDate">-</div>
+                </div>
+            </section>
+
+            <!-- Charts Grid -->
+            <div class="charts-grid">
+                <!-- Score Trend Chart -->
+                <div class="chart-card">
+                    <h3 class="chart-title">📈 Score Trends vs Class Average</h3>
+                    <div class="chart-container">
+                        <canvas id="scoreTrendChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Time Analysis Chart -->
+                <div class="chart-card">
+                    <h3 class="chart-title">⏱️ Time Analysis</h3>
+                    <div class="chart-container">
+                        <canvas id="timeAnalysisChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Quiz Results -->
+            <div class="results-table">
+                <h3 class="chart-title">📋 Detailed Quiz Results (Last 10 Quizzes)</h3>
+                <div id="detailedResultsContainer">
+                    <!-- Table will be inserted here -->
+                </div>
+            </div>
+
+            <!-- Question-by-Question Analysis -->
+            <div class="question-analysis" id="questionAnalysisContainer">
+                <h3 class="chart-title">🔍 Latest Quiz - Question Analysis</h3>
+                <!-- Question analysis will be inserted here -->
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Global variables
+        const studentId = '{{studentId}}';
+        const studentName = '{{student.name}}';
+        const professorName = '{{userName}}';
+        let studentData = null;
+        let charts = {};
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Student analytics page initializing...');
+            initializePage();
+            loadStudentAnalytics();
+        });
+
+        // Initialize page UI
+        function initializePage() {
+            // Update avatar initials
+            const avatar = document.getElementById('profileAvatar');
+            const initials = professorName.split(' ').map(name => name.charAt(0)).join('').toUpperCase();
+            avatar.textContent = initials;
+        }
+
+        // Load student analytics data
+        async function loadStudentAnalytics() {
+            try {
+                console.log('📊 Loading student analytics for:', studentId);
+                const response = await fetch(`/api/teacher/student-analytics/${studentId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    studentData = data.data;
+                    displayAnalytics();
+                    console.log('✅ Student analytics loaded');
+                } else {
+                    console.error('❌ Failed to load student analytics:', data.message);
+                    showErrorState(data.message);
+                }
+            } catch (error) {
+                console.error('❌ Error loading student analytics:', error);
+                showErrorState('Network error while loading analytics.');
+            }
+        }
+
+        // Display analytics data
+        function displayAnalytics() {
+            if (!studentData) return;
+
+            // Hide loading, show content
+            document.getElementById('loadingContainer').style.display = 'none';
+            document.getElementById('analyticsContent').style.display = 'block';
+
+            updateStatsCards();
+            updateDetailedResults();
+            updateQuestionAnalysis();
+            
+            // Create charts after DOM is ready
+            setTimeout(() => {
+                createScoreTrendChart();
+                createTimeAnalysisChart();
+            }, 100);
+        }
+
+        // Update stats cards
+        function updateStatsCards() {
+            const metrics = studentData.performanceMetrics;
+            const latestResult = studentData.detailedResults[0];
+
+            document.getElementById('totalQuizzes').textContent = metrics.totalQuizzes;
+            document.getElementById('trendIndicator').textContent = metrics.trendIndicator;
+            document.getElementById('averageScore').textContent = metrics.averageScore + '%';
+            document.getElementById('scoreComparison').textContent = `Class avg: ${metrics.classAverage}%`;
+            document.getElementById('averageTime').textContent = metrics.averageTime;
+
+            if (latestResult) {
+                document.getElementById('lastQuizScore').textContent = latestResult.percentage + '%';
+                document.getElementById('lastQuizDate').textContent = 
+                    new Date(latestResult.submissionDate).toLocaleDateString();
+            }
+        }
+
+        // Update detailed results table
+        function updateDetailedResults() {
+            const container = document.getElementById('detailedResultsContainer');
+            const results = studentData.detailedResults;
+
+            if (results.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #64748b; padding: 2rem;">No quiz results available.</p>';
+                return;
+            }
+
+            const tableHTML = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Quiz Title</th>
+                            <th>Score</th>
+                            <th>Percentage</th>
+                            <th>Time Taken</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${results.map(result => {
+                            const scoreClass = getScoreClass(result.percentage);
+                            const timeFormatted = formatTime(result.timeTaken);
+                            return `
+                                <tr>
+                                    <td>${result.quizTitle}</td>
+                                    <td>${result.score}/${result.totalQuestions}</td>
+                                    <td>
+                                        <span class="score-badge ${scoreClass}">
+                                            ${result.percentage}%
+                                        </span>
+                                    </td>
+                                    <td>${timeFormatted}</td>
+                                    <td>${new Date(result.submissionDate).toLocaleDateString()}</td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+
+            container.innerHTML = tableHTML;
+        }
+
+        // Update question analysis
+        function updateQuestionAnalysis() {
+            const container = document.getElementById('questionAnalysisContainer');
+            const latestResult = studentData.detailedResults[0];
+
+            if (!latestResult || !latestResult.answers) {
+                container.innerHTML = `
+                    <h3 class="chart-title">🔍 Question Analysis</h3>
+                    <p style="text-align: center; color: #64748b; padding: 2rem;">No detailed question data available.</p>
+                `;
+                return;
+            }
+
+            const questionsHTML = latestResult.answers.map((answer, index) => `
+                <div class="question-item">
+                    <div class="question-text">
+                        Question ${index + 1}: ${answer.question}
+                    </div>
+                    <div class="answer-row">
+                        <span>Selected: <strong>${answer.selectedOption}</strong></span>
+                        <span>Correct: <strong>${answer.correctOption}</strong></span>
+                        <span class="${answer.isCorrect ? 'correct-answer' : 'wrong-answer'}">
+                            ${answer.isCorrect ? '✅ Correct' : '❌ Wrong'}
+                        </span>
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = `
+                <h3 class="chart-title">🔍 Latest Quiz: ${latestResult.quizTitle} - Question Analysis</h3>
+                ${questionsHTML}
+            `;
+        }
+
+        // Create score trend chart
+        function createScoreTrendChart() {
+            const ctx = document.getElementById('scoreTrendChart');
+            if (!ctx || charts.scoreTrendChart) return;
+
+            const chartData = studentData.chartData.scoresTrend;
+            
+            charts.scoreTrendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartData.map(d => d.date),
+                    datasets: [{
+                        label: `${studentName}'s Scores`,
+                        data: chartData.map(d => d.score),
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }, {
+                        label: 'Class Average',
+                        data: chartData.map(d => d.classAvg),
+                        borderColor: '#64748b',
+                        backgroundColor: 'transparent',
+                        borderDash: [5, 5],
+                        tension: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Create time analysis chart
+        function createTimeAnalysisChart() {
+            const ctx = document.getElementById('timeAnalysisChart');
+            if (!ctx || charts.timeAnalysisChart) return;
+
+            const timeData = studentData.chartData.timeAnalysis;
+            
+            charts.timeAnalysisChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: timeData.map(d => d.quiz.substring(0, 15) + '...'),
+                    datasets: [{
+                        label: 'Time Taken (minutes)',
+                        data: timeData.map(d => d.timeMinutes),
+                        backgroundColor: 'rgba(139, 92, 246, 0.6)',
+                        borderColor: '#8b5cf6',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Minutes'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // Utility functions
+        function getScoreClass(percentage) {
+            if (percentage >= 90) return 'score-excellent';
+            if (percentage >= 70) return 'score-good';
+            if (percentage >= 50) return 'score-average';
+            return 'score-poor';
+        }
+
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${minutes}m ${secs}s`;
+        }
+
+        function showErrorState(message) {
+            document.getElementById('loadingContainer').innerHTML = `
+                <h3 style="color: #ef4444;">❌ Error Loading Analytics</h3>
+                <p>${message}</p>
+                <a href="/homeTeacher" class="back-btn" style="margin-top: 1rem; display: inline-block;">
+                    Back to Dashboard
+                </a>
+            `;
+        }
+    </script>
+</body>
+</html>
