@@ -289,6 +289,10 @@
         .action-button.generate-btn:hover {
             background: #d97706;
         }
+        .action-button.generate-btn:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
         .action-button.view-btn {
             background: #10b981; /* Green for view */
         }
@@ -361,6 +365,26 @@
             background: #2563eb;
         }
 
+        /* Success and Error Messages */
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .alert-success {
+            background-color: #dcfce7;
+            color: #16a34a;
+            border: 1px solid #86efac;
+        }
+
+        .alert-error {
+            background-color: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #fca5a5;
+        }
+
         /* Mobile Responsiveness - Replicated and adapted */
         @media (max-width: 768px) {
             .header-content {
@@ -413,17 +437,16 @@
             <div class="logo">QuizAI</div>
             <nav>
                 <ul class="nav-links">
-                    {{!-- You can add professor-specific navigation links here if needed --}}
-                    <li><a href="/professor_dashboard" onclick="showSection('lectures')">My Lectures</a></li>
+                    <li><a href="/homeTeacher" onclick="showSection('lectures')">My Lectures</a></li>
                 </ul>
             </nav>
             <div class="profile-section">
                 <div class="profile-avatar" id="profileAvatar"></div>
                 <div class="profile-info">
-                    <h3>{{{userName}}}</h3> {{!-- userName passed from controller --}}
-                    <p>Professor</p> {{!-- Hardcoded user type for now --}}
+                    <h3>{{{userName}}}</h3>
+                    <p>Professor</p>
                 </div>
-                <a href="/logout" class="logout-btn">Logout</a> {{!-- Logout button --}}
+                <a href="/logout" class="logout-btn">Logout</a>
             </div>
         </div>
     </header>
@@ -431,44 +454,55 @@
     <main class="main-content">
         <h1 class="dashboard-title" id="dashboardTitle"></h1>
 
+        {{#if uploadSuccess}}
+            <div class="alert alert-success">
+                ✅ Lecture "{{uploadedTitle}}" uploaded successfully!
+            </div>
+        {{/if}}
+
+        {{#if uploadError}}
+            <div class="alert alert-error">
+                ❌ {{message}}
+            </div>
+        {{/if}}
+
         <section class="stats-section">
             <div class="stat-card blue">
-                <div class="stat-value">{{totalLectures}}</div> {{!-- Dynamic data --}}
+                <div class="stat-value">{{totalLectures}}</div>
                 <div class="stat-label">Total Lectures</div>
             </div>
             <div class="stat-card green">
-                <div class="stat-value">{{quizzesGenerated}}</div> {{!-- Dynamic data --}}
+                <div class="stat-value">{{quizzesGenerated}}</div>
                 <div class="stat-label">Quizzes Generated</div>
             </div>
             <div class="stat-card purple">
-                <div class="stat-value">{{pendingLectures}}</div> {{!-- Dynamic data --}}
+                <div class="stat-value">{{pendingLectures}}</div>
                 <div class="stat-label">Pending Quizzes</div>
             </div>
             <div class="stat-card orange">
-                <div class="stat-value">{{totalStudents}}</div> {{!-- Dynamic data --}}
+                <div class="stat-value">{{totalStudents}}</div>
                 <div class="stat-label">Total Students</div>
             </div>
         </section>
 
         <section class="section upload-section">
             <h2 class="section-title">Upload New Lecture for Quiz Generation</h2>
-            {{!-- The form action will be handled by your backend Express route --}}
             <form action="/upload_lecture" method="POST" enctype="multipart/form-data" class="upload-input-group">
                 <input type="text" name="title" placeholder="Lecture Title (e.g., 'Introduction to Algorithms')" required>
-                <input type="hidden" name="userName" value="{{{userName}}}"> <!-- To pass the userName -->
-                <input type="file" name="lectureFile" accept=".pdf,.ppt,.pptx" required>
+                <input type="hidden" name="userName" value="{{{userName}}}">
+                <input type="file" name="lectureFile" accept=".pdf,.ppt,.pptx,.doc,.docx" required>
                 <button type="submit" class="btn btn-success">Upload Lecture & Prepare for Quiz</button>
             </form>
             <p style="margin-top: 1rem; font-size: 0.9rem; color: #64748b;">
-                Supported formats: PDF, PPT, PPTX. Our AI will process this to generate quiz questions.
+                Supported formats: PDF, PPT, PPTX, DOC, DOCX. Our AI will process this to generate quiz questions.
             </p>
         </section>
 
         <section class="section">
             <h2 class="section-title">My Lectures</h2>
-            {{#if lectures}} {{!-- Handlebars conditional for empty lectures --}}
+            {{#if lectures}}
                 <div class="lectures-grid">
-                    {{#each lectures}} {{!-- Handlebars loop for each lecture --}}
+                    {{#each lectures}}
                         <div class="lecture-card">
                             <h3 class="lecture-title">{{this.title}}</h3>
                             <p class="lecture-details">Uploaded on: {{this.uploadDate}}</p>
@@ -476,14 +510,13 @@
                                 Status: {{#if this.quizGenerated}}Quiz Generated{{else}}Quiz Pending{{/if}}
                             </p>
                             <div class="lecture-actions">
-                                {{!-- Assuming a /lectures/:id/view route for viewing the actual lecture content --}}
-                                <a href="/lectures/{{this._id}}/view" target="_blank" class="action-button view-btn">View Lecture</a>
-                                {{#unless this.quizGenerated}} {{!-- Only show if quiz not generated --}}
-                                    <button class="action-button generate-btn" onclick="generateQuiz('{{this._id}}')">Generate Quiz</button>
+                                <a href="/lectures/{{this.id}}/view" target="_blank" class="action-button view-btn">View Lecture</a>
+                                {{#unless this.quizGenerated}}
+                                    <button class="action-button generate-btn" onclick="generateQuiz('{{this.id}}', event)">Generate Quiz</button>
                                 {{else}}
-                                    <a href="/lectures/{{this._id}}/quizzes" class="action-button">View Quizzes</a> {{!-- Link to quizzes associated with this lecture --}}
+                                    <a href="/lectures/{{this.id}}/quizzes" class="action-button">View Quizzes</a>
                                 {{/unless}}
-                                <button class="action-button delete-btn" onclick="deleteLecture('{{this._id}}')">Delete</button>
+                                <button class="action-button delete-btn" onclick="deleteLecture('{{this.id}}')">Delete</button>
                             </div>
                         </div>
                     {{/each}}
@@ -496,86 +529,107 @@
 
     <script>
         // Get professor name from server-side rendered template
-        // Using `userName` that's passed by the Express route
         const professorName = '{{{userName}}}';
         
-        // Navigation functionality (adapted for professor links)
+        // Navigation functionality
         function showSection(section) {
             console.log(`Navigating to ${section} section`);
             const navLinks = document.querySelectorAll('.nav-links a');
             navLinks.forEach(link => {
                 link.style.color = '#64748b';
             });
-            // This event.target check is a common pattern for inline onclick
-            // If navigating via Express routes, the page reload handles this
             if (event && event.target) {
                 event.target.style.color = '#3b82f6';
             }
         }
 
-        // Lecture management functions
-        function viewLecture(lectureId) {
-            console.log(`Viewing lecture: ${lectureId}`);
-            alert(`Opening lecture ${lectureId}... (This would open the PDF/PPT in a new tab or modal)`);
-            // Example: window.open(`/lectures/${lectureId}/view`, '_blank');
-        }
-
-        function generateQuiz(lectureId) {
+        // Generate Quiz function - UPDATED
+        function generateQuiz(lectureId, event) {
             console.log(`Attempting to generate quiz for lecture: ${lectureId}`);
+            
+            if (!lectureId) {
+                alert('❌ Error: Lecture ID is missing!');
+                return;
+            }
+            
             if (confirm('Are you sure you want to generate a quiz for this lecture? This might take a moment.')) {
+                // Get the button element
+                const button = event.target;
+                
+                // Show loading indicator
+                button.disabled = true;
+                button.textContent = 'Generating...';
+                
                 // Perform a fetch request to your backend to trigger quiz generation
                 fetch(`/generate_quiz/${lectureId}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        // Include CSRF token if you're using one for security
                     }
                 })
-                .then(response => response.json())
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
+                    console.log('Response data:', data);
                     if (data.success) {
-                        alert('Quiz generation started! It may take a few minutes. The dashboard will update when complete.');
+                        alert(`✅ Quiz generated successfully!\n\n${data.message}\nQuiz ID: ${data.quizId}`);
                         window.location.reload(); // Reload to show updated status
                     } else {
-                        alert('Failed to start quiz generation: ' + (data.message || 'Unknown error.'));
+                        alert('❌ Failed to generate quiz: ' + (data.message || 'Unknown error.'));
+                        // Re-enable button
+                        button.disabled = false;
+                        button.textContent = 'Generate Quiz';
                     }
                 })
                 .catch(error => {
                     console.error('Error generating quiz:', error);
-                    alert('An error occurred during quiz generation.');
+                    alert('❌ An error occurred during quiz generation: ' + error.message);
+                    // Re-enable button
+                    button.disabled = false;
+                    button.textContent = 'Generate Quiz';
                 });
             }
         }
 
-        function viewQuizzes(lectureId) {
-            console.log(`Viewing quizzes for lecture: ${lectureId}`);
-            alert(`Opening quizzes for lecture ${lectureId}... (This would navigate to a quiz listing page)`);
-            // Example: window.location.href = `/lectures/${lectureId}/quizzes`;
-        }
-
+        // Delete Lecture function - UPDATED
         function deleteLecture(lectureId) {
             console.log(`Attempting to delete lecture: ${lectureId}`);
+            
+            if (!lectureId) {
+                alert('❌ Error: Lecture ID is missing!');
+                return;
+            }
+            
             if (confirm('Are you sure you want to delete this lecture and all associated quizzes? This action cannot be undone.')) {
                 // Perform a fetch request to your backend to delete the lecture
                 fetch(`/delete_lecture/${lectureId}`, {
-                    method: 'POST', // Or 'DELETE' if your API supports it
+                    method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        // Include CSRF token if you're using one
                     }
                 })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     if (data.success) {
-                        alert('Lecture deleted successfully!');
+                        alert('✅ Lecture deleted successfully!');
                         window.location.reload(); // Reload to show updated list
                     } else {
-                        alert('Failed to delete lecture: ' + (data.message || 'Unknown error.'));
+                        alert('❌ Failed to delete lecture: ' + (data.message || 'Unknown error.'));
                     }
                 })
                 .catch(error => {
                     console.error('Error deleting lecture:', error);
-                    alert('An error occurred during lecture deletion.');
+                    alert('❌ An error occurred during lecture deletion: ' + error.message);
                 });
             }
         }
@@ -610,7 +664,7 @@
             });
         });
 
-        // Add interactive hover effects for lecture cards (similar to student performance)
+        // Add interactive hover effects for lecture cards
         document.querySelectorAll('.lecture-card').forEach(item => {
             item.addEventListener('mouseenter', function() {
                 this.style.backgroundColor = '#f8fafc';
@@ -619,12 +673,12 @@
             });
             
             item.addEventListener('mouseleave', function() {
-                this.style.backgroundColor = 'white'; // Revert to white
+                this.style.backgroundColor = 'white';
                 this.style.transform = 'translateY(0)';
             });
         });
 
-        // Simulate real-time updates for stats (if you implement this in your backend)
+        // Simulate real-time updates for stats
         setInterval(() => {
             const statCards = document.querySelectorAll('.stat-value');
             statCards.forEach(card => {
@@ -633,14 +687,7 @@
                     card.style.transform = 'scale(1)';
                 }, 200);
             });
-
-
-            // Every 30 seconds
         }, 30000); // Every 30 seconds
-
-
-
-        
     </script>
 </body>
 </html>
