@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Dashboard - QuizAI</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
         /* Reset and Base Styles */
         * {
@@ -58,7 +59,7 @@
             cursor: pointer;
         }
 
-        .nav-links a:hover {
+        .nav-links a:hover, .nav-links a.active {
             color: #3b82f6;
         }
 
@@ -139,6 +140,7 @@
             padding: 1.5rem;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
         }
 
         .stat-card:hover {
@@ -155,6 +157,9 @@
             font-size: 2.25rem;
             font-weight: bold;
             margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .stat-card.blue .stat-value { color: #3b82f6; }
@@ -166,6 +171,17 @@
             color: #64748b;
             font-size: 0.9rem;
             font-weight: 500;
+        }
+
+        .trend-indicator {
+            font-size: 1.5rem;
+            margin-left: 0.5rem;
+        }
+
+        .comparison {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 0.25rem;
         }
 
         /* Section Styles */
@@ -180,7 +196,97 @@
             margin-bottom: 1.5rem;
         }
 
-        /* Quizzes Section */
+        /* Tab Navigation */
+        .tab-navigation {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .tab-button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            color: #64748b;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .tab-button.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Charts Container */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 1rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        /* Tables */
+        .data-table {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th,
+        .table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .table tr:hover {
+            background: #f8fafc;
+        }
+
+        /* Quiz Cards */
         .quizzes-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -233,21 +339,83 @@
             transform: translateY(-1px);
         }
 
-        .btn-success {
-            background: #10b981;
+        /* Top Performers */
+        .top-performers {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
-        .btn-success:hover {
-            background: #059669;
+        .performer-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid #e2e8f0;
         }
 
-        /* Loading and Empty States */
+        .performer-item:last-child {
+            border-bottom: none;
+        }
+
+        .rank-badge {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 1rem;
+        }
+
+        .rank-1 { background: #ffd700; color: #1e293b; }
+        .rank-2 { background: #c0c0c0; color: #1e293b; }
+        .rank-3 { background: #cd7f32; color: white; }
+
+        .performer-info {
+            flex: 1;
+        }
+
+        .performer-name {
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .performer-stats {
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        .performer-score {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #10b981;
+        }
+
+        /* Loading States */
         .loading {
             text-align: center;
             padding: 2rem;
             color: #64748b;
         }
 
+        .loading-spinner {
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Empty States */
         .empty-state {
             text-align: center;
             padding: 3rem;
@@ -280,8 +448,17 @@
                 gap: 1rem;
             }
 
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
             .quizzes-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .tab-navigation {
+                overflow-x: auto;
+                white-space: nowrap;
             }
         }
 
@@ -291,8 +468,13 @@
             }
 
             .stat-card,
-            .quiz-card {
+            .quiz-card,
+            .chart-card {
                 padding: 1rem;
+            }
+
+            .chart-container {
+                height: 250px;
             }
         }
     </style>
@@ -304,8 +486,9 @@
             <div class="logo">QuizAI</div>
             <nav>
                 <ul class="nav-links">
-                    <li><a onclick="showSection('quizzes')">Available Quizzes</a></li>
-                    <li><a onclick="showSection('performance')">My Performance</a></li>
+                    <li><a onclick="showTab('quizzes')" class="active">Available Quizzes</a></li>
+                    <li><a onclick="showTab('performance')">Performance</a></li>
+                    <li><a onclick="showTab('rankings')">Top Performers</a></li>
                 </ul>
             </nav>
             <div class="profile-section">
@@ -326,86 +509,183 @@
         <!-- Stats Section -->
         <section class="stats-section">
             <div class="stat-card blue">
-                <div class="stat-value" id="availableQuizzesCount">-</div>
-                <div class="stat-label">Available Quizzes</div>
+                <div class="stat-value">
+                    <span id="totalQuizzesCount">-</span>
+                    <span class="trend-indicator" id="trendIndicator">→</span>
+                </div>
+                <div class="stat-label">Quizzes Taken</div>
+                <div class="comparison" id="quizComparison">Last 15 days</div>
             </div>
             <div class="stat-card green">
-                <div class="stat-value" id="completedQuizzesCount">-</div>
-                <div class="stat-label">Quizzes Completed</div>
+                <div class="stat-value" id="averageScore">-%</div>
+                <div class="stat-label">Your Average</div>
+                <div class="comparison" id="scoreComparison">Class avg: -%</div>
             </div>
             <div class="stat-card purple">
-                <div class="stat-value" id="averageScore">-</div>
-                <div class="stat-label">Average Score</div>
+                <div class="stat-value" id="currentRank">-</div>
+                <div class="stat-label">Your Rank</div>
+                <div class="comparison" id="rankComparison">Out of - students</div>
             </div>
             <div class="stat-card orange">
-                <div class="stat-value" id="bestRank">-</div>
-                <div class="stat-label">Best Rank</div>
+                <div class="stat-value" id="availableQuizzesCount">-</div>
+                <div class="stat-label">Available Quizzes</div>
+                <div class="comparison">Ready to take</div>
             </div>
         </section>
 
-        <!-- Available Quizzes Section -->
-        <section class="section">
-            <h2 class="section-title">Available Quizzes</h2>
-            <div id="quizzesContainer">
-                <div class="loading">
-                    <p>🔄 Loading available quizzes...</p>
-                </div>
-            </div>
-        </section>
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button class="tab-button active" onclick="showTab('quizzes')">Available Quizzes</button>
+            <button class="tab-button" onclick="showTab('performance')">My Performance</button>
+            <button class="tab-button" onclick="showTab('rankings')">Top Performers</button>
+        </div>
 
-        <!-- Recent Performance Section -->
-        <section class="section" id="performanceSection" style="display: none;">
-            <h2 class="section-title">Recent Performance</h2>
-            <div id="performanceContainer">
-                <div class="loading">
-                    <p>🔄 Loading your performance data...</p>
+        <!-- Available Quizzes Tab -->
+        <div id="quizzesTab" class="tab-content active">
+            <section class="section">
+                <div id="quizzesContainer">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>🔄 Loading available quizzes...</p>
+                    </div>
                 </div>
-            </div>
-        </section>
+            </section>
+        </div>
+
+        <!-- Performance Tab -->
+        <div id="performanceTab" class="tab-content">
+            <section class="section">
+                <!-- Charts Grid -->
+                <div class="charts-grid">
+                    <!-- Score Trend Chart -->
+                    <div class="chart-card">
+                        <h3 class="chart-title">📈 Score Trends</h3>
+                        <div class="chart-container">
+                            <canvas id="scoreTrendChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Performance Breakdown Pie Chart -->
+                    <div class="chart-card">
+                        <h3 class="chart-title">📊 Performance Breakdown</h3>
+                        <div class="chart-container">
+                            <canvas id="performanceBreakdownChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Quiz Results Table -->
+                <div class="data-table">
+                    <h3 class="chart-title">📋 Recent Quiz Results</h3>
+                    <div id="recentResultsContainer">
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                            <p>Loading recent results...</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Top Performers Tab -->
+        <div id="rankingsTab" class="tab-content">
+            <section class="section">
+                <div class="top-performers">
+                    <h3 class="chart-title">🏆 Top 3 Performers (Last 15 Days)</h3>
+                    <div id="topPerformersContainer">
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                            <p>Loading top performers...</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
     </main>
 
     <script>
-        // Get student name from server-side rendered template
+        // Global variables
         const studentName = '{{{userName}}}';
+        let performanceData = null;
         let availableQuizzes = [];
-        let studentResults = [];
-        
-        // Navigation functionality
-        function showSection(section) {
-            console.log(`Navigating to ${section} section`);
-            
-            // Update navigation styles
-            const navLinks = document.querySelectorAll('.nav-links a');
-            navLinks.forEach(link => {
-                link.style.color = '#64748b';
-            });
-            
-            if (event && event.target) {
-                event.target.style.color = '#3b82f6';
-            }
+        let charts = {};
 
-            // Show/hide sections based on navigation
-            if (section === 'performance') {
-                document.getElementById('performanceSection').style.display = 'block';
-                loadStudentPerformance();
-            } else {
-                document.getElementById('performanceSection').style.display = 'none';
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Student dashboard initializing...');
+            initializeDashboard();
+            loadPerformanceData();
+            loadAvailableQuizzes();
+        });
+
+        // Initialize dashboard UI
+        function initializeDashboard() {
+            // Set dynamic greeting
+            const hour = new Date().getHours();
+            let greeting = 'Good evening';
+            if (hour < 12) greeting = 'Good morning';
+            else if (hour < 18) greeting = 'Good afternoon';
+            
+            document.getElementById('dashboardTitle').textContent = `${greeting}, ${studentName}!`;
+            
+            // Update avatar initials
+            const avatar = document.getElementById('profileAvatar');
+            const initials = studentName.split(' ').map(name => name.charAt(0)).join('').toUpperCase();
+            avatar.textContent = initials;
+        }
+
+        // Tab navigation
+        function showTab(tabName) {
+            // Update navigation
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.nav-links a').forEach(link => link.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Update content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(tabName + 'Tab').classList.add('active');
+
+            // Load data if needed
+            if (tabName === 'performance' && !charts.scoreTrendChart) {
+                setTimeout(createCharts, 100);
             }
         }
 
-        // Load available quizzes from backend
+        // Load performance data
+        async function loadPerformanceData() {
+            try {
+                console.log('📊 Loading performance data...');
+                const response = await fetch('/api/student/performance-data');
+                const data = await response.json();
+                
+                if (data.success) {
+                    performanceData = data.data;
+                    updateStatsCards();
+                    updateRecentResults();
+                    updateTopPerformers();
+                    console.log('✅ Performance data loaded');
+                } else {
+                    console.error('❌ Failed to load performance data:', data.message);
+                    showErrorState('performance');
+                }
+            } catch (error) {
+                console.error('❌ Error loading performance data:', error);
+                showErrorState('performance');
+            }
+        }
+
+        // Load available quizzes
         async function loadAvailableQuizzes() {
             try {
-                console.log('🔄 Loading available quizzes...');
+                console.log('📝 Loading available quizzes...');
                 const response = await fetch('/api/student/available-quizzes');
                 const data = await response.json();
                 
-                console.log('📊 Available quizzes response:', data);
-                
-                if (data.success && data.quizzes) {
+                if (data.success) {
                     availableQuizzes = data.quizzes;
                     displayQuizzes(data.quizzes);
-                    updateQuizStats(data.quizzes.length);
+                    updateQuizCount(data.quizzes.length);
+                    console.log('✅ Available quizzes loaded');
                 } else {
                     console.error('❌ Failed to load quizzes:', data.message);
                     showEmptyQuizzes();
@@ -416,7 +696,26 @@
             }
         }
 
-        // Display quizzes in the UI
+        // Update stats cards
+        function updateStatsCards() {
+            if (!performanceData) return;
+
+            const stats = performanceData.studentStats;
+            
+            document.getElementById('totalQuizzesCount').textContent = stats.totalQuizzes;
+            document.getElementById('trendIndicator').textContent = stats.trendIndicator;
+            document.getElementById('averageScore').textContent = stats.averageScore + '%';
+            document.getElementById('scoreComparison').textContent = `Class avg: ${stats.classAverage}%`;
+            document.getElementById('currentRank').textContent = `#${stats.currentRank}`;
+            document.getElementById('rankComparison').textContent = `Out of ${stats.totalStudents} students`;
+        }
+
+        // Update quiz count
+        function updateQuizCount(count) {
+            document.getElementById('availableQuizzesCount').textContent = count;
+        }
+
+        // Display quizzes
         function displayQuizzes(quizzes) {
             const container = document.getElementById('quizzesContainer');
             
@@ -438,14 +737,190 @@
                 </div>
             `).join('');
 
-            container.innerHTML = `
-                <div class="quizzes-grid">
-                    ${quizzesHTML}
-                </div>
-            `;
+            container.innerHTML = `<div class="quizzes-grid">${quizzesHTML}</div>`;
         }
 
-        // Show empty state when no quizzes available
+        // Update recent results
+        function updateRecentResults() {
+            if (!performanceData?.recentResults) return;
+
+            const container = document.getElementById('recentResultsContainer');
+            const results = performanceData.recentResults;
+
+            if (results.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>📝 No Quiz Results Yet</h3>
+                        <p>Take some quizzes to see your performance history!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const tableHTML = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Quiz</th>
+                            <th>Score</th>
+                            <th>Date</th>
+                            <th>Time Taken</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${results.map(result => `
+                            <tr>
+                                <td>${result.quizTitle}</td>
+                                <td><strong>${result.score}%</strong></td>
+                                <td>${result.submissionDate}</td>
+                                <td>${result.timeTaken}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+
+            container.innerHTML = tableHTML;
+        }
+
+        // Update top performers
+        function updateTopPerformers() {
+            if (!performanceData?.top3Performers) return;
+
+            const container = document.getElementById('topPerformersContainer');
+            const performers = performanceData.top3Performers;
+
+            if (performers.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>🏆 No Rankings Yet</h3>
+                        <p>Be the first to take quizzes and appear on the leaderboard!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const performersHTML = performers.map(performer => `
+                <div class="performer-item">
+                    <div class="rank-badge rank-${performer.rank}">${performer.rank}</div>
+                    <div class="performer-info">
+                        <div class="performer-name">${performer.name}</div>
+                        <div class="performer-stats">${performer.totalQuizzes} quizzes completed</div>
+                    </div>
+                    <div class="performer-score">${performer.averageScore}%</div>
+                </div>
+            `).join('');
+
+            container.innerHTML = performersHTML;
+        }
+
+        // Create charts
+        function createCharts() {
+            if (!performanceData) return;
+
+            createScoreTrendChart();
+            createPerformanceBreakdownChart();
+        }
+
+        // Create score trend chart
+        function createScoreTrendChart() {
+            const ctx = document.getElementById('scoreTrendChart');
+            if (!ctx || charts.scoreTrendChart) return;
+
+            const trendData = performanceData.trendData || [];
+            const classAverage = performanceData.studentStats.classAverage;
+
+            charts.scoreTrendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: trendData.map(d => d.date),
+                    datasets: [{
+                        label: 'Your Scores',
+                        data: trendData.map(d => d.score),
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }, {
+                        label: 'Class Average',
+                        data: trendData.map(() => classAverage),
+                        borderColor: '#64748b',
+                        backgroundColor: 'transparent',
+                        borderDash: [5, 5],
+                        tension: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Create performance breakdown chart
+        function createPerformanceBreakdownChart() {
+            const ctx = document.getElementById('performanceBreakdownChart');
+            if (!ctx || charts.performanceBreakdownChart) return;
+
+            const breakdown = performanceData.performanceBreakdown || {};
+
+            charts.performanceBreakdownChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Excellent (90%+)', 'Good (70-89%)', 'Average (50-69%)', 'Needs Improvement (<50%)'],
+                    datasets: [{
+                        data: [
+                            breakdown.excellent || 0,
+                            breakdown.good || 0,
+                            breakdown.average || 0,
+                            breakdown.needsImprovement || 0
+                        ],
+                        backgroundColor: [
+                            '#10b981',
+                            '#3b82f6',
+                            '#f59e0b',
+                            '#ef4444'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Quiz functions
+        function takeQuiz(quizId, quizTitle) {
+            console.log(`🎯 Taking quiz: ${quizId} - ${quizTitle}`);
+            
+            if (confirm(`Are you ready to take the quiz: "${quizTitle}"?\n\nOnce started, the quiz timer will begin immediately.`)) {
+                window.location.href = `/take_quiz/${quizId}`;
+            }
+        }
+
+        // Error states
         function showEmptyQuizzes() {
             const container = document.getElementById('quizzesContainer');
             container.innerHTML = `
@@ -456,7 +931,6 @@
             `;
         }
 
-        // Show error state
         function showErrorQuizzes() {
             const container = document.getElementById('quizzesContainer');
             container.innerHTML = `
@@ -470,74 +944,14 @@
             `;
         }
 
-        // Update quiz statistics
-        function updateQuizStats(availableCount) {
-            document.getElementById('availableQuizzesCount').textContent = availableCount;
-            // TODO: Load actual student performance data
-            document.getElementById('completedQuizzesCount').textContent = '0';
-            document.getElementById('averageScore').textContent = '-';
-            document.getElementById('bestRank').textContent = '-';
+        function showErrorState(type) {
+            console.error(`❌ Error in ${type} section`);
         }
 
-        // Take quiz function
-        function takeQuiz(quizId, quizTitle) {
-            console.log(`🎯 Taking quiz: ${quizId} - ${quizTitle}`);
-            
-            if (confirm(`Are you ready to take the quiz: "${quizTitle}"?\n\nOnce started, the quiz timer will begin immediately.`)) {
-                // Redirect to quiz taking page
-                window.location.href = `/take_quiz/${quizId}`;
-            }
-        }
-
-        // Load student performance (placeholder for now)
-        function loadStudentPerformance() {
-            const container = document.getElementById('performanceContainer');
-            container.innerHTML = `
-                <div class="empty-state">
-                    <h3>📊 Performance Tracking</h3>
-                    <p>Your quiz results and performance analytics will appear here after you complete some quizzes.</p>
-                </div>
-            `;
-        }
-
-        // Initialize dashboard when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Student dashboard initializing...');
-            
-            // Set dynamic greeting based on time
-            const hour = new Date().getHours();
-            let greeting = 'Good evening';
-            if (hour < 12) greeting = 'Good morning';
-            else if (hour < 18) greeting = 'Good afternoon';
-            
-            const title = document.getElementById('dashboardTitle');
-            title.textContent = `${greeting}, ${studentName}!`;
-            
-            // Update avatar initials based on actual name
-            const avatar = document.getElementById('profileAvatar');
-            const initials = studentName.split(' ').map(name => name.charAt(0)).join('').toUpperCase();
-            avatar.textContent = initials;
-            
-            // Load available quizzes
-            loadAvailableQuizzes();
-            
-            // Add entrance animations for cards
-            const cards = document.querySelectorAll('.stat-card, .quiz-card');
-            cards.forEach((card, index) => {
-                card.style.opacity = '0';
-                card.style.transform = 'translateY(20px)';
-                
-                setTimeout(() => {
-                    card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-                    card.style.opacity = '1';
-                    card.style.transform = 'translateY(0)';
-                }, index * 100);
-            });
-        });
-
-        // Refresh quizzes periodically (every 30 seconds)
+        // Auto-refresh data every 30 seconds
         setInterval(() => {
-            console.log('🔄 Auto-refreshing available quizzes...');
+            console.log('🔄 Auto-refreshing data...');
+            loadPerformanceData();
             loadAvailableQuizzes();
         }, 30000);
     </script>
