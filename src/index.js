@@ -20,7 +20,7 @@ const { toJson } = require("pptx2json")
 require('dotenv').config()
 
 // Import database collections
-const { studentCollection, teacherCollection, lectureCollection, quizCollection, quizResultCollection } = require("./mongodb")
+const { studentCollection, teacherCollection, lectureCollection, quizCollection, quizResultCollection, explanationCacheCollection } = require("./mongodb")
 
 // Google Gemini API setup
 const { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } = require('@google/generative-ai')
@@ -423,7 +423,6 @@ app.post("/upload_lecture", isAuthenticated, upload.single('lectureFile'), async
             cleanupTempFile(tempFilePath);
         }
 
-        const currentUserName = req.session.userName || 'Teacher';
         res.status(500).redirect(`/homeTeacher?uploadError=true&message=${encodeURIComponent('Failed to process uploaded file: ' + error.message)}`);
     }
 });
@@ -462,12 +461,12 @@ app.get('/lectures/:id/text', isAuthenticated, async (req, res) => {
     }
 })
 
-// ==================== IMPROVED QUIZ GENERATION ROUTE WITH DEBUG LOGGING ====================
+// ==================== ENHANCED QUIZ GENERATION ROUTE ====================
 
 app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
     try {
         const lectureId = req.params.id
-        console.log(`🔄 Starting quiz generation for lecture ID: ${lectureId}`)
+        console.log(`🔄 Starting ENHANCED quiz generation for lecture ID: ${lectureId}`)
         
         const lecture = await lectureCollection.findById(lectureId)
 
@@ -498,13 +497,9 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
             lastProcessed: new Date()
         })
 
-        console.log('🤖 AI Quiz Generation Started for:', lecture.title)
+        console.log('🤖 ENHANCED AI Quiz Generation Started for:', lecture.title)
 
         const extractedText = lecture.extractedText
-
-        // DEBUG: Log extracted text details
-        console.log('📊 Extracted text length:', extractedText.length);
-        console.log('📝 First 500 chars of text:', extractedText.substring(0, 500));
 
         if (!extractedText || extractedText.length < 50) {
             await lectureCollection.findByIdAndUpdate(lectureId, {
@@ -518,9 +513,9 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
             })
         }
 
-        // Improved prompt for better quiz generation
+        // ENHANCED PROMPT - Generates questions with detailed explanations
         const prompt = `
-        You are an expert quiz generator. Create a high-quality multiple-choice quiz based on the following lecture content.
+        You are an expert quiz generator and educational content creator. Create a comprehensive multiple-choice quiz with detailed explanations based on the following lecture content.
 
         **STRICT REQUIREMENTS:**
         1. Generate exactly 10 multiple-choice questions
@@ -529,38 +524,55 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
         4. Mix difficulty levels: 3 easy, 4 medium, 3 hard questions
         5. Ensure all questions are directly based on the lecture content
         6. Make wrong options plausible but clearly incorrect
-        7. Output must be valid JSON only, no extra text
+        7. Provide detailed explanations for EACH wrong answer option
+        8. Provide a comprehensive explanation for the correct answer
+        9. Output must be valid JSON only, no extra text
 
         **LECTURE CONTENT:**
-        ${extractedText.substring(0, 4000)} // Limit text to avoid token limits
+        ${extractedText.substring(0, 4000)}
 
-        **REQUIRED JSON FORMAT:**
+        **REQUIRED JSON FORMAT - MUST INCLUDE EXPLANATIONS:**
         [
           {
             "question": "Clear, complete question text here?",
             "options": {
               "A": "First option",
-              "B": "Second option",
+              "B": "Second option", 
               "C": "Third option",
               "D": "Fourth option"
             },
-            "correct_answer": "B"
+            "correct_answer": "B",
+            "correctAnswerExplanation": "Detailed explanation of why B is correct, referencing specific content from the lecture.",
+            "explanations": {
+              "A": "Explanation of why A is incorrect and what concept it might confuse with specific reference to lecture content",
+              "B": "",
+              "C": "Explanation of why C is incorrect and what the student might have misunderstood, with reference to lecture material",
+              "D": "Explanation of why D is incorrect and how to avoid this mistake, connecting to lecture concepts"
+            }
           }
         ]
 
-        Generate exactly 10 questions following this format.`
+        **EXPLANATION GUIDELINES:**
+        - Each wrong answer explanation should be 2-3 sentences
+        - Reference specific concepts from the lecture material provided
+        - Explain the common misconception or mistake
+        - Provide educational guidance on the correct concept
+        - Use encouraging and educational tone
+        - The correct answer should have empty string in explanations object
+        - Use correctAnswerExplanation field for detailed explanation of correct answer
+        - All explanations must be educational and helpful for learning
+
+        Generate exactly 10 questions following this format with comprehensive explanations for each wrong answer.`
 
         try {
-            // Configure generation parameters for consistency
             const generationConfig = {
-                temperature: 0.3, // Lower temperature for more consistent output
+                temperature: 0.3,
                 topP: 0.8,
                 topK: 40,
-                maxOutputTokens: 4096,
+                maxOutputTokens: 8192, // Increased for explanations
                 responseMimeType: "application/json",
             }
 
-            // Safety settings
             const safetySettings = [
                 {
                     category: HarmCategory.HARM_CATEGORY_HARASSMENT,
@@ -580,9 +592,8 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
                 },
             ]
 
-            console.log('📤 Sending request to Gemini API...')
+            console.log('📤 Sending ENHANCED request to Gemini API...')
             
-            // Make the API call
             const result = await model.generateContent({
                 contents: [{ role: "user", parts: [{ text: prompt }] }],
                 generationConfig,
@@ -592,12 +603,11 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
             const response = result.response
             let quizContent = response.text()
 
-            console.log('✅ Received response from Gemini API')
+            console.log('✅ Received ENHANCED response from Gemini API')
 
-            // Parse the response
+            // Parse and validate the AI response
             let generatedQuiz = null
             try {
-                // Clean up the response if needed
                 quizContent = quizContent.trim()
                 if (quizContent.startsWith('```json')) {
                     quizContent = quizContent.substring(7, quizContent.lastIndexOf('```')).trim()
@@ -605,7 +615,7 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
                 
                 generatedQuiz = JSON.parse(quizContent)
                 
-                // Validate the quiz structure
+                // Enhanced validation
                 if (!Array.isArray(generatedQuiz)) {
                     throw new Error('Response is not an array')
                 }
@@ -614,41 +624,56 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
                     throw new Error('No questions generated')
                 }
                 
-                // Validate each question
+                // Validate each question WITH explanations
                 generatedQuiz.forEach((q, index) => {
-                    if (!q.question || !q.options || !q.correct_answer) {
-                        throw new Error(`Question ${index + 1} is missing required fields`)
+                    if (!q.question || !q.options || !q.correct_answer || !q.explanations || !q.correctAnswerExplanation) {
+                        throw new Error(`Question ${index + 1} is missing required fields (including explanations)`)
                     }
                     if (!['A', 'B', 'C', 'D'].includes(q.correct_answer)) {
                         throw new Error(`Question ${index + 1} has invalid correct_answer`)
                     }
+                    
+                    // Validate explanations exist for wrong answers
+                    ['A', 'B', 'C', 'D'].forEach(option => {
+                        if (option !== q.correct_answer && (!q.explanations[option] || q.explanations[option].trim() === '')) {
+                            console.warn(`⚠️ Question ${index + 1}: Missing explanation for wrong answer ${option}`);
+                            // Set fallback explanation
+                            q.explanations[option] = `This option is incorrect. The correct answer is ${q.correct_answer}. Please review the lecture material for more details.`;
+                        }
+                    });
+                    
+                    // Ensure correct answer has empty explanation in explanations object
+                    q.explanations[q.correct_answer] = "";
                 })
                 
-                // DEBUG: Log parsed quiz details
-                console.log('🎯 Number of questions generated:', generatedQuiz.length);
-                console.log('📋 First question:', JSON.stringify(generatedQuiz[0], null, 2));
+                console.log('🎯 ENHANCED quiz validated:', {
+                    totalQuestions: generatedQuiz.length,
+                    hasExplanations: !!generatedQuiz[0].explanations,
+                    hasCorrectExplanation: !!generatedQuiz[0].correctAnswerExplanation,
+                    sampleExplanation: generatedQuiz[0].explanations[Object.keys(generatedQuiz[0].explanations).find(key => key !== generatedQuiz[0].correct_answer)]?.substring(0, 100) + '...'
+                });
                 
             } catch (parseError) {
-                console.error('❌ Failed to parse quiz JSON:', parseError)
-                console.error('Raw response:', quizContent.substring(0, 500) + '...')
+                console.error('❌ Failed to parse ENHANCED quiz JSON:', parseError)
+                console.error('Raw response sample:', quizContent.substring(0, 500) + '...')
                 
                 await lectureCollection.findByIdAndUpdate(lectureId, {
                     processingStatus: 'failed',
                     quizGenerated: false,
-                    quizGenerationError: 'AI response parsing failed: ' + parseError.message
+                    quizGenerationError: 'Enhanced AI response parsing failed: ' + parseError.message
                 })
                 
                 return res.status(500).json({ 
                     success: false, 
-                    message: 'Failed to parse AI response. Please try again.' 
+                    message: 'Failed to parse enhanced AI response. Please try again.' 
                 })
             }
 
-            // Save the quiz to database
+            // Save the ENHANCED quiz to database
             const newQuiz = {
                 lectureId: lectureId,
                 lectureTitle: lecture.title,
-                questions: generatedQuiz,
+                questions: generatedQuiz, // Now includes detailed explanations!
                 totalQuestions: generatedQuiz.length,
                 generatedDate: new Date(),
                 createdBy: req.session.userId
@@ -656,24 +681,21 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
 
             try {
                 const savedQuiz = await quizCollection.create(newQuiz)
-                console.log('✅ Quiz saved to database:', savedQuiz._id)
+                console.log('✅ ENHANCED quiz saved to database:', savedQuiz._id)
                 
-                // DEBUG: Verify the quiz was actually saved
+                // Verify explanations were saved correctly
                 const verifyQuiz = await quizCollection.findById(savedQuiz._id)
-                if (verifyQuiz) {
-                    console.log('✅ VERIFIED: Quiz exists in database with ID:', verifyQuiz._id)
-                    console.log('📊 Quiz has', verifyQuiz.questions.length, 'questions')
-                    
-                    // DEBUG: Log saved quiz details
-                    console.log('💾 Saved quiz details:', {
-                        _id: savedQuiz._id,
-                        lectureId: savedQuiz.lectureId,
-                        totalQuestions: savedQuiz.totalQuestions,
-                        questionsCount: savedQuiz.questions.length
+                if (verifyQuiz && verifyQuiz.questions[0].explanations) {
+                    console.log('✅ VERIFIED: Quiz with explanations saved successfully!')
+                    console.log('📊 First question explanations:', {
+                        hasExplanationsField: !!verifyQuiz.questions[0].explanations,
+                        explanationCount: Object.keys(verifyQuiz.questions[0].explanations).length,
+                        hasCorrectExplanation: !!verifyQuiz.questions[0].correctAnswerExplanation,
+                        sampleExplanation: Object.values(verifyQuiz.questions[0].explanations).find(exp => exp && exp.trim() !== '')?.substring(0, 50) + '...'
                     });
                 } else {
-                    console.log('❌ ERROR: Quiz not found after saving!')
-                    throw new Error('Quiz verification failed - not found in database after saving')
+                    console.log('❌ ERROR: Quiz explanations not saved properly!')
+                    throw new Error('Quiz explanations verification failed')
                 }
                 
                 // Update lecture status
@@ -684,46 +706,41 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
                     lastProcessed: new Date()
                 })
 
-                console.log('✅ Quiz generation completed successfully for:', lecture.title)
+                console.log('✅ ENHANCED quiz generation completed successfully for:', lecture.title)
 
                 res.json({
                     success: true,
-                    message: `Quiz generated successfully with ${generatedQuiz.length} questions!`,
+                    message: `Enhanced quiz generated successfully with ${generatedQuiz.length} questions and detailed explanations!`,
                     quizId: savedQuiz._id,
                     totalQuestions: generatedQuiz.length,
-                    title: lecture.title
+                    title: lecture.title,
+                    explanationsGenerated: true
                 })
                 
             } catch (saveError) {
-                console.error('❌ Error saving quiz to MongoDB:', saveError)
-                console.error('Full error details:', JSON.stringify(saveError, null, 2))
+                console.error('❌ Error saving ENHANCED quiz to MongoDB:', saveError)
                 
                 await lectureCollection.findByIdAndUpdate(lectureId, {
                     processingStatus: 'failed',
                     quizGenerated: false,
-                    quizGenerationError: 'Database save error: ' + saveError.message
+                    quizGenerationError: 'Enhanced database save error: ' + saveError.message
                 })
                 
                 return res.status(500).json({ 
                     success: false, 
-                    message: 'Failed to save quiz to database: ' + saveError.message 
+                    message: 'Failed to save enhanced quiz to database: ' + saveError.message 
                 })
             }
 
         } catch (apiError) {
-            console.error('❌ Gemini API Error:', apiError)
-            console.error('Error details:', {
-                message: apiError.message,
-                stack: apiError.stack
-            })
+            console.error('❌ ENHANCED Gemini API Error:', apiError)
 
             await lectureCollection.findByIdAndUpdate(lectureId, {
                 processingStatus: 'failed',
                 quizGenerated: false,
-                quizGenerationError: 'AI API Error: ' + apiError.message
+                quizGenerationError: 'Enhanced AI API Error: ' + apiError.message
             })
 
-            // Check for specific API errors
             if (apiError.message.includes('quota') || apiError.message.includes('limit')) {
                 return res.status(429).json({ 
                     success: false, 
@@ -733,12 +750,12 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
 
             res.status(500).json({ 
                 success: false, 
-                message: 'Failed to generate quiz. Please check your API key and try again.' 
+                message: 'Failed to generate enhanced quiz. Please check your API key and try again.' 
             })
         }
     
     } catch (error) {
-        console.error('❌ Quiz generation error:', error)
+        console.error('❌ ENHANCED quiz generation error:', error)
         
         if (req.params.id) {
             await lectureCollection.findByIdAndUpdate(req.params.id, {
@@ -750,7 +767,7 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
 
         res.status(500).json({ 
             success: false, 
-            message: 'Failed to generate quiz: ' + error.message 
+            message: 'Failed to generate enhanced quiz: ' + error.message 
         })
     }
 })
@@ -853,6 +870,7 @@ app.get('/api/quiz/:quizId', isAuthenticated, async (req, res) => {
             return res.status(404).json({ success: false, message: 'Quiz not found.' });
         }
 
+        // Only send question text and options to students (not correct answers or explanations)
         const questionsForClient = quiz.questions.map(q => ({
             question: q.question,
             options: q.options,
@@ -886,6 +904,7 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
         const studentId = req.session.userId;
         const studentName = req.session.userName;
 
+        // Get complete quiz data including lecture ID
         const quiz = await quizCollection.findById(quizId).lean();
         if (!quiz) {
             return res.status(404).json({ success: false, message: 'Quiz not found for scoring.' });
@@ -894,7 +913,9 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
         let score = 0;
         const totalQuestions = quiz.totalQuestions;
         const detailedAnswers = [];
+        const enhancedQuestionDetails = []; // For detailed results page
 
+        // Score the quiz and prepare detailed results
         studentAnswers.forEach(sAnswer => {
             const correspondingQuestion = quiz.questions[sAnswer.questionIndex];
             if (correspondingQuestion) {
@@ -902,6 +923,8 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
                 if (isCorrect) {
                     score++;
                 }
+                
+                // For quiz results storage
                 detailedAnswers.push({
                     questionIndex: sAnswer.questionIndex,
                     question: sAnswer.question,
@@ -909,11 +932,22 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
                     correctOption: correspondingQuestion.correct_answer,
                     isCorrect: isCorrect
                 });
+
+                // Enhanced data for results page with all question details
+                enhancedQuestionDetails.push({
+                    questionIndex: sAnswer.questionIndex,
+                    questionText: correspondingQuestion.question,
+                    options: correspondingQuestion.options,
+                    studentAnswer: sAnswer.selectedOption,
+                    correctAnswer: correspondingQuestion.correct_answer,
+                    isCorrect: isCorrect
+                });
             }
         });
 
         const percentage = (totalQuestions > 0) ? (score / totalQuestions) * 100 : 0;
 
+        // Save quiz result to database
         const newQuizResult = {
             quizId: quizId,
             lectureId: quiz.lectureId,
@@ -930,6 +964,7 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
         await quizResultCollection.create(newQuizResult);
         console.log(`✅ Quiz result saved for student ${studentName} on quiz ${quiz.lectureTitle}: Score ${score}/${totalQuestions}`);
 
+        // Return enhanced response with all needed data for explanations
         res.json({
             success: true,
             message: 'Quiz submitted and scored successfully!',
@@ -937,7 +972,12 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
             totalQuestions: totalQuestions,
             percentage: percentage,
             timeTakenSeconds: timeTakenSeconds,
-            quizResultId: newQuizResult._id
+            quizResultId: newQuizResult._id,
+            // Add these for the results page
+            lectureId: quiz.lectureId,
+            quizTitle: quiz.lectureTitle,
+            questionDetails: enhancedQuestionDetails,
+            quizId: quizId // Include quizId for explanations
         });
 
     } catch (error) {
@@ -985,44 +1025,6 @@ app.get('/lecture_results/:lectureId', isAuthenticated, async (req, res) => {
     }
 });
 
-// ==================== ERROR HANDLING ====================
-
-app.use((error, req, res, next) => {
-    if (error instanceof multer.MulterError) {
-        if (error.code === 'LIMIT_FILE_SIZE') {
-            const redirectUrl = req.session.userType === 'teacher' ? '/homeTeacher' : '/login';
-            const message = encodeURIComponent('File too large. Maximum size is 100MB.');
-            return res.status(400).redirect(`${redirectUrl}?uploadError=true&message=${message}`);
-        }
-        const redirectUrl = req.session.userType === 'teacher' ? '/homeTeacher' : '/login';
-        const message = encodeURIComponent('File upload error: ' + error.message);
-        return res.status(400).redirect(`${redirectUrl}?uploadError=true&message=${message}`);
-    }
-
-    if (req.fileError) {
-        const redirectUrl = req.session.userType === 'teacher' ? '/homeTeacher' : '/login';
-        const message = encodeURIComponent(req.fileError.message);
-        return res.status(400).redirect(`${redirectUrl}?uploadError=true&message=${message}`);
-    }
-
-    next(error)
-})
-
-// ==================== SERVER STARTUP ====================
-
-app.listen(PORT, () => {
-    console.log(`🚀 QuizAI Server started on port ${PORT}`)
-    console.log(`📌 Open http://localhost:${PORT} in your browser`)
-
-    cleanupTempFiles()
-
-    console.log('✅ Server initialization complete!')
-    console.log('📚 Ready to process lecture uploads and generate quizzes!')
-    console.log(`🔑 Using Gemini model: gemini-1.5-flash (Free tier)`)
-})
-
-// Add these routes to your index.js file - Analytics & Performance Features
-
 // ==================== ANALYTICS ROUTES ====================
 
 // Student Performance Analytics
@@ -1055,20 +1057,6 @@ app.get('/api/student/performance-data', isAuthenticated, async (req, res) => {
         const averageScore = totalQuizzes > 0 
             ? (studentResults.reduce((sum, result) => sum + result.percentage, 0) / totalQuizzes).toFixed(1)
             : 0;
-
-        // Calculate class averages per quiz
-        const quizAverages = {};
-        const quizParticipation = {};
-        
-        allResults.forEach(result => {
-            const quizId = result.quizId.toString();
-            if (!quizAverages[quizId]) {
-                quizAverages[quizId] = [];
-                quizParticipation[quizId] = 0;
-            }
-            quizAverages[quizId].push(result.percentage);
-            quizParticipation[quizId]++;
-        });
 
         // Calculate overall class average
         const allScores = allResults.map(r => r.percentage);
@@ -1407,7 +1395,271 @@ app.get('/teacher/student-analytics/:studentId', isAuthenticated, async (req, re
     }
 });
 
-// ==================== DATA CLEANUP FUNCTION ====================
+// ==================== AI EXPLANATIONS ROUTES ====================
+
+// Enhanced explanation retrieval route
+app.post('/api/explanation/get', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'student') {
+            return res.status(403).json({ success: false, message: 'Access denied. Students only.' });
+        }
+
+        const { quizId, questionIndex, wrongAnswer } = req.body;
+
+        console.log('🔍 Getting ENHANCED explanation for:', {
+            quizId: quizId,
+            questionIndex: questionIndex,
+            wrongAnswer: wrongAnswer
+        });
+
+        // Get the quiz with enhanced explanations
+        const quiz = await quizCollection.findById(quizId).lean();
+        if (!quiz) {
+            return res.status(404).json({ success: false, message: 'Quiz not found.' });
+        }
+
+        const question = quiz.questions[questionIndex];
+        if (!question) {
+            return res.status(404).json({ success: false, message: 'Question not found.' });
+        }
+
+        let explanation = null;
+        let explanationType = 'detailed';
+
+        // Get the detailed explanation for the wrong answer
+        if (question.explanations && question.explanations[wrongAnswer] && question.explanations[wrongAnswer].trim() !== '') {
+            explanation = question.explanations[wrongAnswer];
+            
+            // Also include context about the correct answer
+            if (question.correctAnswerExplanation && question.correctAnswerExplanation.trim() !== '') {
+                explanation += `\n\n💡 **Why ${question.correct_answer} is correct:** ${question.correctAnswerExplanation}`;
+            }
+            
+            console.log('✅ Retrieved detailed explanation for wrong answer:', wrongAnswer);
+        } else {
+            // Fallback explanation if detailed ones aren't available
+            explanationType = 'basic';
+            if (question.correctAnswerExplanation && question.correctAnswerExplanation.trim() !== '') {
+                explanation = `The correct answer is ${question.correct_answer}) ${question.options[question.correct_answer]}.\n\n${question.correctAnswerExplanation}`;
+            } else {
+                explanation = `The correct answer is ${question.correct_answer}) ${question.options[question.correct_answer]}. Please review the lecture material for detailed understanding.`;
+            }
+            
+            console.log('⚠️ Using fallback explanation - detailed explanation not found');
+        }
+
+        console.log('✅ Retrieved explanation:', {
+            type: explanationType,
+            length: explanation.length,
+            preview: explanation.substring(0, 100) + '...'
+        });
+
+        res.json({
+            success: true,
+            explanation: explanation,
+            cached: true,
+            source: 'pre-generated-enhanced',
+            explanationType: explanationType,
+            questionDetails: {
+                correctAnswer: question.correct_answer,
+                correctOption: question.options[question.correct_answer],
+                wrongOption: question.options[wrongAnswer],
+                hasDetailedExplanations: !!(question.explanations && Object.keys(question.explanations).length > 0),
+                hasCorrectExplanation: !!(question.correctAnswerExplanation && question.correctAnswerExplanation.trim() !== '')
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error retrieving enhanced explanation:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to retrieve explanation: ' + error.message 
+        });
+    }
+});
+
+// Check explanation status for a quiz
+app.get('/api/quiz/:quizId/explanations-status', isAuthenticated, async (req, res) => {
+    try {
+        const quizId = req.params.quizId;
+        const quiz = await quizCollection.findById(quizId).select('questions generatedDate').lean();
+        
+        if (!quiz) {
+            return res.status(404).json({ success: false, message: 'Quiz not found.' });
+        }
+
+        // Check if questions have enhanced explanations
+        const questionsWithExplanations = quiz.questions.filter(q => 
+            q.explanations && Object.keys(q.explanations).some(key => q.explanations[key] && q.explanations[key].trim() !== '')
+        ).length;
+
+        const questionsWithCorrectExplanations = quiz.questions.filter(q => 
+            q.correctAnswerExplanation && q.correctAnswerExplanation.trim() !== ''
+        ).length;
+
+        const hasEnhancedExplanations = questionsWithExplanations > 0;
+
+        console.log('📊 Explanation status check:', {
+            quizId: quizId,
+            totalQuestions: quiz.questions.length,
+            questionsWithExplanations: questionsWithExplanations,
+            questionsWithCorrectExplanations: questionsWithCorrectExplanations,
+            hasEnhancedExplanations: hasEnhancedExplanations
+        });
+
+        res.json({
+            success: true,
+            hasEnhancedExplanations: hasEnhancedExplanations,
+            explanationStats: {
+                totalQuestions: quiz.questions.length,
+                questionsWithExplanations: questionsWithExplanations,
+                questionsWithCorrectExplanations: questionsWithCorrectExplanations,
+                enhancementLevel: questionsWithExplanations === quiz.questions.length ? 'full' : 
+                                questionsWithExplanations > 0 ? 'partial' : 'none'
+            },
+            generatedDate: quiz.generatedDate
+        });
+
+    } catch (error) {
+        console.error('❌ Error checking explanation status:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to check explanation status: ' + error.message 
+        });
+    }
+});
+
+// ==================== DEBUG ROUTES (Development Only) ====================
+
+// Debug route to check quiz explanations structure
+app.get('/debug/quiz/:quizId', isAuthenticated, async (req, res) => {
+    try {
+        const quizId = req.params.quizId;
+        console.log('🔍 DEBUG: Checking quiz explanations for:', quizId);
+        
+        const quiz = await quizCollection.findById(quizId).lean();
+        
+        if (!quiz) {
+            return res.json({ error: 'Quiz not found' });
+        }
+
+        // Check the structure of the first question
+        const firstQuestion = quiz.questions[0];
+        
+        const debugInfo = {
+            quizId: quiz._id,
+            lectureTitle: quiz.lectureTitle,
+            totalQuestions: quiz.questions.length,
+            generatedDate: quiz.generatedDate,
+            
+            // Check first question structure
+            firstQuestionStructure: {
+                hasQuestion: !!firstQuestion.question,
+                hasOptions: !!firstQuestion.options,
+                hasCorrectAnswer: !!firstQuestion.correct_answer,
+                hasExplanations: !!firstQuestion.explanations,
+                hasCorrectExplanation: !!firstQuestion.correctAnswerExplanation,
+                
+                // Show actual explanation data
+                explanationsData: firstQuestion.explanations || 'NOT FOUND',
+                correctExplanationData: firstQuestion.correctAnswerExplanation || 'NOT FOUND'
+            },
+            
+            // Check all questions for explanations
+            questionsWithExplanations: quiz.questions.filter(q => 
+                q.explanations && Object.keys(q.explanations).length > 0
+            ).length,
+            
+            questionsWithCorrectExplanations: quiz.questions.filter(q => 
+                q.correctAnswerExplanation && q.correctAnswerExplanation.trim() !== ''
+            ).length,
+            
+            // Sample of explanations from first question
+            sampleExplanations: firstQuestion.explanations ? 
+                Object.entries(firstQuestion.explanations).map(([key, value]) => ({
+                    option: key,
+                    explanation: value ? value.substring(0, 100) + '...' : 'EMPTY'
+                })) : 'NO EXPLANATIONS FIELD'
+        };
+
+        console.log('📊 DEBUG Results:', debugInfo);
+        
+        res.json({
+            success: true,
+            debugInfo: debugInfo,
+            recommendation: debugInfo.questionsWithExplanations === 0 ? 
+                'ISSUE FOUND: No questions have explanations. You need to generate a NEW quiz with the enhanced system.' :
+                'Explanations found! Check the explanation retrieval route.'
+        });
+
+    } catch (error) {
+        console.error('❌ Debug error:', error);
+        res.json({ error: error.message });
+    }
+});
+
+// Debug route to test a specific question's explanations
+app.get('/debug/quiz/:quizId/question/:questionIndex', isAuthenticated, async (req, res) => {
+    try {
+        const { quizId, questionIndex } = req.params;
+        
+        const quiz = await quizCollection.findById(quizId).lean();
+        if (!quiz) {
+            return res.json({ error: 'Quiz not found' });
+        }
+
+        const question = quiz.questions[parseInt(questionIndex)];
+        if (!question) {
+            return res.json({ error: 'Question not found' });
+        }
+
+        res.json({
+            success: true,
+            questionDebug: {
+                questionText: question.question,
+                options: question.options,
+                correctAnswer: question.correct_answer,
+                hasExplanations: !!question.explanations,
+                explanations: question.explanations || 'NOT FOUND',
+                hasCorrectExplanation: !!question.correctAnswerExplanation,
+                correctExplanation: question.correctAnswerExplanation || 'NOT FOUND',
+                
+                // Test each wrong answer explanation
+                explanationTests: ['A', 'B', 'C', 'D'].map(option => ({
+                    option: option,
+                    isCorrectAnswer: option === question.correct_answer,
+                    hasExplanation: !!(question.explanations && question.explanations[option]),
+                    explanationText: question.explanations && question.explanations[option] ? 
+                        question.explanations[option] : 'NO EXPLANATION'
+                }))
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Question debug error:', error);
+        res.json({ error: error.message });
+    }
+});
+
+// ==================== QUIZ RESULTS PAGE ROUTE ====================
+
+app.get('/quiz-results', isAuthenticated, (req, res) => {
+    try {
+        if (req.session.userType !== 'student') {
+            return res.status(403).redirect('/login?message=Access denied. Only students can view quiz results.');
+        }
+
+        res.render('quizResults', {
+            userName: req.session.userName || 'Student'
+        });
+
+    } catch (error) {
+        console.error('❌ Error rendering quiz results page:', error);
+        res.status(500).send('Failed to load quiz results page.');
+    }
+});
+
+// ==================== DATA CLEANUP FUNCTIONS ====================
 
 // Function to clean up old quiz results (older than 15 days)
 async function cleanupOldQuizResults() {
@@ -1425,8 +1677,62 @@ async function cleanupOldQuizResults() {
     }
 }
 
-// Schedule cleanup to run daily at midnight
-setInterval(cleanupOldQuizResults, 24 * 60 * 60 * 1000); // Every 24 hours
+// Function to clean up old unused explanations (run monthly)
+async function cleanupOldExplanations() {
+    try {
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        
+        // Delete explanations that haven't been used in 30 days and have usage count of 1
+        const deleteResult = await explanationCacheCollection.deleteMany({
+            generatedDate: { $lt: thirtyDaysAgo },
+            usageCount: 1
+        });
+        
+        console.log(`🗑️ Cleaned up ${deleteResult.deletedCount} unused explanations`);
+        
+    } catch (error) {
+        console.error('❌ Error during explanation cleanup:', error);
+    }
+}
 
-// Run cleanup on server start
-cleanupOldQuizResults();
+// ==================== ERROR HANDLING ====================
+
+app.use((error, req, res, next) => {
+    if (error instanceof multer.MulterError) {
+        if (error.code === 'LIMIT_FILE_SIZE') {
+            const redirectUrl = req.session.userType === 'teacher' ? '/homeTeacher' : '/login';
+            const message = encodeURIComponent('File too large. Maximum size is 100MB.');
+            return res.status(400).redirect(`${redirectUrl}?uploadError=true&message=${message}`);
+        }
+        const redirectUrl = req.session.userType === 'teacher' ? '/homeTeacher' : '/login';
+        const message = encodeURIComponent('File upload error: ' + error.message);
+        return res.status(400).redirect(`${redirectUrl}?uploadError=true&message=${message}`);
+    }
+
+    if (req.fileError) {
+        const redirectUrl = req.session.userType === 'teacher' ? '/homeTeacher' : '/login';
+        const message = encodeURIComponent(req.fileError.message);
+        return res.status(400).redirect(`${redirectUrl}?uploadError=true&message=${message}`);
+    }
+
+    next(error)
+})
+
+// ==================== SERVER STARTUP ====================
+
+app.listen(PORT, () => {
+    console.log(`🚀 QuizAI Server started on port ${PORT}`)
+    console.log(`📌 Open http://localhost:${PORT} in your browser`)
+
+    // Run cleanup functions on server start
+    cleanupTempFiles()
+    cleanupOldQuizResults()
+
+    console.log('✅ Server initialization complete!')
+    console.log('📚 Ready to process lecture uploads and generate enhanced quizzes!')
+    console.log(`🔑 Using Gemini model: gemini-1.5-flash (Free tier)`)
+})
+
+// Schedule cleanup functions to run periodically
+setInterval(cleanupOldQuizResults, 24 * 60 * 60 * 1000); // Every 24 hours
+setInterval(cleanupOldExplanations, 15 * 24 * 60 * 60 * 1000); // Every 15 days
