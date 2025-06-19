@@ -46,81 +46,42 @@ const lectureSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    teacherId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'TeacherCollection',
-        required: false // Made optional for now, you can make it required later
-    },
-    filename: {
+    filePath: { // The path where the file is stored on your server
         type: String,
         required: true
     },
-    originalName: {
-        type: String,
-        required: true
-    },
-    filePath: {
-        type: String,
-        required: true
-    },
-    extractedText: {
-        type: String,
-        required: true
-    },
+    originalFileName: String,
+    mimeType: String,
+    fileSize: Number,
     uploadDate: {
         type: Date,
         default: Date.now
     },
-    fileSize: {
-        type: Number,
-        required: true
-    },
-    mimeType: {
-        type: String,
-        required: true
-    },
-    quizGenerated: {
+    quizGenerated: { // A flag to indicate if a quiz has been generated for this lecture
         type: Boolean,
         default: false
     },
-    quizzes: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'QuizCollection'
-    }]
-})
-
-// For Quizzes (for future use)
-const quizSchema = new mongoose.Schema({
-    lectureId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'LectureCollection',
-        required: true
-    },
-    questions: [{
-        question: String,
-        options: [String],
-        correctAnswer: Number,
-        explanation: String
-    }],
-    createdDate: {
-        type: Date,
-        default: Date.now
-    },
-    difficulty: {
+    professorName: { // To link the lecture to the professor who uploaded it
         type: String,
-        enum: ['easy', 'medium', 'hard'],
-        default: 'medium'
+        required: true
     }
-})
+});
 
-const studentCollection = new mongoose.model("StudentCollection", studentSchema) //Collection for students
-const teacherCollection = new mongoose.model("TeacherCollection", teacherSchema) // collection for teachers
-const lectureCollection = new mongoose.model("LectureCollection", lectureSchema) // collection for lectures
-const quizCollection = new mongoose.model("QuizCollection", quizSchema) // collection for quizzes
+
+const studentCollection = new mongoose.model("StudentCollection",studentSchema ) //Collection for students
+
+const teacherCollection = new mongoose.model("TeacherCollection",teacherSchema) // collection for teachers
+
+const lectureCollection = new mongoose.model("LectureCollection", lectureSchema); // Collection for lectures
+
 
 module.exports = {
     studentCollection,
     teacherCollection,
     lectureCollection,
     quizCollection
+
+
+    //end
+
 }

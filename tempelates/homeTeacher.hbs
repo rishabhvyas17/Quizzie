@@ -455,6 +455,7 @@
             {{!-- The form action will be handled by your backend Express route --}}
             <form action="/upload_lecture" method="POST" enctype="multipart/form-data" class="upload-input-group">
                 <input type="text" name="title" placeholder="Lecture Title (e.g., 'Introduction to Algorithms')" required>
+                <input type="hidden" name="userName" value="{{{userName}}}"> <!-- To pass the userName -->
                 <input type="file" name="lectureFile" accept=".pdf,.ppt,.pptx" required>
                 <button type="submit" class="btn btn-success">Upload Lecture & Prepare for Quiz</button>
             </form>
@@ -476,13 +477,13 @@
                             </p>
                             <div class="lecture-actions">
                                 {{!-- Assuming a /lectures/:id/view route for viewing the actual lecture content --}}
-                                <a href="/lectures/{{this.id}}/view" target="_blank" class="action-button view-btn">View Lecture</a>
+                                <a href="/lectures/{{this._id}}/view" target="_blank" class="action-button view-btn">View Lecture</a>
                                 {{#unless this.quizGenerated}} {{!-- Only show if quiz not generated --}}
-                                    <button class="action-button generate-btn" onclick="generateQuiz('{{this.id}}')">Generate Quiz</button>
+                                    <button class="action-button generate-btn" onclick="generateQuiz('{{this._id}}')">Generate Quiz</button>
                                 {{else}}
-                                    <a href="/lectures/{{this.id}}/quizzes" class="action-button">View Quizzes</a> {{!-- Link to quizzes associated with this lecture --}}
+                                    <a href="/lectures/{{this._id}}/quizzes" class="action-button">View Quizzes</a> {{!-- Link to quizzes associated with this lecture --}}
                                 {{/unless}}
-                                <button class="action-button delete-btn" onclick="deleteLecture('{{this.id}}')">Delete</button>
+                                <button class="action-button delete-btn" onclick="deleteLecture('{{this._id}}')">Delete</button>
                             </div>
                         </div>
                     {{/each}}
@@ -632,7 +633,14 @@
                     card.style.transform = 'scale(1)';
                 }, 200);
             });
+
+
+            // Every 30 seconds
         }, 30000); // Every 30 seconds
+
+
+
+        
     </script>
 </body>
 </html>
