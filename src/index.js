@@ -1020,3 +1020,413 @@ app.listen(PORT, () => {
     console.log('📚 Ready to process lecture uploads and generate quizzes!')
     console.log(`🔑 Using Gemini model: gemini-1.5-flash (Free tier)`)
 })
+
+// Add these routes to your index.js file - Analytics & Performance Features
+
+// ==================== ANALYTICS ROUTES ====================
+
+// Student Performance Analytics
+app.get('/api/student/performance-data', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'student') {
+            return res.status(403).json({ success: false, message: 'Access denied. Students only.' });
+        }
+
+        const studentId = req.session.userId;
+        const fifteenDaysAgo = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000);
+
+        // Get student's quiz results from last 15 days
+        const studentResults = await quizResultCollection
+            .find({ 
+                studentId: studentId,
+                submissionDate: { $gte: fifteenDaysAgo }
+            })
+            .sort({ submissionDate: -1 })
+            .populate('quizId', 'lectureTitle')
+            .lean();
+
+        // Get all quiz results for class averages (last 15 days)
+        const allResults = await quizResultCollection
+            .find({ submissionDate: { $gte: fifteenDaysAgo } })
+            .lean();
+
+        // Calculate student statistics
+        const totalQuizzes = studentResults.length;
+        const averageScore = totalQuizzes > 0 
+            ? (studentResults.reduce((sum, result) => sum + result.percentage, 0) / totalQuizzes).toFixed(1)
+            : 0;
+
+        // Calculate class averages per quiz
+        const quizAverages = {};
+        const quizParticipation = {};
+        
+        allResults.forEach(result => {
+            const quizId = result.quizId.toString();
+            if (!quizAverages[quizId]) {
+                quizAverages[quizId] = [];
+                quizParticipation[quizId] = 0;
+            }
+            quizAverages[quizId].push(result.percentage);
+            quizParticipation[quizId]++;
+        });
+
+        // Calculate overall class average
+        const allScores = allResults.map(r => r.percentage);
+        const classAverage = allScores.length > 0 
+            ? (allScores.reduce((sum, score) => sum + score, 0) / allScores.length).toFixed(1)
+            : 0;
+
+        // Calculate performance trend (last 5 vs previous 5)
+        let trendIndicator = '→';
+        if (studentResults.length >= 6) {
+            const recent5 = studentResults.slice(0, 5).reduce((sum, r) => sum + r.percentage, 0) / 5;
+            const previous5 = studentResults.slice(5, 10).reduce((sum, r) => sum + r.percentage, 0) / 5;
+            
+            if (recent5 > previous5 + 5) trendIndicator = '↗️';
+            else if (recent5 < previous5 - 5) trendIndicator = '↘️';
+        }
+
+        // Get top 3 performers (by average score in last 15 days)
+        const studentPerformances = {};
+        allResults.forEach(result => {
+            if (!studentPerformances[result.studentId]) {
+                studentPerformances[result.studentId] = {
+                    studentId: result.studentId,
+                    studentName: result.studentName,
+                    scores: [],
+                    totalQuizzes: 0
+                };
+            }
+            studentPerformances[result.studentId].scores.push(result.percentage);
+            studentPerformances[result.studentId].totalQuizzes++;
+        });
+
+        const rankedStudents = Object.values(studentPerformances)
+            .map(student => ({
+                ...student,
+                averageScore: student.scores.reduce((sum, score) => sum + score, 0) / student.scores.length
+            }))
+            .sort((a, b) => b.averageScore - a.averageScore);
+
+        const top3Performers = rankedStudents.slice(0, 3).map((student, index) => ({
+            rank: index + 1,
+            name: student.studentName,
+            averageScore: student.averageScore.toFixed(1),
+            totalQuizzes: student.totalQuizzes
+        }));
+
+        // Find current student's rank
+        const currentStudentRank = rankedStudents.findIndex(s => s.studentId.toString() === studentId.toString()) + 1;
+
+        // Prepare trend data for charts
+        const trendData = studentResults.reverse().map(result => ({
+            date: result.submissionDate.toLocaleDateString(),
+            score: result.percentage,
+            quizTitle: result.quizId?.lectureTitle || 'Quiz',
+            timeTaken: result.timeTakenSeconds
+        }));
+
+        res.json({
+            success: true,
+            data: {
+                studentStats: {
+                    totalQuizzes,
+                    averageScore: parseFloat(averageScore),
+                    classAverage: parseFloat(classAverage),
+                    trendIndicator,
+                    currentRank: currentStudentRank,
+                    totalStudents: rankedStudents.length
+                },
+                recentResults: studentResults.slice(0, 10).map(result => ({
+                    quizTitle: result.quizId?.lectureTitle || 'Quiz',
+                    score: result.percentage,
+                    submissionDate: result.submissionDate.toLocaleDateString(),
+                    timeTaken: Math.floor(result.timeTakenSeconds / 60) + 'm ' + (result.timeTakenSeconds % 60) + 's'
+                })),
+                trendData,
+                top3Performers,
+                performanceBreakdown: {
+                    excellent: studentResults.filter(r => r.percentage >= 90).length,
+                    good: studentResults.filter(r => r.percentage >= 70 && r.percentage < 90).length,
+                    average: studentResults.filter(r => r.percentage >= 50 && r.percentage < 70).length,
+                    needsImprovement: studentResults.filter(r => r.percentage < 50).length
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error fetching student performance:', error);
+        res.status(500).json({ success: false, message: 'Failed to load performance data.' });
+    }
+});
+
+// Teacher Class Analytics
+app.get('/api/teacher/class-analytics', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'teacher') {
+            return res.status(403).json({ success: false, message: 'Access denied. Teachers only.' });
+        }
+
+        const teacherId = req.session.userId;
+        const fifteenDaysAgo = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000);
+
+        // Get teacher's lectures
+        const teacherLectures = await lectureCollection
+            .find({ professorId: teacherId })
+            .select('_id title')
+            .lean();
+
+        const lectureIds = teacherLectures.map(l => l._id);
+
+        // Get quizzes for teacher's lectures
+        const teacherQuizzes = await quizCollection
+            .find({ lectureId: { $in: lectureIds } })
+            .lean();
+
+        const quizIds = teacherQuizzes.map(q => q._id);
+
+        // Get all quiz results for teacher's quizzes (last 15 days)
+        const allResults = await quizResultCollection
+            .find({ 
+                quizId: { $in: quizIds },
+                submissionDate: { $gte: fifteenDaysAgo }
+            })
+            .sort({ submissionDate: -1 })
+            .lean();
+
+        // Calculate overall class statistics
+        const totalStudents = [...new Set(allResults.map(r => r.studentId.toString()))].length;
+        const totalQuizzesTaken = allResults.length;
+        const classAverage = allResults.length > 0 
+            ? (allResults.reduce((sum, r) => sum + r.percentage, 0) / allResults.length).toFixed(1)
+            : 0;
+
+        // Get student rankings
+        const studentPerformances = {};
+        allResults.forEach(result => {
+            if (!studentPerformances[result.studentId]) {
+                studentPerformances[result.studentId] = {
+                    studentId: result.studentId,
+                    studentName: result.studentName,
+                    scores: [],
+                    totalQuizzes: 0,
+                    totalTime: 0
+                };
+            }
+            studentPerformances[result.studentId].scores.push(result.percentage);
+            studentPerformances[result.studentId].totalQuizzes++;
+            studentPerformances[result.studentId].totalTime += result.timeTakenSeconds;
+        });
+
+        const rankedStudents = Object.values(studentPerformances)
+            .map(student => ({
+                ...student,
+                averageScore: student.scores.reduce((sum, score) => sum + score, 0) / student.scores.length,
+                averageTime: Math.floor(student.totalTime / student.totalQuizzes / 60) // in minutes
+            }))
+            .sort((a, b) => b.averageScore - a.averageScore)
+            .map((student, index) => ({
+                rank: index + 1,
+                studentId: student.studentId,
+                studentName: student.studentName,
+                averageScore: student.averageScore.toFixed(1),
+                totalQuizzes: student.totalQuizzes,
+                averageTime: student.averageTime + 'm'
+            }));
+
+        // Quiz-wise performance
+        const quizPerformance = {};
+        teacherQuizzes.forEach(quiz => {
+            const quizResults = allResults.filter(r => r.quizId.toString() === quiz._id.toString());
+            if (quizResults.length > 0) {
+                const avgScore = quizResults.reduce((sum, r) => sum + r.percentage, 0) / quizResults.length;
+                quizPerformance[quiz._id] = {
+                    quizTitle: quiz.lectureTitle,
+                    participants: quizResults.length,
+                    averageScore: avgScore.toFixed(1),
+                    highestScore: Math.max(...quizResults.map(r => r.percentage)),
+                    lowestScore: Math.min(...quizResults.map(r => r.percentage))
+                };
+            }
+        });
+
+        res.json({
+            success: true,
+            data: {
+                overallStats: {
+                    totalStudents,
+                    totalQuizzesTaken,
+                    classAverage: parseFloat(classAverage),
+                    activeQuizzes: teacherQuizzes.length
+                },
+                rankedStudents,
+                quizPerformance: Object.values(quizPerformance),
+                recentActivity: allResults.slice(0, 20).map(result => ({
+                    studentName: result.studentName,
+                    quizTitle: teacherQuizzes.find(q => q._id.toString() === result.quizId.toString())?.lectureTitle || 'Quiz',
+                    score: result.percentage,
+                    submissionDate: result.submissionDate.toLocaleDateString(),
+                    timeTaken: Math.floor(result.timeTakenSeconds / 60) + 'm'
+                }))
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error fetching teacher analytics:', error);
+        res.status(500).json({ success: false, message: 'Failed to load analytics data.' });
+    }
+});
+
+// Individual Student Analytics for Teachers
+app.get('/api/teacher/student-analytics/:studentId', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'teacher') {
+            return res.status(403).json({ success: false, message: 'Access denied. Teachers only.' });
+        }
+
+        const studentId = req.params.studentId;
+        const fifteenDaysAgo = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000);
+
+        // Get student info
+        const student = await studentCollection.findById(studentId).select('name enrollment').lean();
+        if (!student) {
+            return res.status(404).json({ success: false, message: 'Student not found.' });
+        }
+
+        // Get student's last 10 quiz results
+        const studentResults = await quizResultCollection
+            .find({ 
+                studentId: studentId,
+                submissionDate: { $gte: fifteenDaysAgo }
+            })
+            .sort({ submissionDate: -1 })
+            .limit(10)
+            .populate('quizId', 'lectureTitle totalQuestions')
+            .lean();
+
+        // Get all results for class comparison
+        const allResults = await quizResultCollection
+            .find({ submissionDate: { $gte: fifteenDaysAgo } })
+            .lean();
+
+        // Calculate class averages
+        const classAverage = allResults.length > 0 
+            ? (allResults.reduce((sum, r) => sum + r.percentage, 0) / allResults.length).toFixed(1)
+            : 0;
+
+        // Calculate student's performance metrics
+        const totalQuizzes = studentResults.length;
+        const averageScore = totalQuizzes > 0 
+            ? (studentResults.reduce((sum, result) => sum + result.percentage, 0) / totalQuizzes).toFixed(1)
+            : 0;
+
+        const averageTime = totalQuizzes > 0 
+            ? Math.floor(studentResults.reduce((sum, result) => sum + result.timeTakenSeconds, 0) / totalQuizzes / 60)
+            : 0;
+
+        // Calculate improvement trend
+        let trendIndicator = '→';
+        if (studentResults.length >= 6) {
+            const recent3 = studentResults.slice(0, 3).reduce((sum, r) => sum + r.percentage, 0) / 3;
+            const previous3 = studentResults.slice(3, 6).reduce((sum, r) => sum + r.percentage, 0) / 3;
+            
+            if (recent3 > previous3 + 5) trendIndicator = '↗️';
+            else if (recent3 < previous3 - 5) trendIndicator = '↘️';
+        }
+
+        // Detailed quiz breakdown
+        const detailedResults = studentResults.map(result => ({
+            quizTitle: result.quizId?.lectureTitle || 'Quiz',
+            score: result.score,
+            totalQuestions: result.totalQuestions,
+            percentage: result.percentage,
+            timeTaken: result.timeTakenSeconds,
+            submissionDate: result.submissionDate,
+            answers: result.answers
+        }));
+
+        res.json({
+            success: true,
+            data: {
+                studentInfo: {
+                    name: student.name,
+                    enrollment: student.enrollment,
+                    studentId: studentId
+                },
+                performanceMetrics: {
+                    totalQuizzes,
+                    averageScore: parseFloat(averageScore),
+                    classAverage: parseFloat(classAverage),
+                    averageTime: averageTime + 'm',
+                    trendIndicator
+                },
+                detailedResults,
+                chartData: {
+                    scoresTrend: studentResults.reverse().map(r => ({
+                        date: r.submissionDate.toLocaleDateString(),
+                        score: r.percentage,
+                        classAvg: parseFloat(classAverage)
+                    })),
+                    timeAnalysis: studentResults.map(r => ({
+                        quiz: r.quizId?.lectureTitle || 'Quiz',
+                        timeMinutes: Math.floor(r.timeTakenSeconds / 60)
+                    }))
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error fetching student analytics:', error);
+        res.status(500).json({ success: false, message: 'Failed to load student analytics.' });
+    }
+});
+
+// Student Analytics Page for Teachers
+app.get('/teacher/student-analytics/:studentId', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'teacher') {
+            return res.status(403).redirect('/login?message=Access denied. Teachers only.');
+        }
+
+        const studentId = req.params.studentId;
+        const student = await studentCollection.findById(studentId).select('name enrollment').lean();
+        
+        if (!student) {
+            return res.status(404).send('Student not found.');
+        }
+
+        res.render('studentAnalytics', {
+            student: student,
+            studentId: studentId,
+            userName: req.session.userName
+        });
+
+    } catch (error) {
+        console.error('❌ Error rendering student analytics page:', error);
+        res.status(500).send('Failed to load student analytics page.');
+    }
+});
+
+// ==================== DATA CLEANUP FUNCTION ====================
+
+// Function to clean up old quiz results (older than 15 days)
+async function cleanupOldQuizResults() {
+    try {
+        const fifteenDaysAgo = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000);
+        
+        const deleteResult = await quizResultCollection.deleteMany({
+            submissionDate: { $lt: fifteenDaysAgo }
+        });
+        
+        console.log(`🗑️ Cleaned up ${deleteResult.deletedCount} old quiz results (older than 15 days)`);
+        
+    } catch (error) {
+        console.error('❌ Error during cleanup:', error);
+    }
+}
+
+// Schedule cleanup to run daily at midnight
+setInterval(cleanupOldQuizResults, 24 * 60 * 60 * 1000); // Every 24 hours
+
+// Run cleanup on server start
+cleanupOldQuizResults();
