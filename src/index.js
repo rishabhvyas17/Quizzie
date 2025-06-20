@@ -59,6 +59,14 @@ const isAuthenticated = (req, res, next) => {
     }
 };
 
+const requireAuth = (req, res, next) => {
+    if (req.session && req.session.userId) {
+        return next();
+    } else {
+        return res.status(401).json({ success: false, message: 'Authentication required' });
+    }
+};
+
 // ==================== FILE UPLOAD CONFIGURATION ====================
 
 // Configure multer for temporary file storage
@@ -1149,120 +1157,345 @@ app.get('/api/student/performance-data', isAuthenticated, async (req, res) => {
 });
 
 // Teacher Class Analytics
-app.get('/api/teacher/class-analytics', isAuthenticated, async (req, res) => {
-    try {
-        if (req.session.userType !== 'teacher') {
-            return res.status(403).json({ success: false, message: 'Access denied. Teachers only.' });
-        }
 
-        const teacherId = req.session.userId;
-        const fifteenDaysAgo = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000);
 
-        // Get teacher's lectures
-        const teacherLectures = await lectureCollection
-            .find({ professorId: teacherId })
-            .select('_id title')
-            .lean();
+// Helper functions for safe calculations
+function safeNumber(value, defaultValue = 0) {
+  const num = Number(value);
+  return isNaN(num) || !isFinite(num) ? defaultValue : num;
+}
 
-        const lectureIds = teacherLectures.map(l => l._id);
+function safeToFixed(value, decimals = 2) {
+  const num = safeNumber(value, 0);
+  return num.toFixed(decimals);
+}
 
-        // Get quizzes for teacher's lectures
-        const teacherQuizzes = await quizCollection
-            .find({ lectureId: { $in: lectureIds } })
-            .lean();
+function safePercentage(part, total) {
+  const p = safeNumber(part, 0);
+  const t = safeNumber(total, 1); // Avoid division by zero
+  return t === 0 ? 0 : (p / t) * 100;
+}
 
-        const quizIds = teacherQuizzes.map(q => q._id);
+// 🎯 FIXED ANALYTICS ROUTE - USING YOUR COLLECTION NAMES
+app.get('/api/teacher/class-analytics', requireAuth, async (req, res) => {
+  try {
+    console.log('📊 Starting enhanced analytics calculation...');
+    const teacherId = req.session.userId;
 
-        // Get all quiz results for teacher's quizzes (last 15 days)
-        const allResults = await quizResultCollection
-            .find({ 
-                quizId: { $in: quizIds },
-                submissionDate: { $gte: fifteenDaysAgo }
-            })
-            .sort({ submissionDate: -1 })
-            .lean();
+    // Get all teacher's lectures (using your collection names)
+    const lectures = await lectureCollection.find({ professorId: teacherId }).lean();
+    console.log(`Found ${lectures.length} lectures`);
 
-        // Calculate overall class statistics
-        const totalStudents = [...new Set(allResults.map(r => r.studentId.toString()))].length;
-        const totalQuizzesTaken = allResults.length;
-        const classAverage = allResults.length > 0 
-            ? (allResults.reduce((sum, r) => sum + r.percentage, 0) / allResults.length).toFixed(1)
-            : 0;
-
-        // Get student rankings
-        const studentPerformances = {};
-        allResults.forEach(result => {
-            if (!studentPerformances[result.studentId]) {
-                studentPerformances[result.studentId] = {
-                    studentId: result.studentId,
-                    studentName: result.studentName,
-                    scores: [],
-                    totalQuizzes: 0,
-                    totalTime: 0
-                };
-            }
-            studentPerformances[result.studentId].scores.push(result.percentage);
-            studentPerformances[result.studentId].totalQuizzes++;
-            studentPerformances[result.studentId].totalTime += result.timeTakenSeconds;
-        });
-
-        const rankedStudents = Object.values(studentPerformances)
-            .map(student => ({
-                ...student,
-                averageScore: student.scores.reduce((sum, score) => sum + score, 0) / student.scores.length,
-                averageTime: Math.floor(student.totalTime / student.totalQuizzes / 60) // in minutes
-            }))
-            .sort((a, b) => b.averageScore - a.averageScore)
-            .map((student, index) => ({
-                rank: index + 1,
-                studentId: student.studentId,
-                studentName: student.studentName,
-                averageScore: student.averageScore.toFixed(1),
-                totalQuizzes: student.totalQuizzes,
-                averageTime: student.averageTime + 'm'
-            }));
-
-        // Quiz-wise performance
-        const quizPerformance = {};
-        teacherQuizzes.forEach(quiz => {
-            const quizResults = allResults.filter(r => r.quizId.toString() === quiz._id.toString());
-            if (quizResults.length > 0) {
-                const avgScore = quizResults.reduce((sum, r) => sum + r.percentage, 0) / quizResults.length;
-                quizPerformance[quiz._id] = {
-                    quizTitle: quiz.lectureTitle,
-                    participants: quizResults.length,
-                    averageScore: avgScore.toFixed(1),
-                    highestScore: Math.max(...quizResults.map(r => r.percentage)),
-                    lowestScore: Math.min(...quizResults.map(r => r.percentage))
-                };
-            }
-        });
-
-        res.json({
-            success: true,
-            data: {
-                overallStats: {
-                    totalStudents,
-                    totalQuizzesTaken,
-                    classAverage: parseFloat(classAverage),
-                    activeQuizzes: teacherQuizzes.length
-                },
-                rankedStudents,
-                quizPerformance: Object.values(quizPerformance),
-                recentActivity: allResults.slice(0, 20).map(result => ({
-                    studentName: result.studentName,
-                    quizTitle: teacherQuizzes.find(q => q._id.toString() === result.quizId.toString())?.lectureTitle || 'Quiz',
-                    score: result.percentage,
-                    submissionDate: result.submissionDate.toLocaleDateString(),
-                    timeTaken: Math.floor(result.timeTakenSeconds / 60) + 'm'
-                }))
-            }
-        });
-
-    } catch (error) {
-        console.error('❌ Error fetching teacher analytics:', error);
-        res.status(500).json({ success: false, message: 'Failed to load analytics data.' });
+    if (lectures.length === 0) {
+      return res.json({
+        success: true,
+        data: getEmptyAnalyticsData()
+      });
     }
+
+    const lectureIds = lectures.map(l => l._id);
+    
+    // Get all quizzes for these lectures (using your collection names)
+    const quizzes = await quizCollection.find({ lectureId: { $in: lectureIds } }).lean();
+    console.log(`Found ${quizzes.length} quizzes`);
+
+    // Get all quiz results (using your collection names)
+    const results = await quizResultCollection.find({ 
+      quizId: { $in: quizzes.map(q => q._id) } 
+    }).lean();
+    console.log(`Found ${results.length} quiz results`);
+
+    // Create quiz lookup map
+    const quizMap = {};
+    quizzes.forEach(quiz => {
+      quizMap[quiz._id.toString()] = quiz;
+    });
+
+    // Create lecture lookup map
+    const lectureMap = {};
+    lectures.forEach(lecture => {
+      lectureMap[lecture._id.toString()] = lecture;
+    });
+
+    // 📈 CALCULATE BASIC STATS
+    const totalQuizzes = quizzes.length;
+    const totalResults = results.length;
+    
+    // Get unique students who took quizzes
+    const uniqueStudents = [...new Set(results.map(r => r.studentId.toString()))];
+    const totalStudents = uniqueStudents.length;
+
+    // Calculate average score (safe)
+    let totalScore = 0;
+    let validScores = 0;
+    
+    results.forEach(result => {
+      const score = safeNumber(result.percentage);
+      if (score >= 0 && score <= 100) {
+        totalScore += score;
+        validScores++;
+      }
+    });
+
+    const averageScore = validScores > 0 ? totalScore / validScores : 0;
+    console.log(`📊 Basic stats: ${totalStudents} students, avg score: ${safeToFixed(averageScore)}%`);
+
+    // 🎯 PERFORMANCE DISTRIBUTION DATA
+    const performanceDistribution = [];
+    const quizPerformanceMap = {};
+
+    // Group results by quiz
+    results.forEach(result => {
+      const quizId = result.quizId.toString();
+      if (!quizPerformanceMap[quizId]) {
+        quizPerformanceMap[quizId] = [];
+      }
+      quizPerformanceMap[quizId].push(safeNumber(result.percentage));
+    });
+
+    // Calculate performance distribution for each quiz
+    Object.keys(quizPerformanceMap).forEach(quizId => {
+      const quiz = quizMap[quizId];
+      const scores = quizPerformanceMap[quizId];
+      
+      if (quiz && scores.length > 0) {
+        const excellent = scores.filter(s => s >= 90).length;
+        const good = scores.filter(s => s >= 70 && s < 90).length;
+        const average = scores.filter(s => s >= 50 && s < 70).length;
+        const needsHelp = scores.filter(s => s < 50).length;
+        const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+        
+        const lecture = lectureMap[quiz.lectureId.toString()];
+        const lectureTitle = lecture ? lecture.title : 'Unknown Lecture';
+        
+        performanceDistribution.push({
+          quizTitle: quiz.lectureTitle && quiz.lectureTitle.length > 20 ? quiz.lectureTitle.substring(0, 20) + '...' : (quiz.lectureTitle || 'Quiz'),
+          fullTitle: `${lectureTitle} - ${quiz.lectureTitle || 'Quiz'}`,
+          excellent,
+          good,
+          average,
+          needsHelp,
+          totalParticipants: scores.length,
+          averageScore: safeToFixed(avgScore, 1)
+        });
+      }
+    });
+
+    console.log(`📊 Performance distribution calculated for ${performanceDistribution.length} quizzes`);
+
+    // 📊 ENGAGEMENT LEVELS DATA
+    const studentEngagement = {};
+    
+    // Calculate engagement for each student
+    uniqueStudents.forEach(studentId => {
+      const studentResults = results.filter(r => r.studentId.toString() === studentId);
+      const participationRate = (studentResults.length / totalQuizzes) * 100;
+      
+      studentEngagement[studentId] = {
+        participationRate: safeNumber(participationRate),
+        totalQuizzes: studentResults.length,
+        averageScore: studentResults.length > 0 
+          ? studentResults.reduce((sum, r) => sum + safeNumber(r.percentage), 0) / studentResults.length 
+          : 0
+      };
+    });
+
+    // Categorize students by engagement
+    const engagementLevels = {
+      highlyActive: 0,      // 80%+ participation
+      moderatelyActive: 0,  // 50-79% participation
+      lowActivity: 0,       // 20-49% participation
+      inactive: 0           // <20% participation
+    };
+
+    Object.values(studentEngagement).forEach(engagement => {
+      const rate = engagement.participationRate;
+      if (rate >= 80) engagementLevels.highlyActive++;
+      else if (rate >= 50) engagementLevels.moderatelyActive++;
+      else if (rate >= 20) engagementLevels.lowActivity++;
+      else engagementLevels.inactive++;
+    });
+
+    console.log(`📊 Engagement levels calculated`);
+
+    // 🏆 TOP PERFORMERS AND INSIGHTS
+    const studentPerformance = {};
+    
+    results.forEach(result => {
+      const studentId = result.studentId.toString();
+      const score = safeNumber(result.percentage);
+      const studentName = result.studentName || `Student ${studentId.slice(-4)}`;
+      
+      if (!studentPerformance[studentId]) {
+        studentPerformance[studentId] = {
+          studentId,
+          studentName,
+          totalScore: 0,
+          quizCount: 0,
+          scores: [],
+          totalTime: 0
+        };
+      }
+      
+      studentPerformance[studentId].totalScore += score;
+      studentPerformance[studentId].quizCount++;
+      studentPerformance[studentId].scores.push(score);
+      studentPerformance[studentId].totalTime += safeNumber(result.timeTakenSeconds, 0);
+    });
+
+    // Calculate student rankings
+    const rankedStudents = Object.values(studentPerformance)
+      .map((student, index) => ({
+        rank: index + 1, // Will be recalculated after sorting
+        studentId: student.studentId,
+        studentName: student.studentName,
+        averageScore: student.quizCount > 0 ? safeToFixed(student.totalScore / student.quizCount, 1) : '0.0',
+        totalQuizzes: student.quizCount,
+        averageTime: student.quizCount > 0 ? formatTime(student.totalTime / student.quizCount) : '0:00',
+        participationRate: safeToFixed(safePercentage(student.quizCount, totalQuizzes), 1)
+      }))
+      .sort((a, b) => safeNumber(b.averageScore) - safeNumber(a.averageScore))
+      .map((student, index) => ({ ...student, rank: index + 1 }));
+
+    // Top 5 performers for insights
+    const topPerformers = rankedStudents.slice(0, 5);
+
+    // Students needing attention (low participation or low scores)
+    const studentsNeedingAttention = rankedStudents
+      .filter(student => 
+        safeNumber(student.averageScore) < 60 || 
+        safeNumber(student.participationRate) < 50
+      )
+      .slice(0, 5);
+
+    // Quiz insights
+    const mostChallengingQuiz = performanceDistribution.length > 0 ? 
+      performanceDistribution.sort((a, b) => safeNumber(a.averageScore) - safeNumber(b.averageScore))[0] : null;
+    
+    const bestPerformingQuiz = performanceDistribution.length > 0 ? 
+      performanceDistribution.sort((a, b) => safeNumber(b.averageScore) - safeNumber(a.averageScore))[0] : null;
+
+    console.log(`🏆 Student rankings calculated: ${rankedStudents.length} students`);
+
+    // 📅 RECENT ACTIVITY (Last 10 submissions)
+    const recentActivity = results
+      .sort((a, b) => new Date(b.submissionDate) - new Date(a.submissionDate))
+      .slice(0, 10)
+      .map(result => {
+        const quiz = quizMap[result.quizId.toString()];
+        const lecture = quiz ? lectureMap[quiz.lectureId.toString()] : null;
+        
+        return {
+          studentName: result.studentName || 'Unknown Student',
+          quizTitle: quiz ? 
+            (quiz.lectureTitle && quiz.lectureTitle.length > 30 ? quiz.lectureTitle.substring(0, 30) + '...' : quiz.lectureTitle || 'Quiz') 
+            : 'Unknown Quiz',
+          fullQuizTitle: quiz ? `${lecture?.title || 'Unknown'} - ${quiz.lectureTitle || 'Quiz'}` : 'Unknown Quiz',
+          score: safeToFixed(result.percentage, 1),
+          submissionDate: new Date(result.submissionDate).toLocaleDateString(),
+          timeTaken: formatTime(result.timeTakenSeconds)
+        };
+      });
+
+    // 🎯 QUIZ PERFORMANCE SUMMARY
+    const quizPerformance = performanceDistribution.map(quiz => ({
+      quizTitle: quiz.quizTitle,
+      fullTitle: quiz.fullTitle,
+      participants: quiz.totalParticipants,
+      averageScore: quiz.averageScore,
+      highestScore: safeToFixed(Math.max(...(quizPerformanceMap[Object.keys(quizMap).find(id => 
+        (quizMap[id].lectureTitle === quiz.quizTitle) || 
+        quiz.fullTitle.includes(quizMap[id].lectureTitle || '')
+      )] || [0])), 1),
+      lowestScore: safeToFixed(Math.min(...(quizPerformanceMap[Object.keys(quizMap).find(id => 
+        (quizMap[id].lectureTitle === quiz.quizTitle) || 
+        quiz.fullTitle.includes(quizMap[id].lectureTitle || '')
+      )] || [0])), 1)
+    }));
+
+    // 📊 CLASS HEALTH METRICS
+    const classHealthScore = {
+      engagement: safeToFixed(safePercentage(
+        engagementLevels.highlyActive + engagementLevels.moderatelyActive, 
+        totalStudents
+      ), 1),
+      performance: safeToFixed(averageScore, 1),
+      participation: safeToFixed(safePercentage(
+        rankedStudents.filter(s => safeNumber(s.participationRate) >= 50).length,
+        totalStudents
+      ), 1)
+    };
+
+    // 🎨 CHART METADATA
+    const chartMetadata = {
+      performanceChart: {
+        title: '📊 Student Performance Distribution by Quiz',
+        subtitle: 'Number of students in each performance category per quiz',
+        colors: {
+          excellent: '#10b981',
+          good: '#3b82f6',
+          average: '#f59e0b',
+          needsHelp: '#ef4444'
+        }
+      },
+      engagementChart: {
+        title: '👥 Student Engagement Levels',
+        subtitle: 'Based on quiz participation rates',
+        colors: {
+          highlyActive: '#10b981',
+          moderatelyActive: '#3b82f6',
+          lowActivity: '#f59e0b',
+          inactive: '#ef4444'
+        }
+      }
+    };
+
+    // 🎯 FINAL ENHANCED ANALYTICS DATA
+    const enhancedAnalyticsData = {
+      overallStats: {
+        totalStudents,
+        totalQuizzes,
+        classAverage: safeToFixed(averageScore, 1),
+        totalResults
+      },
+      performanceDistribution,
+      engagementLevels,
+      insights: {
+        classHealthScore,
+        topPerformers: topPerformers.map(p => ({ ...p, rank: p.rank })),
+        studentsNeedingAttention,
+        mostChallengingQuiz,
+        bestPerformingQuiz
+      },
+      rankedStudents,
+      recentActivity,
+      quizPerformance,
+      chartMetadata
+    };
+
+    console.log('✅ Enhanced analytics calculation completed successfully');
+    console.log('📊 Analytics summary:', {
+      totalStudents: enhancedAnalyticsData.overallStats.totalStudents,
+      totalQuizzes: enhancedAnalyticsData.overallStats.totalQuizzes,
+      classAverage: enhancedAnalyticsData.overallStats.classAverage,
+      performanceQuizzes: enhancedAnalyticsData.performanceDistribution.length,
+      rankedStudents: enhancedAnalyticsData.rankedStudents.length,
+      recentActivity: enhancedAnalyticsData.recentActivity.length
+    });
+
+    res.json({
+      success: true,
+      data: enhancedAnalyticsData
+    });
+
+  } catch (error) {
+    console.error('❌ Enhanced analytics error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to calculate enhanced analytics',
+      error: error.message
+    });
+  }
 });
 
 // Individual Student Analytics for Teachers
@@ -1736,3 +1969,67 @@ app.listen(PORT, () => {
 // Schedule cleanup functions to run periodically
 setInterval(cleanupOldQuizResults, 24 * 60 * 60 * 1000); // Every 24 hours
 setInterval(cleanupOldExplanations, 15 * 24 * 60 * 60 * 1000); // Every 15 days
+
+
+// 🛠️ HELPER FUNCTIONS (Add these at the bottom of your index.js file)
+
+function getEmptyAnalyticsData() {
+  return {
+    overallStats: {
+      totalStudents: 0,
+      totalQuizzes: 0,
+      classAverage: '0.0',
+      totalResults: 0
+    },
+    performanceDistribution: [],
+    engagementLevels: {
+      highlyActive: 0,
+      moderatelyActive: 0,
+      lowActivity: 0,
+      inactive: 0
+    },
+    insights: {
+      classHealthScore: {
+        engagement: '0.0',
+        performance: '0.0',
+        participation: '0.0'
+      },
+      topPerformers: [],
+      studentsNeedingAttention: [],
+      mostChallengingQuiz: null,
+      bestPerformingQuiz: null
+    },
+    rankedStudents: [],
+    recentActivity: [],
+    quizPerformance: [],
+    chartMetadata: {
+      performanceChart: {
+        title: '📊 Student Performance Distribution by Quiz',
+        subtitle: 'No data available yet',
+        colors: {
+          excellent: '#10b981',
+          good: '#3b82f6',
+          average: '#f59e0b',
+          needsHelp: '#ef4444'
+        }
+      },
+      engagementChart: {
+        title: '👥 Student Engagement Levels',
+        subtitle: 'No data available yet',
+        colors: {
+          highlyActive: '#10b981',
+          moderatelyActive: '#3b82f6',
+          lowActivity: '#f59e0b',
+          inactive: '#ef4444'
+        }
+      }
+    }
+  };
+}
+
+function formatTime(seconds) {
+  const totalSeconds = safeNumber(seconds, 0);
+  const minutes = Math.floor(totalSeconds / 60);
+  const remainingSeconds = Math.floor(totalSeconds % 60);
+  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+}
