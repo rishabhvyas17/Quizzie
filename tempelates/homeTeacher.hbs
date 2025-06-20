@@ -399,6 +399,196 @@
             background: #dc2626;
         }
 
+        /* Enhanced Analytics Section */
+        .analytics-section {
+            margin-top: 2rem;
+            padding: 2rem;
+            background: #f8fafc;
+            border-radius: 12px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 1rem;
+        }
+
+        .section-header h2 {
+            color: #1f2937;
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .refresh-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .refresh-btn:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        /* Enhanced Charts Grid */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+
+        /* Insights Panel */
+        .insights-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+        }
+
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .insight-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+        }
+
+        .insight-card h3 {
+            margin: 0 0 1rem 0;
+            color: #1f2937;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .metrics {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem;
+            background: #f9fafb;
+            border-radius: 6px;
+        }
+
+        .metric .label {
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .metric .value {
+            font-weight: 600;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .value.excellent { background: #dcfce7; color: #16a34a; }
+        .value.good { background: #dbeafe; color: #2563eb; }
+        .value.average { background: #fef3c7; color: #d97706; }
+        .value.needs-help { background: #fee2e2; color: #dc2626; }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .alert-warning {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            color: #92400e;
+        }
+
+        .alert-success {
+            background: #dcfce7;
+            border: 1px solid #16a34a;
+            color: #15803d;
+        }
+
+        .student-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .student-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: #f9fafb;
+            border-radius: 6px;
+            border-left: 3px solid #e5e7eb;
+        }
+
+        .student-item.top-performer {
+            border-left-color: #10b981;
+            background: #f0fdf4;
+        }
+
+        .student-item .rank {
+            font-weight: bold;
+            color: #10b981;
+            margin-right: 0.5rem;
+        }
+
+        .student-item .name {
+            font-weight: 500;
+            color: #374151;
+            flex: 1;
+        }
+
+        .student-item .stats {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        .no-issues {
+            text-align: center;
+            color: #16a34a;
+            font-weight: 500;
+            padding: 2rem;
+        }
+
         /* Analytics Tables */
         .analytics-table {
             background: white;
@@ -461,33 +651,6 @@
             background: #7c3aed;
         }
 
-        /* Charts */
-        .charts-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 2rem;
-            margin-bottom: 2rem;
-        }
-
-        .chart-card {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        .chart-title {
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: #1e293b;
-            margin-bottom: 1rem;
-        }
-
-        .chart-container {
-            position: relative;
-            height: 300px;
-        }
-
         /* Success and Error Messages */
         .alert {
             padding: 1rem;
@@ -525,12 +688,43 @@
             margin: 0 auto 1rem;
         }
 
+        .error-message {
+            text-align: center;
+            padding: 2rem;
+            color: #dc2626;
+        }
+
+        .retry-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 1rem;
+        }
+
+        .retry-btn:hover {
+            background: #2563eb;
+        }
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
 
         /* Mobile Responsiveness */
+        @media (max-width: 1024px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .chart-wrapper {
+                height: 350px;
+            }
+        }
+
         @media (max-width: 768px) {
             .header-content {
                 flex-direction: column;
@@ -571,6 +765,34 @@
                 overflow-x: auto;
                 white-space: nowrap;
             }
+
+            .analytics-section {
+                padding: 1rem;
+            }
+            
+            .section-header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+            
+            .chart-container {
+                padding: 1rem;
+            }
+            
+            .chart-wrapper {
+                height: 300px;
+            }
+
+            .insights-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .student-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.25rem;
+            }
         }
 
         @media (max-width: 480px) {
@@ -581,12 +803,13 @@
             .stat-card,
             .lecture-card,
             .upload-section,
-            .chart-card {
+            .chart-container {
                 padding: 1rem;
             }
 
-            .chart-container {
-                height: 250px;
+            .refresh-btn {
+                width: 100%;
+                justify-content: center;
             }
         }
     </style>
@@ -686,7 +909,7 @@
                                     {{#unless this.quizGenerated}}
                                         <button class="action-button generate-btn" onclick="generateQuiz('{{this.id}}', event)">Generate Quiz</button>
                                     {{else}}
-                                        <a href="/lectures/{{this.id}}/quizzes" class="action-button">View Quizzes</a>
+                                        <a href="/lecture_results/{{this.id}}" class="action-button">View Results</a>
                                     {{/unless}}
                                     <button class="action-button delete-btn" onclick="deleteLecture('{{this.id}}')">Delete</button>
                                 </div>
@@ -699,25 +922,74 @@
             </section>
         </div>
 
-        <!-- Analytics Tab -->
+        <!-- Enhanced Analytics Tab -->
         <div id="analyticsTab" class="tab-content">
-            <section class="section">
-                <div id="analyticsContainer">
-                    <div class="loading">
-                        <div class="loading-spinner"></div>
-                        <p>🔄 Loading class analytics...</p>
+            <div class="analytics-section">
+                <div class="section-header">
+                    <h2>📊 Enhanced Class Analytics</h2>
+                    <button onclick="refreshAnalytics()" class="refresh-btn">
+                        🔄 Refresh Data
+                    </button>
+                </div>
+
+                <!-- Enhanced Charts Grid -->
+                <div class="charts-grid">
+                    <!-- Chart 1: Performance Distribution -->
+                    <div class="chart-container">
+                        <div class="chart-wrapper">
+                            <canvas id="performanceChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Chart 2: Student Engagement -->
+                    <div class="chart-container">
+                        <div class="chart-wrapper">
+                            <canvas id="engagementChart"></canvas>
+                        </div>
                     </div>
                 </div>
-            </section>
+
+                <!-- Insights Panel -->
+                <div id="insightsPanel" class="insights-panel">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>📊 Loading analytics insights...</p>
+                    </div>
+                </div>
+
+                <!-- Traditional Analytics Tables -->
+                <div class="analytics-table">
+                    <h3>📋 Recent Quiz Activity</h3>
+                    <div id="recentActivityTable">
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                            <p>Loading recent activity...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="analytics-table">
+                    <h3>🎯 Quiz Performance Breakdown</h3>
+                    <div id="quizPerformanceTable">
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                            <p>Loading quiz performance...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Students Tab -->
         <div id="studentsTab" class="tab-content">
             <section class="section">
-                <div id="studentsContainer">
-                    <div class="loading">
-                        <div class="loading-spinner"></div>
-                        <p>🔄 Loading student rankings...</p>
+                <div class="analytics-table">
+                    <h3>🏆 Student Rankings (Last 15 Days)</h3>
+                    <div id="studentsContainer">
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                            <p>🔄 Loading student rankings...</p>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -732,9 +1004,9 @@
 
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Teacher dashboard initializing...');
+            console.log('🚀 Enhanced Teacher dashboard initializing...');
             initializeDashboard();
-            loadAnalyticsData();
+            loadEnhancedAnalytics();
         });
 
         // Initialize dashboard UI
@@ -753,7 +1025,7 @@
             avatar.textContent = initials;
         }
 
-        // Tab navigation
+        // Enhanced Tab navigation
         function showTab(tabName) {
             // Update navigation
             document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
@@ -766,34 +1038,60 @@
 
             // Load data if needed
             if (tabName === 'analytics' && !analyticsData) {
-                loadAnalyticsData();
+                loadEnhancedAnalytics();
             }
         }
 
-        // Load analytics data
-        async function loadAnalyticsData() {
+        // Load enhanced analytics data
+        async function loadEnhancedAnalytics() {
             try {
-                console.log('📊 Loading analytics data...');
-                const response = await fetch('/api/teacher/class-analytics');
-                const data = await response.json();
+                console.log('📊 Loading enhanced analytics data...');
                 
-                if (data.success) {
-                    analyticsData = data.data;
+                // Show loading state
+                showLoadingState();
+                
+                const response = await fetch('/api/teacher/class-analytics');
+                const result = await response.json();
+                
+                if (result.success) {
+                    analyticsData = result.data;
+                    console.log('✅ Enhanced analytics data loaded:', analyticsData);
+                    
+                    // Update all components
                     updateStatsCards();
-                    updateAnalyticsContent();
+                    createPerformanceDistributionChart();
+                    createEngagementLevelsChart();
+                    updateInsightsPanel();
+                    updateRecentActivityTable();
+                    updateQuizPerformanceTable();
                     updateStudentsContent();
-                    console.log('✅ Analytics data loaded');
                 } else {
-                    console.error('❌ Failed to load analytics:', data.message);
-                    showErrorState('analytics');
+                    console.error('❌ Failed to load analytics:', result.message);
+                    showAnalyticsError('Failed to load analytics data');
                 }
             } catch (error) {
                 console.error('❌ Error loading analytics:', error);
-                showErrorState('analytics');
+                showAnalyticsError('Network error while loading analytics');
             }
         }
 
-        // Update stats cards
+        function showLoadingState() {
+            const containers = ['performanceChart', 'engagementChart'];
+            containers.forEach(id => {
+                const container = document.getElementById(id);
+                if (container) {
+                    const canvas = container;
+                    const ctx = canvas.getContext('2d');
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = '#6b7280';
+                    ctx.font = '16px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Loading chart...', canvas.width / 2, canvas.height / 2);
+                }
+            });
+        }
+
+        // Update stats cards with enhanced data
         function updateStatsCards() {
             if (!analyticsData) return;
 
@@ -803,75 +1101,365 @@
             document.getElementById('classAverageScore').textContent = stats.classAverage + '%';
         }
 
-        // Update analytics content
-        function updateAnalyticsContent() {
-            if (!analyticsData) return;
+        // ENHANCED CHART 1: Performance Distribution (Stacked Bar Chart)
+        function createPerformanceDistributionChart() {
+            const ctx = document.getElementById('performanceChart');
+            if (!ctx || !analyticsData.performanceDistribution) {
+                console.log('⚠️ Performance chart container not found or no data');
+                return;
+            }
 
-            const container = document.getElementById('analyticsContainer');
+            const data = analyticsData.performanceDistribution;
+            const metadata = analyticsData.chartMetadata.performanceChart;
+
+            // Destroy existing chart if it exists
+            if (charts.performanceChart) {
+                charts.performanceChart.destroy();
+            }
+
+            charts.performanceChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.quizTitle),
+                    datasets: [
+                        {
+                            label: 'Excellent (90-100%)',
+                            data: data.map(d => d.excellent),
+                            backgroundColor: metadata.colors.excellent,
+                            borderColor: metadata.colors.excellent,
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Good (70-89%)',
+                            data: data.map(d => d.good),
+                            backgroundColor: metadata.colors.good,
+                            borderColor: metadata.colors.good,
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Average (50-69%)',
+                            data: data.map(d => d.average),
+                            backgroundColor: metadata.colors.average,
+                            borderColor: metadata.colors.average,
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Needs Help (<50%)',
+                            data: data.map(d => d.needsHelp),
+                            backgroundColor: metadata.colors.needsHelp,
+                            borderColor: metadata.colors.needsHelp,
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: metadata.title,
+                            font: { size: 16, weight: 'bold' }
+                        },
+                        subtitle: {
+                            display: true,
+                            text: metadata.subtitle,
+                            font: { size: 12 },
+                            color: '#666'
+                        },
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                title: function(context) {
+                                    const dataIndex = context[0].dataIndex;
+                                    return data[dataIndex].fullTitle;
+                                },
+                                afterTitle: function(context) {
+                                    const dataIndex = context[0].dataIndex;
+                                    const quiz = data[dataIndex];
+                                    return `Average Score: ${quiz.averageScore}% | Participants: ${quiz.totalParticipants}`;
+                                },
+                                label: function(context) {
+                                    const value = context.parsed.y;
+                                    const total = data[context.dataIndex].totalParticipants;
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                    return `${context.dataset.label}: ${value} students (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            title: {
+                                display: true,
+                                text: 'Quizzes'
+                            }
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Students'
+                            },
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    }
+                }
+            });
+
+            console.log('✅ Performance distribution chart created');
+        }
+
+        // ENHANCED CHART 2: Student Engagement Levels (Donut Chart)
+        function createEngagementLevelsChart() {
+            const ctx = document.getElementById('engagementChart');
+            if (!ctx || !analyticsData.engagementLevels) {
+                console.log('⚠️ Engagement chart container not found or no data');
+                return;
+            }
+
+            const data = analyticsData.engagementLevels;
+            const metadata = analyticsData.chartMetadata.engagementChart;
+            const total = data.highlyActive + data.moderatelyActive + data.lowActivity + data.inactive;
+
+            // Destroy existing chart if it exists
+            if (charts.engagementChart) {
+                charts.engagementChart.destroy();
+            }
+
+            charts.engagementChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: [
+                        'Highly Active (80%+)',
+                        'Moderately Active (50-79%)', 
+                        'Low Activity (20-49%)',
+                        'Inactive (<20%)'
+                    ],
+                    datasets: [{
+                        data: [
+                            data.highlyActive,
+                            data.moderatelyActive,
+                            data.lowActivity,
+                            data.inactive
+                        ],
+                        backgroundColor: [
+                            metadata.colors.highlyActive,
+                            metadata.colors.moderatelyActive,
+                            metadata.colors.lowActivity,
+                            metadata.colors.inactive
+                        ],
+                        borderColor: '#ffffff',
+                        borderWidth: 2,
+                        hoverBorderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: metadata.title,
+                            font: { size: 16, weight: 'bold' }
+                        },
+                        subtitle: {
+                            display: true,
+                            text: metadata.subtitle,
+                            font: { size: 12 },
+                            color: '#666'
+                        },
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                usePointStyle: true,
+                                generateLabels: function(chart) {
+                                    const dataset = chart.data.datasets[0];
+                                    return chart.data.labels.map((label, index) => {
+                                        const value = dataset.data[index];
+                                        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                        return {
+                                            text: `${label}: ${value} (${percentage}%)`,
+                                            fillStyle: dataset.backgroundColor[index],
+                                            strokeStyle: dataset.backgroundColor[index],
+                                            pointStyle: 'circle'
+                                        };
+                                    });
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed;
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                    return `${context.label}: ${value} students (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '50%',
+                    elements: {
+                        arc: {
+                            borderWidth: 0
+                        }
+                    }
+                },
+                plugins: [{
+                    id: 'centerText',
+                    beforeDatasetsDraw(chart, args, options) {
+                        const { ctx, width, height } = chart;
+                        ctx.save();
+                        
+                        const fontSize = Math.min(width, height) / 15;
+                        ctx.font = `bold ${fontSize}px sans-serif`;
+                        ctx.fillStyle = '#374151';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        
+                        const centerX = width / 2;
+                        const centerY = height / 2;
+                        
+                        ctx.fillText(total.toString(), centerX, centerY - 10);
+                        
+                        ctx.font = `${fontSize * 0.6}px sans-serif`;
+                        ctx.fillStyle = '#6B7280';
+                        ctx.fillText('Total Students', centerX, centerY + 15);
+                        
+                        ctx.restore();
+                    }
+                }]
+            });
+
+            console.log('✅ Engagement levels chart created');
+        }
+
+        // Update insights panel with actionable information
+        function updateInsightsPanel() {
+            if (!analyticsData.insights) return;
+
+            const insights = analyticsData.insights;
+            const insightsContainer = document.getElementById('insightsPanel');
             
-            const analyticsHTML = `
-                <div class="charts-grid">
-                    <!-- Quiz Performance Chart -->
-                    <div class="chart-card">
-                        <h3 class="chart-title">📊 Quiz Performance Overview</h3>
-                        <div class="chart-container">
-                            <canvas id="quizPerformanceChart"></canvas>
+            if (!insightsContainer) {
+                console.log('⚠️ Insights panel container not found');
+                return;
+            }
+
+            const insightsHTML = `
+                <div class="insights-grid">
+                    <!-- Class Health Score -->
+                    <div class="insight-card health-score">
+                        <h3>📊 Class Health Score</h3>
+                        <div class="metrics">
+                            <div class="metric">
+                                <span class="label">Engagement:</span>
+                                <span class="value ${getHealthColor(insights.classHealthScore.engagement)}">${insights.classHealthScore.engagement}%</span>
+                            </div>
+                            <div class="metric">
+                                <span class="label">Performance:</span>
+                                <span class="value ${getHealthColor(insights.classHealthScore.performance)}">${insights.classHealthScore.performance}%</span>
+                            </div>
+                            <div class="metric">
+                                <span class="label">Participation:</span>
+                                <span class="value ${getHealthColor(insights.classHealthScore.participation)}">${insights.classHealthScore.participation}%</span>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Student Activity Chart -->
-                    <div class="chart-card">
-                        <h3 class="chart-title">👥 Student Activity</h3>
-                        <div class="chart-container">
-                            <canvas id="studentActivityChart"></canvas>
+                    <!-- Quiz Insights -->
+                    <div class="insight-card quiz-insights">
+                        <h3>🎯 Quiz Insights</h3>
+                        ${insights.mostChallengingQuiz ? `
+                            <div class="alert alert-warning">
+                                <strong>⚠️ Needs Review:</strong><br>
+                                "${insights.mostChallengingQuiz.fullTitle}"<br>
+                                <small>Average: ${insights.mostChallengingQuiz.averageScore}% | ${insights.mostChallengingQuiz.needsHelp} students struggling</small>
+                            </div>
+                        ` : ''}
+                        ${insights.bestPerformingQuiz ? `
+                            <div class="alert alert-success">
+                                <strong>✅ Top Performance:</strong><br>
+                                "${insights.bestPerformingQuiz.fullTitle}"<br>
+                                <small>Average: ${insights.bestPerformingQuiz.averageScore}% | ${insights.bestPerformingQuiz.excellent} students excelled</small>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <!-- Students Needing Attention -->
+                    <div class="insight-card student-attention">
+                        <h3>👥 Students Needing Attention</h3>
+                        ${insights.studentsNeedingAttention.length > 0 ? `
+                            <div class="student-list">
+                                ${insights.studentsNeedingAttention.map(student => `
+                                    <div class="student-item">
+                                        <span class="name">${student.studentName}</span>
+                                        <span class="stats">
+                                            ${student.participationRate}% participation | 
+                                            Avg: ${student.averageScore}%
+                                        </span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : '<p class="no-issues">🎉 All students are actively engaged!</p>'}
+                    </div>
+
+                    <!-- Top Performers -->
+                    <div class="insight-card top-performers">
+                        <h3>🏆 Top Performers</h3>
+                        <div class="student-list">
+                            ${insights.topPerformers.map(student => `
+                                <div class="student-item top-performer">
+                                    <span class="rank">#${student.rank}</span>
+                                    <span class="name">${student.studentName}</span>
+                                    <span class="stats">${student.averageScore}% avg</span>
+                                </div>
+                            `).join('')}
                         </div>
                     </div>
                 </div>
-
-                <!-- Recent Activity Table -->
-                <div class="analytics-table">
-                    <h3 class="chart-title">📋 Recent Quiz Activity</h3>
-                    ${createRecentActivityTable()}
-                </div>
-
-                <!-- Quiz Performance Table -->
-                <div class="analytics-table">
-                    <h3 class="chart-title">🎯 Quiz Performance Breakdown</h3>
-                    ${createQuizPerformanceTable()}
-                </div>
             `;
 
-            container.innerHTML = analyticsHTML;
-            
-            // Create charts after DOM update
-            setTimeout(() => {
-                createQuizPerformanceChart();
-                createStudentActivityChart();
-            }, 100);
+            insightsContainer.innerHTML = insightsHTML;
+            console.log('✅ Insights panel updated');
         }
 
-        // Update students content
-        function updateStudentsContent() {
-            if (!analyticsData) return;
-
-            const container = document.getElementById('studentsContainer');
-            
-            const studentsHTML = `
-                <div class="analytics-table">
-                    <h3 class="chart-title">🏆 Student Rankings (Last 15 Days)</h3>
-                    ${createStudentRankingsTable()}
-                </div>
-            `;
-
-            container.innerHTML = studentsHTML;
+        // Helper function to determine health color
+        function getHealthColor(value) {
+            const numValue = parseFloat(value);
+            if (numValue >= 80) return 'excellent';
+            if (numValue >= 60) return 'good'; 
+            if (numValue >= 40) return 'average';
+            return 'needs-help';
         }
 
-        // Create recent activity table
-        function createRecentActivityTable() {
-            const recentActivity = analyticsData.recentActivity || [];
+        // Update recent activity table
+        function updateRecentActivityTable() {
+            const container = document.getElementById('recentActivityTable');
+            if (!container || !analyticsData.recentActivity) return;
+
+            const recentActivity = analyticsData.recentActivity;
             
             if (recentActivity.length === 0) {
-                return '<p style="text-align: center; color: #64748b; padding: 2rem;">No recent quiz activity.</p>';
+                container.innerHTML = '<p style="text-align: center; color: #64748b; padding: 2rem;">No recent quiz activity.</p>';
+                return;
             }
 
             const tableRows = recentActivity.map(activity => `
@@ -884,7 +1472,7 @@
                 </tr>
             `).join('');
 
-            return `
+            container.innerHTML = `
                 <table class="table">
                     <thead>
                         <tr>
@@ -902,12 +1490,16 @@
             `;
         }
 
-        // Create quiz performance table
-        function createQuizPerformanceTable() {
-            const quizPerformance = analyticsData.quizPerformance || [];
+        // Update quiz performance table
+        function updateQuizPerformanceTable() {
+            const container = document.getElementById('quizPerformanceTable');
+            if (!container || !analyticsData.quizPerformance) return;
+
+            const quizPerformance = analyticsData.quizPerformance;
             
             if (quizPerformance.length === 0) {
-                return '<p style="text-align: center; color: #64748b; padding: 2rem;">No quiz performance data available.</p>';
+                container.innerHTML = '<p style="text-align: center; color: #64748b; padding: 2rem;">No quiz performance data available.</p>';
+                return;
             }
 
             const tableRows = quizPerformance.map(quiz => `
@@ -920,7 +1512,7 @@
                 </tr>
             `).join('');
 
-            return `
+            container.innerHTML = `
                 <table class="table">
                     <thead>
                         <tr>
@@ -938,12 +1530,16 @@
             `;
         }
 
-        // Create student rankings table
-        function createStudentRankingsTable() {
+        // Update students content
+        function updateStudentsContent() {
+            if (!analyticsData) return;
+
+            const container = document.getElementById('studentsContainer');
             const rankedStudents = analyticsData.rankedStudents || [];
             
             if (rankedStudents.length === 0) {
-                return '<p style="text-align: center; color: #64748b; padding: 2rem;">No student data available.</p>';
+                container.innerHTML = '<p style="text-align: center; color: #64748b; padding: 2rem;">No student data available.</p>';
+                return;
             }
 
             const tableRows = rankedStudents.map(student => {
@@ -967,7 +1563,7 @@
                 `;
             }).join('');
 
-            return `
+            container.innerHTML = `
                 <table class="table">
                     <thead>
                         <tr>
@@ -986,94 +1582,26 @@
             `;
         }
 
-        // Create quiz performance chart
-        function createQuizPerformanceChart() {
-            const ctx = document.getElementById('quizPerformanceChart');
-            if (!ctx || charts.quizPerformanceChart) return;
-
-            const quizData = analyticsData.quizPerformance || [];
-            
-            charts.quizPerformanceChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: quizData.map(q => q.quizTitle.substring(0, 20) + '...'),
-                    datasets: [{
-                        label: 'Average Score',
-                        data: quizData.map(q => parseFloat(q.averageScore)),
-                        backgroundColor: 'rgba(59, 130, 246, 0.6)',
-                        borderColor: '#3b82f6',
-                        borderWidth: 1
-                    }, {
-                        label: 'Participants',
-                        data: quizData.map(q => q.participants),
-                        backgroundColor: 'rgba(16, 185, 129, 0.6)',
-                        borderColor: '#10b981',
-                        borderWidth: 1,
-                        yAxisID: 'y1'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100,
-                            title: {
-                                display: true,
-                                text: 'Average Score (%)'
-                            }
-                        },
-                        y1: {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
-                            title: {
-                                display: true,
-                                text: 'Participants'
-                            },
-                            grid: {
-                                drawOnChartArea: false,
-                            },
-                        }
-                    }
+        // Error handling
+        function showAnalyticsError(message) {
+            const containers = ['performanceChart', 'engagementChart', 'insightsPanel'];
+            containers.forEach(id => {
+                const container = document.getElementById(id);
+                if (container) {
+                    container.innerHTML = `
+                        <div class="error-message">
+                            <p>❌ ${message}</p>
+                            <button onclick="loadEnhancedAnalytics()" class="retry-btn">🔄 Retry</button>
+                        </div>
+                    `;
                 }
             });
         }
 
-        // Create student activity chart
-        function createStudentActivityChart() {
-            const ctx = document.getElementById('studentActivityChart');
-            if (!ctx || charts.studentActivityChart) return;
-
-            const studentsData = analyticsData.rankedStudents || [];
-            const top5Students = studentsData.slice(0, 5);
-            
-            charts.studentActivityChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: top5Students.map(s => s.studentName),
-                    datasets: [{
-                        data: top5Students.map(s => s.totalQuizzes),
-                        backgroundColor: [
-                            '#3b82f6',
-                            '#10b981',
-                            '#f59e0b',
-                            '#ef4444',
-                            '#8b5cf6'
-                        ]
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom'
-                        }
-                    }
-                }
-            });
+        // Refresh analytics data
+        function refreshAnalytics() {
+            console.log('🔄 Refreshing enhanced analytics...');
+            loadEnhancedAnalytics();
         }
 
         // Existing functions for lecture management
@@ -1106,7 +1634,7 @@
                 .then(data => {
                     console.log('Response data:', data);
                     if (data.success) {
-                        alert(`✅ Quiz generated successfully!\n\n${data.message}\nQuiz ID: ${data.quizId}`);
+                        alert(`✅ Enhanced quiz generated successfully!\n\n${data.message}\nQuiz ID: ${data.quizId}`);
                         window.location.reload();
                     } else {
                         alert('❌ Failed to generate quiz: ' + (data.message || 'Unknown error.'));
@@ -1159,17 +1687,8 @@
             }
         }
 
-        function showErrorState(type) {
-            console.error(`❌ Error in ${type} section`);
-        }
-
-        // Auto-refresh analytics every 60 seconds
-        setInterval(() => {
-            if (analyticsData) {
-                console.log('🔄 Auto-refreshing analytics...');
-                loadAnalyticsData();
-            }
-        }, 60000);
+        // Auto-refresh analytics every 5 minutes
+        setInterval(refreshAnalytics, 5 * 60 * 1000);
     </script>
 </body>
 </html>
