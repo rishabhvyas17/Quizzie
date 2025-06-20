@@ -14,7 +14,7 @@ const mammoth = require("mammoth")
 const session = require('express-session');
 
 // Fix for pptx2json import/usage
-const { toJson } = require("pptx2json")
+const pptxToJson = require("pptx2json")
 
 // Load environment variables from .env file
 require('dotenv').config()
@@ -28,7 +28,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
 
 // Configuration
-const PORT = 3000
+const PORT = process.env.PORT || 3000
 const TEMP_UPLOAD_DIR = './temp_uploads'
 const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100MB
 const templatePath = path.join(__dirname, '../tempelates')
