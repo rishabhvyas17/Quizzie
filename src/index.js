@@ -1,6 +1,6 @@
 // QuizAI Server - Express.js Application
 // Dependencies to install:
-// npm i express hbs mongoose multer pdf-parse mammoth pptx2json @google/generative-ai dotenv nodemon express-session
+// npm i express hbs mongoose multer pdf-parse mammoth pptx2json @google/generative-ai dotenv nodemon express-session connect-mongo
 // Run with: nodemon src/index.js
 
 const express = require("express")
@@ -12,6 +12,7 @@ const fs = require("fs")
 const pdfParse = require("pdf-parse")
 const mammoth = require("mammoth")
 const session = require('express-session');
+const MongoStore = require('connect-mongo'); // ADD THIS LINE for persistent sessions
 
 // Fix for pptx2json import/usage
 const { toJson } = require("pptx2json")
@@ -28,7 +29,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
 
 // Configuration
-const PORT = 3000
+const PORT = process.env.PORT || 3000
 const TEMP_UPLOAD_DIR = './temp_uploads'
 const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100MB
 const templatePath = path.join(__dirname, '../tempelates')
@@ -39,14 +40,22 @@ app.use(express.urlencoded({ extended: false }))
 app.set("view engine", "hbs")
 app.set("views", templatePath)
 
-// Session configuration
+// Configure and use express-session middleware with MongoStore
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'a_very_secret_key_for_quizai',
-    resave: false,
-    saveUninitialized: false,
+    secret: process.env.SESSION_SECRET, // IMPORTANT: Ensure this env var is set in Render/GCP
+    resave: false, // Prevents session from being saved back to the session store on every request
+    saveUninitialized: false, // Prevents uninitialized sessions from being saved to the store
+    store: MongoStore.create({
+        mongoUrl: process.env.MONGODB_URI, // CRITICAL: Use your Atlas URI for session storage
+        ttl: 14 * 24 * 60 * 60, // Session will expire after 14 days (in seconds)
+        autoRemove: 'interval', // Auto-remove expired sessions
+        autoRemoveInterval: 10 // In minutes. MongoStore will clean up expired sessions every 10 minutes.
+    }),
     cookie: {
-        maxAge: 1000 * 60 * 60 * 24, // 1 day
-        httpOnly: true
+        maxAge: 1000 * 60 * 60 * 24 * 14, // 14 days in milliseconds
+        secure: true, // IMPORTANT: Set to true in production (requires HTTPS, which Render/GCP provide)
+        httpOnly: true, // Prevents client-side JavaScript from accessing the cookie
+        sameSite: 'lax' // Recommended for security: 'strict', 'lax', or 'none'. 'lax' is often a good balance.
     }
 }));
 
