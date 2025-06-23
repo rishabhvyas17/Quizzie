@@ -20,7 +20,16 @@ const { toJson } = require("pptx2json")
 require('dotenv').config()
 
 // Import database collections
-const { studentCollection, teacherCollection, lectureCollection, quizCollection, quizResultCollection, explanationCacheCollection } = require("./mongodb")
+const { 
+    studentCollection, 
+    teacherCollection, 
+    lectureCollection, 
+    quizCollection, 
+    quizResultCollection, 
+    explanationCacheCollection,
+    classCollection,           // 🆕 NEW
+    classStudentCollection     // 🆕 NEW
+} = require("./mongodb")
 
 // Google Gemini API setup
 const { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } = require('@google/generative-ai')
@@ -49,6 +58,53 @@ app.use(session({
         httpOnly: true
     }
 }));
+
+// ==================== HANDLEBARS HELPERS REGISTRATION ====================
+// Register Handlebars helpers
+hbs.registerHelper('eq', function(a, b) {
+    return a === b;
+});
+
+hbs.registerHelper('add', function(a, b) {
+    return a + b;
+});
+
+hbs.registerHelper('getScoreClass', function(percentage) {
+    if (percentage >= 90) return 'excellent';
+    if (percentage >= 70) return 'good';
+    if (percentage >= 50) return 'average';
+    return 'poor';
+});
+
+hbs.registerHelper('formatTime', function(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${minutes}m ${secs}s`;
+});
+
+hbs.registerHelper('json', function(context) {
+    return JSON.stringify(context);
+});
+
+// Enhanced ranking helper
+hbs.registerHelper('getRankClass', function(index) {
+    if (index === 0) return 'rank-1';
+    if (index === 1) return 'rank-2';
+    if (index === 2) return 'rank-3';
+    return 'rank-other';
+});
+
+// Date formatting helper
+hbs.registerHelper('formatDate', function(date) {
+    return new Date(date).toLocaleDateString();
+});
+
+// Percentage formatting helper
+hbs.registerHelper('toFixed', function(number, decimals) {
+    return parseFloat(number).toFixed(decimals || 1);
+});
+
+console.log('✅ Handlebars helpers registered successfully!');
 
 // Middleware to check if user is authenticated
 const isAuthenticated = (req, res, next) => {
@@ -295,64 +351,951 @@ app.get('/logout', (req, res) => {
 
 // ==================== DASHBOARD ROUTES ====================
 
-app.get("/homeStudent", isAuthenticated, async (req, res) => {
-    res.render("homeStudent", {
-        userType: req.session.userType || "student",
-        userName: req.session.userName || "Student",
-    })
-})
+// 📝 OPTIONAL: Add this to your /homeStudent route in index.js to handle class context
 
+app.get("/homeStudent", isAuthenticated, async (req, res) => {
+    try {
+        // Get class context from query params (when redirected from student class route)
+        const classContext = {
+            classId: req.query.class || null,
+            className: req.query.className || null,
+            message: req.query.message || null
+        };
+
+        console.log('🎓 Student dashboard loaded with context:', classContext);
+
+        res.render("homeStudent", {
+            userType: req.session.userType || "student",
+            userName: req.session.userName || "Student",
+            classContext: classContext, // Pass context to template
+            message: req.query.message
+        });
+    } catch (error) {
+        console.error('❌ Error loading student dashboard:', error);
+        res.render("homeStudent", {
+            userType: req.session.userType || "student",
+            userName: req.session.userName || "Student",
+            error: 'Failed to load dashboard'
+        });
+    }
+});
+
+// 🔄 REPLACE your existing /homeTeacher route with this:
 app.get("/homeTeacher", isAuthenticated, async (req, res) => {
     try {
         if (req.session.userType !== 'teacher') {
             return res.status(403).redirect('/login?message=Access denied. Not a teacher account.');
         }
 
-        const lectures = await lectureCollection.find({ professorId: req.session.userId }).sort({ uploadDate: -1 }).lean()
+        const teacherId = req.session.userId;
 
+        // Get teacher's classes
+        const classes = await classCollection.find({ 
+            teacherId: teacherId, 
+            isActive: true 
+        }).sort({ createdAt: -1 }).lean();
+
+        // Calculate overall stats
         const stats = {
-            totalLectures: lectures.length,
-            quizzesGenerated: lectures.filter(lecture => lecture.quizGenerated).length,
-            pendingLectures: lectures.filter(lecture => !lecture.quizGenerated).length,
-            totalStudents: await studentCollection.countDocuments()
-        }
+            totalClasses: classes.length,
+            totalStudents: classes.reduce((sum, cls) => sum + (cls.studentCount || 0), 0),
+            totalLectures: classes.reduce((sum, cls) => sum + (cls.lectureCount || 0), 0),
+            totalQuizzes: classes.reduce((sum, cls) => sum + (cls.quizCount || 0), 0)
+        };
 
-        const formattedLectures = lectures.map(lecture => ({
-            id: lecture._id,
-            title: lecture.title,
-            uploadDate: lecture.uploadDate ? lecture.uploadDate.toLocaleDateString() : 'N/A',
-            quizGenerated: lecture.quizGenerated,
-            originalFileName: lecture.originalFileName,
-            fileType: lecture.fileType,
-            textLength: lecture.textLength,
-            processingStatus: lecture.processingStatus
-        }))
+        // Format classes for display
+        const formattedClasses = classes.map(classDoc => ({
+            id: classDoc._id,
+            name: classDoc.name,
+            subject: classDoc.subject,
+            description: classDoc.description,
+            studentCount: classDoc.studentCount || 0,
+            lectureCount: classDoc.lectureCount || 0,
+            quizCount: classDoc.quizCount || 0,
+            averageScore: classDoc.averageScore || 0,
+            createdDate: classDoc.createdAt ? classDoc.createdAt.toLocaleDateString() : 'N/A'
+        }));
 
         res.render("homeTeacher", {
             userType: req.session.userType || "teacher",
             userName: req.session.userName || "Teacher",
             ...stats,
-            lectures: formattedLectures,
-            uploadSuccess: req.query.upload === 'success',
+            classes: formattedClasses,
+            classCreated: req.query.classCreated === 'true',
             uploadError: req.query.uploadError === 'true',
             message: req.query.message,
-            uploadedTitle: req.query.title
-        })
+            createdClassName: req.query.className
+        });
     } catch (error) {
-        console.error('❌ Error loading teacher dashboard:', error)
+        console.error('❌ Error loading teacher dashboard:', error);
         res.status(500).render("homeTeacher", {
             userType: req.session.userType || "teacher",
             userName: req.session.userName || "Teacher",
-            totalLectures: 0,
-            quizzesGenerated: 0,
-            pendingLectures: 0,
+            totalClasses: 0,
             totalStudents: 0,
-            lectures: [],
+            totalLectures: 0,
+            totalQuizzes: 0,
+            classes: [],
             uploadError: true,
             message: 'Failed to load dashboard: ' + error.message
-        })
+        });
     }
-})
+});
+
+// ==================== CLASS CRUD ROUTES ====================
+
+// 📋 Get all classes for a teacher
+app.get('/api/classes', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'teacher') {
+            return res.status(403).json({ success: false, message: 'Access denied. Teachers only.' });
+        }
+
+        const teacherId = req.session.userId;
+        
+        // Get teacher's classes with computed stats
+        const classes = await classCollection.find({ 
+            teacherId: teacherId, 
+            isActive: true 
+        })
+        .sort({ createdAt: -1 })
+        .lean();
+
+        console.log(`📋 Found ${classes.length} classes for teacher ${req.session.userName}`);
+
+        // Format classes for response
+        const formattedClasses = classes.map(classDoc => ({
+            id: classDoc._id,
+            name: classDoc.name,
+            subject: classDoc.subject,
+            description: classDoc.description,
+            studentCount: classDoc.studentCount || 0,
+            lectureCount: classDoc.lectureCount || 0,
+            quizCount: classDoc.quizCount || 0,
+            averageScore: classDoc.averageScore || 0,
+            createdAt: classDoc.createdAt,
+            updatedAt: classDoc.updatedAt
+        }));
+
+        res.json({
+            success: true,
+            classes: formattedClasses,
+            totalClasses: formattedClasses.length
+        });
+
+    } catch (error) {
+        console.error('❌ Error fetching classes:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch classes: ' + error.message
+        });
+    }
+});
+
+// ➕ Create new class
+app.post('/api/classes', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'teacher') {
+            return res.status(403).json({ success: false, message: 'Access denied. Teachers only.' });
+        }
+
+        const { name, subject, description } = req.body;
+        const teacherId = req.session.userId;
+        const teacherName = req.session.userName;
+
+        // Validate required fields
+        if (!name || !subject) {
+            return res.status(400).json({
+                success: false,
+                message: 'Class name and subject are required.'
+            });
+        }
+
+        // Check if class name already exists for this teacher
+        const existingClass = await classCollection.findOne({
+            teacherId: teacherId,
+            name: name.trim(),
+            isActive: true
+        });
+
+        if (existingClass) {
+            return res.status(400).json({
+                success: false,
+                message: 'You already have a class with this name.'
+            });
+        }
+
+        // Create new class
+        const newClass = await classCollection.create({
+            name: name.trim(),
+            subject: subject.trim(),
+            description: description?.trim() || '',
+            teacherId: teacherId,
+            teacherName: teacherName,
+            studentCount: 0,
+            lectureCount: 0,
+            quizCount: 0,
+            averageScore: 0
+        });
+
+        console.log(`✅ New class created: ${newClass.name} by ${teacherName}`);
+
+        res.json({
+            success: true,
+            message: 'Class created successfully!',
+            class: {
+                id: newClass._id,
+                name: newClass.name,
+                subject: newClass.subject,
+                description: newClass.description,
+                studentCount: 0,
+                lectureCount: 0,
+                quizCount: 0,
+                averageScore: 0,
+                createdAt: newClass.createdAt
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error creating class:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to create class: ' + error.message
+        });
+    }
+});
+
+// 📖 Get specific class details
+app.get('/api/classes/:classId', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'teacher') {
+            return res.status(403).json({ success: false, message: 'Access denied. Teachers only.' });
+        }
+
+        const classId = req.params.classId;
+        const teacherId = req.session.userId;
+
+        const classDoc = await classCollection.findOne({
+            _id: classId,
+            teacherId: teacherId,
+            isActive: true
+        }).lean();
+
+        if (!classDoc) {
+            return res.status(404).json({
+                success: false,
+                message: 'Class not found or access denied.'
+            });
+        }
+
+        res.json({
+            success: true,
+            class: {
+                id: classDoc._id,
+                name: classDoc.name,
+                subject: classDoc.subject,
+                description: classDoc.description,
+                studentCount: classDoc.studentCount || 0,
+                lectureCount: classDoc.lectureCount || 0,
+                quizCount: classDoc.quizCount || 0,
+                averageScore: classDoc.averageScore || 0,
+                createdAt: classDoc.createdAt,
+                updatedAt: classDoc.updatedAt
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error fetching class:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch class: ' + error.message
+        });
+    }
+});
+
+// ✏️ Update class information
+app.put('/api/classes/:classId', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'teacher') {
+            return res.status(403).json({ success: false, message: 'Access denied. Teachers only.' });
+        }
+
+        const classId = req.params.classId;
+        const teacherId = req.session.userId;
+        const { name, subject, description } = req.body;
+
+        // Validate required fields
+        if (!name || !subject) {
+            return res.status(400).json({
+                success: false,
+                message: 'Class name and subject are required.'
+            });
+        }
+
+        // Check if class exists and belongs to teacher
+        const existingClass = await classCollection.findOne({
+            _id: classId,
+            teacherId: teacherId,
+            isActive: true
+        });
+
+        if (!existingClass) {
+            return res.status(404).json({
+                success: false,
+                message: 'Class not found or access denied.'
+            });
+        }
+
+        // Update class
+        const updatedClass = await classCollection.findByIdAndUpdate(
+            classId,
+            {
+                name: name.trim(),
+                subject: subject.trim(),
+                description: description?.trim() || '',
+                updatedAt: new Date()
+            },
+            { new: true }
+        ).lean();
+
+        console.log(`✅ Class updated: ${updatedClass.name}`);
+
+        res.json({
+            success: true,
+            message: 'Class updated successfully!',
+            class: {
+                id: updatedClass._id,
+                name: updatedClass.name,
+                subject: updatedClass.subject,
+                description: updatedClass.description,
+                studentCount: updatedClass.studentCount || 0,
+                lectureCount: updatedClass.lectureCount || 0,
+                quizCount: updatedClass.quizCount || 0,
+                averageScore: updatedClass.averageScore || 0,
+                updatedAt: updatedClass.updatedAt
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error updating class:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update class: ' + error.message
+        });
+    }
+});
+
+// 🗄️ Archive/Delete class
+app.delete('/api/classes/:classId', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'teacher') {
+            return res.status(403).json({ success: false, message: 'Access denied. Teachers only.' });
+        }
+
+        const classId = req.params.classId;
+        const teacherId = req.session.userId;
+
+        // Check if class exists and belongs to teacher
+        const existingClass = await classCollection.findOne({
+            _id: classId,
+            teacherId: teacherId,
+            isActive: true
+        });
+
+        if (!existingClass) {
+            return res.status(404).json({
+                success: false,
+                message: 'Class not found or access denied.'
+            });
+        }
+
+        // Soft delete - mark as inactive
+        await classCollection.findByIdAndUpdate(classId, {
+            isActive: false,
+            updatedAt: new Date()
+        });
+
+        // Also mark class students as inactive
+        await classStudentCollection.updateMany(
+            { classId: classId },
+            { isActive: false }
+        );
+
+        console.log(`🗄️ Class archived: ${existingClass.name}`);
+
+        res.json({
+            success: true,
+            message: 'Class archived successfully!'
+        });
+
+    } catch (error) {
+        console.error('❌ Error archiving class:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to archive class: ' + error.message
+        });
+    }
+});
+
+// ==================== STUDENT MANAGEMENT ROUTES ====================
+
+// ➕ Add student to class (ENHANCED DEBUG VERSION)
+app.post('/api/classes/:classId/students', isAuthenticated, async (req, res) => {
+    try {
+        console.log('🔍 Add student request:', {
+            userType: req.session.userType,
+            userId: req.session.userId,
+            userName: req.session.userName,
+            classId: req.params.classId,
+            body: req.body,
+            ip: req.ip,
+            userAgent: req.get('User-Agent')?.substring(0, 100)
+        });
+
+        if (req.session.userType !== 'teacher') {
+            console.log('❌ Access denied - not a teacher:', req.session.userType);
+            return res.status(403).json({ 
+                success: false, 
+                message: 'Access denied. Teachers only.',
+                debug: {
+                    userType: req.session.userType,
+                    expectedType: 'teacher',
+                    sessionId: req.sessionID
+                }
+            });
+        }
+
+        const classId = req.params.classId;
+        const teacherId = req.session.userId;
+        const { enrollmentNumber } = req.body;
+
+        console.log('📝 Adding student to class:', {
+            classId,
+            teacherId,
+            enrollmentNumber,
+            userName: req.session.userName
+        });
+
+        if (!enrollmentNumber) {
+            return res.status(400).json({
+                success: false,
+                message: 'Student enrollment number is required.'
+            });
+        }
+
+        // Verify class ownership
+        const classDoc = await classCollection.findOne({
+            _id: classId,
+            teacherId: teacherId,
+            isActive: true
+        });
+
+        if (!classDoc) {
+            console.log('❌ Class not found or access denied:', {
+                classId,
+                teacherId
+            });
+            return res.status(404).json({
+                success: false,
+                message: 'Class not found or access denied.'
+            });
+        }
+
+        console.log('✅ Class verified:', classDoc.name);
+
+        // Find student by enrollment number
+        const student = await studentCollection.findOne({
+            enrollment: enrollmentNumber.trim()
+        });
+
+        if (!student) {
+            console.log('❌ Student not found:', enrollmentNumber);
+            return res.status(404).json({
+                success: false,
+                message: 'Student not found with this enrollment number.'
+            });
+        }
+
+        console.log('✅ Student found:', student.name);
+
+        // Check if student is already enrolled in this class
+        const existingEnrollment = await classStudentCollection.findOne({
+            classId: classId,
+            studentId: student._id
+        });
+
+        if (existingEnrollment) {
+            console.log('⚠️ Existing enrollment found:', {
+                isActive: existingEnrollment.isActive,
+                enrollmentId: existingEnrollment._id
+            });
+            
+            if (existingEnrollment.isActive) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Student is already enrolled in this class.'
+                });
+            } else {
+                // Reactivate enrollment
+                await classStudentCollection.findByIdAndUpdate(existingEnrollment._id, {
+                    isActive: true,
+                    enrolledAt: new Date()
+                });
+                console.log('✅ Student enrollment reactivated');
+            }
+        } else {
+            // Create new enrollment
+            const newEnrollment = await classStudentCollection.create({
+                classId: classId,
+                studentId: student._id,
+                studentName: student.name,
+                studentEnrollment: student.enrollment
+            });
+            console.log('✅ New student enrollment created:', newEnrollment._id);
+        }
+
+        // Update class student count
+        const totalActiveStudents = await classStudentCollection.countDocuments({
+            classId: classId,
+            isActive: true
+        });
+        
+        await classCollection.findByIdAndUpdate(classId, {
+            studentCount: totalActiveStudents,
+            updatedAt: new Date()
+        });
+
+        console.log(`✅ Student ${student.name} (${student.enrollment}) added to class ${classDoc.name}`);
+
+        res.json({
+            success: true,
+            message: `Student ${student.name} added to class successfully!`,
+            student: {
+                studentId: student._id,
+                studentName: student.name,
+                studentEnrollment: student.enrollment,
+                enrolledAt: new Date(),
+                totalQuizzes: 0,
+                averageScore: 0,
+                lastActivity: new Date(),
+                participationRate: 0
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error adding student to class:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to add student: ' + error.message,
+            debug: {
+                error: error.message,
+                stack: error.stack
+            }
+        });
+    }
+});
+
+// 👥 Get students in a class (MISSING ROUTE - ADD THIS)
+app.get('/api/classes/:classId/students', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'teacher') {
+            return res.status(403).json({ success: false, message: 'Access denied. Teachers only.' });
+        }
+
+        const classId = req.params.classId;
+        const teacherId = req.session.userId;
+
+        console.log('👥 Loading students for class:', {
+            classId: classId,
+            teacherId: teacherId,
+            requestedBy: req.session.userName
+        });
+
+        // Verify class ownership
+        const classDoc = await classCollection.findOne({
+            _id: classId,
+            teacherId: teacherId,
+            isActive: true
+        });
+
+        if (!classDoc) {
+            console.log('❌ Class not found or access denied');
+            return res.status(404).json({
+                success: false,
+                message: 'Class not found or access denied.'
+            });
+        }
+
+        console.log('✅ Class verified:', classDoc.name);
+
+        // Get students enrolled in this class
+        const enrollments = await classStudentCollection.find({
+            classId: classId,
+            isActive: true
+        }).lean();
+
+        console.log(`📋 Found ${enrollments.length} active enrollments`);
+
+        // Get quiz results for performance stats
+        const studentsWithStats = await Promise.all(
+            enrollments.map(async (enrollment) => {
+                // Get student's quiz results for this class
+                const studentResults = await quizResultCollection.find({
+                    studentId: enrollment.studentId,
+                    classId: classId
+                }).lean();
+
+                const totalQuizzes = studentResults.length;
+                const averageScore = totalQuizzes > 0 
+                    ? (studentResults.reduce((sum, result) => sum + result.percentage, 0) / totalQuizzes).toFixed(1)
+                    : 0;
+
+                const lastActivity = totalQuizzes > 0 
+                    ? studentResults[studentResults.length - 1].submissionDate 
+                    : enrollment.enrolledAt;
+
+                return {
+                    studentId: enrollment.studentId,
+                    studentName: enrollment.studentName,
+                    studentEnrollment: enrollment.studentEnrollment,
+                    enrolledAt: enrollment.enrolledAt,
+                    totalQuizzes: totalQuizzes,
+                    averageScore: parseFloat(averageScore),
+                    lastActivity: lastActivity,
+                    participationRate: totalQuizzes > 0 ? 100 : 0 // Simple calculation
+                };
+            })
+        );
+
+        console.log(`✅ Students loaded with stats: ${studentsWithStats.length}`);
+
+        res.json({
+            success: true,
+            students: studentsWithStats,
+            totalStudents: studentsWithStats.length,
+            className: classDoc.name
+        });
+
+    } catch (error) {
+        console.error('❌ Error fetching students:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch students: ' + error.message
+        });
+    }
+});
+
+// 🔍 DEBUG ROUTE - Add this temporarily to check sessions
+app.get('/api/debug/session-check', (req, res) => {
+    res.json({
+        sessionExists: !!req.session,
+        sessionData: {
+            userId: req.session?.userId,
+            userName: req.session?.userName,
+            userType: req.session?.userType,
+            sessionID: req.sessionID
+        },
+        headers: {
+            cookie: req.headers.cookie,
+            userAgent: req.headers['user-agent']
+        },
+        timestamp: new Date().toISOString()
+    });
+});
+
+// 🗑️ Remove student from class
+app.delete('/api/classes/:classId/students/:studentId', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'teacher') {
+            return res.status(403).json({ success: false, message: 'Access denied. Teachers only.' });
+        }
+
+        const { classId, studentId } = req.params;
+        const teacherId = req.session.userId;
+
+        // Verify class ownership
+        const classDoc = await classCollection.findOne({
+            _id: classId,
+            teacherId: teacherId,
+            isActive: true
+        });
+
+        if (!classDoc) {
+            return res.status(404).json({
+                success: false,
+                message: 'Class not found or access denied.'
+            });
+        }
+
+        // Find and remove enrollment
+        const enrollment = await classStudentCollection.findOneAndUpdate(
+            {
+                classId: classId,
+                studentId: studentId,
+                isActive: true
+            },
+            {
+                isActive: false
+            },
+            { new: true }
+        );
+
+        if (!enrollment) {
+            return res.status(404).json({
+                success: false,
+                message: 'Student not found in this class.'
+            });
+        }
+
+        console.log(`🗑️ Student ${enrollment.studentName} removed from class ${classDoc.name}`);
+
+        res.json({
+            success: true,
+            message: 'Student removed from class successfully!'
+        });
+
+    } catch (error) {
+        console.error('❌ Error removing student from class:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to remove student: ' + error.message
+        });
+    }
+});
+
+// ==================== CLASS STATISTICS & ANALYTICS ROUTES ====================
+
+// 📊 Get class overview for management page (FIXED VERSION)
+app.get('/api/classes/:classId/overview', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'teacher') {
+            return res.status(403).json({ success: false, message: 'Access denied. Teachers only.' });
+        }
+
+        const classId = req.params.classId;
+        const teacherId = req.session.userId;
+
+        // Get class basic info
+        const classDoc = await classCollection.findOne({
+            _id: classId,
+            teacherId: teacherId,
+            isActive: true
+        }).lean();
+
+        if (!classDoc) {
+            return res.status(404).json({
+                success: false,
+                message: 'Class not found or access denied.'
+            });
+        }
+
+        // Get recent quiz results for performance trends
+        const recentResults = await quizResultCollection.find({
+            classId: classId
+        })
+        .sort({ submissionDate: -1 })
+        .limit(10)
+        .lean();
+
+        // Get top performers (last 30 days)
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        const recentStudentResults = await quizResultCollection.find({
+            classId: classId,
+            submissionDate: { $gte: thirtyDaysAgo }
+        }).lean();
+
+        // Calculate top performers
+        const studentPerformance = {};
+        recentStudentResults.forEach(result => {
+            if (!studentPerformance[result.studentId]) {
+                studentPerformance[result.studentId] = {
+                    studentName: result.studentName,
+                    scores: [],
+                    totalQuizzes: 0
+                };
+            }
+            studentPerformance[result.studentId].scores.push(result.percentage);
+            studentPerformance[result.studentId].totalQuizzes++;
+        });
+
+        const topPerformers = Object.values(studentPerformance)
+            .map(student => ({
+                studentName: student.studentName,
+                averageScore: (student.scores.reduce((a, b) => a + b, 0) / student.scores.length).toFixed(1),
+                totalQuizzes: student.totalQuizzes
+            }))
+            .sort((a, b) => parseFloat(b.averageScore) - parseFloat(a.averageScore))
+            .slice(0, 5);
+
+        console.log(`📊 Overview generated for class ${classDoc.name}`);
+
+        res.json({
+            success: true,
+            classData: {
+                id: classDoc._id,
+                name: classDoc.name,
+                subject: classDoc.subject,
+                description: classDoc.description,
+                studentCount: classDoc.studentCount || 0,
+                lectureCount: classDoc.lectureCount || 0,
+                quizCount: classDoc.quizCount || 0,
+                averageScore: classDoc.averageScore || 0,
+                createdAt: classDoc.createdAt,
+                updatedAt: classDoc.updatedAt
+            },
+            recentActivity: recentResults.map(result => ({
+                studentName: result.studentName,
+                score: result.percentage,
+                submissionDate: result.submissionDate.toLocaleDateString(),
+                timeTaken: Math.floor(result.timeTakenSeconds / 60) + 'm'
+            })),
+            topPerformers: topPerformers,
+            performanceTrend: recentResults.slice(0, 7).reverse().map(result => ({
+                date: result.submissionDate.toLocaleDateString(),
+                score: result.percentage
+            }))
+        });
+
+    } catch (error) {
+        console.error('❌ Error generating class overview:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to generate overview: ' + error.message
+        });
+    }
+});
+
+// 📈 Get detailed class analytics
+app.get('/api/classes/:classId/analytics', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'teacher') {
+            return res.status(403).json({ success: false, message: 'Access denied. Teachers only.' });
+        }
+
+        const classId = req.params.classId;
+        const teacherId = req.session.userId;
+
+        // Verify class ownership
+        const classDoc = await classCollection.findOne({
+            _id: classId,
+            teacherId: teacherId,
+            isActive: true
+        });
+
+        if (!classDoc) {
+            return res.status(404).json({
+                success: false,
+                message: 'Class not found or access denied.'
+            });
+        }
+
+        // Get all quiz results for this class
+        const allResults = await quizResultCollection.find({
+            classId: classId
+        }).lean();
+
+        // Get all quizzes for this class
+        const classQuizzes = await quizCollection.find({
+            classId: classId
+        }).lean();
+
+        // Calculate detailed analytics
+        const analytics = {
+            totalParticipants: new Set(allResults.map(r => r.studentId.toString())).size,
+            totalQuizAttempts: allResults.length,
+            classAverage: allResults.length > 0 
+                ? (allResults.reduce((sum, r) => sum + r.percentage, 0) / allResults.length).toFixed(1)
+                : 0,
+            highestScore: allResults.length > 0 
+                ? Math.max(...allResults.map(r => r.percentage)).toFixed(1)
+                : 0,
+            lowestScore: allResults.length > 0 
+                ? Math.min(...allResults.map(r => r.percentage)).toFixed(1)
+                : 0,
+            
+            // Performance distribution
+            performanceDistribution: {
+                excellent: allResults.filter(r => r.percentage >= 90).length,
+                good: allResults.filter(r => r.percentage >= 70 && r.percentage < 90).length,
+                average: allResults.filter(r => r.percentage >= 50 && r.percentage < 70).length,
+                needsImprovement: allResults.filter(r => r.percentage < 50).length
+            },
+
+            // Quiz performance breakdown
+            quizPerformance: classQuizzes.map(quiz => {
+                const quizResults = allResults.filter(r => r.quizId.toString() === quiz._id.toString());
+                return {
+                    quizId: quiz._id,
+                    quizTitle: quiz.lectureTitle,
+                    totalAttempts: quizResults.length,
+                    averageScore: quizResults.length > 0 
+                        ? (quizResults.reduce((sum, r) => sum + r.percentage, 0) / quizResults.length).toFixed(1)
+                        : 0,
+                    highestScore: quizResults.length > 0 
+                        ? Math.max(...quizResults.map(r => r.percentage)).toFixed(1)
+                        : 0,
+                    lowestScore: quizResults.length > 0 
+                        ? Math.min(...quizResults.map(r => r.percentage)).toFixed(1)
+                        : 0
+                };
+            })
+        };
+
+        console.log(`📈 Analytics generated for class ${classDoc.name}`);
+
+        res.json({
+            success: true,
+            analytics: analytics,
+            className: classDoc.name
+        });
+
+    } catch (error) {
+        console.error('❌ Error generating class analytics:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to generate analytics: ' + error.message
+        });
+    }
+});
+
+// ==================== PAGE ROUTES ====================
+
+// 🏫 Render class management page
+app.get('/class/manage/:classId', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'teacher') {
+            return res.status(403).redirect('/login?message=Access denied. Teachers only.');
+        }
+
+        const classId = req.params.classId;
+        const teacherId = req.session.userId;
+
+        // Get class info
+        const classDoc = await classCollection.findOne({
+            _id: classId,
+            teacherId: teacherId,
+            isActive: true
+        }).lean();
+
+        if (!classDoc) {
+            return res.status(404).send('Class not found or access denied.');
+        }
+
+        console.log(`🏫 Rendering class management page for: ${classDoc.name}`);
+
+        res.render('classManagement', {
+            classId: classId,
+            className: classDoc.name,
+            classSubject: classDoc.subject,
+            userName: req.session.userName,
+            userType: req.session.userType
+        });
+
+    } catch (error) {
+        console.error('❌ Error rendering class management page:', error);
+        res.status(500).send('Failed to load class management page.');
+    }
+});
 
 // ==================== LECTURE MANAGEMENT ROUTES ====================
 
@@ -361,7 +1304,10 @@ app.post("/upload_lecture", isAuthenticated, upload.single('lectureFile'), async
 
     try {
         if (req.fileError) {
-            return res.status(400).redirect(`/homeTeacher?uploadError=true&message=${encodeURIComponent(req.fileError.message)}`);
+            return res.status(400).json({
+                success: false,
+                message: req.fileError.message
+            });
         }
 
         if (!req.file) {
@@ -371,15 +1317,16 @@ app.post("/upload_lecture", isAuthenticated, upload.single('lectureFile'), async
             });
         }
 
-        const { title } = req.body;
+        const { title, classId } = req.body; // 🆕 NEW: classId parameter
         const file = req.file;
         tempFilePath = file.path;
 
-        console.log('📁 Processing file:', {
+        console.log('📁 Processing file for class:', {
             originalName: file.originalname,
             size: file.size,
             mimetype: file.mimetype,
-            tempPath: file.path
+            tempPath: file.path,
+            classId: classId
         });
 
         const professorId = req.session.userId;
@@ -388,9 +1335,29 @@ app.post("/upload_lecture", isAuthenticated, upload.single('lectureFile'), async
         if (!professorId || !professorName || req.session.userType !== 'teacher') {
             console.warn('⚠️ User not identified as a teacher in session for lecture upload.');
             return req.session.destroy(err => {
-                const message = encodeURIComponent('Authentication required. Please log in as a teacher.');
-                res.status(401).redirect(`/login?message=${message}`);
+                res.status(401).json({
+                    success: false,
+                    message: 'Authentication required. Please log in as a teacher.'
+                });
             });
+        }
+
+        // 🆕 NEW: Verify class ownership if classId provided
+        let className = null;
+        if (classId) {
+            const classDoc = await classCollection.findOne({
+                _id: classId,
+                teacherId: professorId,
+                isActive: true
+            });
+
+            if (!classDoc) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Class not found or access denied.'
+                });
+            }
+            className = classDoc.name;
         }
 
         const extractedText = await extractTextFromFile(file.path, file.mimetype);
@@ -403,6 +1370,7 @@ app.post("/upload_lecture", isAuthenticated, upload.single('lectureFile'), async
         cleanupTempFile(tempFilePath);
         console.log(`🗑️ Temporary file cleaned up after extraction.`);
 
+        // 🔄 UPDATED: Include class information in lecture data
         const lectureData = {
             title: title,
             filePath: '',
@@ -416,13 +1384,23 @@ app.post("/upload_lecture", isAuthenticated, upload.single('lectureFile'), async
             quizGenerated: false,
             processingStatus: 'completed',
             professorName: professorName,
-            professorId: professorId
+            professorId: professorId,
+            // 🆕 NEW: Class association
+            classId: classId || null,
+            className: className || null
         };
 
         const savedLecture = await lectureCollection.create(lectureData);
         console.log('✅ Lecture saved to database:', savedLecture._id);
 
-        res.redirect(`/homeTeacher?upload=success&title=${encodeURIComponent(title)}`);
+        // 🆕 NEW: Return structured response for API usage
+        res.json({
+            success: true,
+            message: `Lecture uploaded successfully${className ? ` to class ${className}` : ''}!`,
+            lectureId: savedLecture._id,
+            title: savedLecture.title,
+            className: className
+        });
 
     } catch (error) {
         console.error('❌ Upload processing error:', error);
@@ -431,7 +1409,10 @@ app.post("/upload_lecture", isAuthenticated, upload.single('lectureFile'), async
             cleanupTempFile(tempFilePath);
         }
 
-        res.status(500).redirect(`/homeTeacher?uploadError=true&message=${encodeURIComponent('Failed to process uploaded file: ' + error.message)}`);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to process uploaded file: ' + error.message
+        });
     }
 });
 
@@ -471,6 +1452,7 @@ app.get('/lectures/:id/text', isAuthenticated, async (req, res) => {
 
 // ==================== ENHANCED QUIZ GENERATION ROUTE ====================
 
+// 🔄 UPDATED: Enhanced quiz generation with class association
 app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
     try {
         const lectureId = req.params.id
@@ -521,7 +1503,7 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
             })
         }
 
-        // ENHANCED PROMPT - Generates questions with detailed explanations
+        // [SAME ENHANCED PROMPT AS BEFORE - keeping it for consistency]
         const prompt = `
         You are an expert quiz generator and educational content creator. Create a comprehensive multiple-choice quiz with detailed explanations based on the following lecture content.
 
@@ -577,7 +1559,7 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
                 temperature: 0.3,
                 topP: 0.8,
                 topK: 40,
-                maxOutputTokens: 8192, // Increased for explanations
+                maxOutputTokens: 8192,
                 responseMimeType: "application/json",
             }
 
@@ -657,13 +1639,11 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
                 console.log('🎯 ENHANCED quiz validated:', {
                     totalQuestions: generatedQuiz.length,
                     hasExplanations: !!generatedQuiz[0].explanations,
-                    hasCorrectExplanation: !!generatedQuiz[0].correctAnswerExplanation,
-                    sampleExplanation: generatedQuiz[0].explanations[Object.keys(generatedQuiz[0].explanations).find(key => key !== generatedQuiz[0].correct_answer)]?.substring(0, 100) + '...'
+                    hasCorrectExplanation: !!generatedQuiz[0].correctAnswerExplanation
                 });
                 
             } catch (parseError) {
                 console.error('❌ Failed to parse ENHANCED quiz JSON:', parseError)
-                console.error('Raw response sample:', quizContent.substring(0, 500) + '...')
                 
                 await lectureCollection.findByIdAndUpdate(lectureId, {
                     processingStatus: 'failed',
@@ -677,34 +1657,22 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
                 })
             }
 
-            // Save the ENHANCED quiz to database
+            // 🔄 UPDATED: Save the ENHANCED quiz with class association
             const newQuiz = {
                 lectureId: lectureId,
                 lectureTitle: lecture.title,
-                questions: generatedQuiz, // Now includes detailed explanations!
+                questions: generatedQuiz,
                 totalQuestions: generatedQuiz.length,
                 generatedDate: new Date(),
-                createdBy: req.session.userId
+                createdBy: req.session.userId,
+                // 🆕 NEW: Include class information
+                classId: lecture.classId || null,
+                className: lecture.className || null
             }
 
             try {
                 const savedQuiz = await quizCollection.create(newQuiz)
                 console.log('✅ ENHANCED quiz saved to database:', savedQuiz._id)
-                
-                // Verify explanations were saved correctly
-                const verifyQuiz = await quizCollection.findById(savedQuiz._id)
-                if (verifyQuiz && verifyQuiz.questions[0].explanations) {
-                    console.log('✅ VERIFIED: Quiz with explanations saved successfully!')
-                    console.log('📊 First question explanations:', {
-                        hasExplanationsField: !!verifyQuiz.questions[0].explanations,
-                        explanationCount: Object.keys(verifyQuiz.questions[0].explanations).length,
-                        hasCorrectExplanation: !!verifyQuiz.questions[0].correctAnswerExplanation,
-                        sampleExplanation: Object.values(verifyQuiz.questions[0].explanations).find(exp => exp && exp.trim() !== '')?.substring(0, 50) + '...'
-                    });
-                } else {
-                    console.log('❌ ERROR: Quiz explanations not saved properly!')
-                    throw new Error('Quiz explanations verification failed')
-                }
                 
                 // Update lecture status
                 await lectureCollection.findByIdAndUpdate(lectureId, {
@@ -716,12 +1684,14 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
 
                 console.log('✅ ENHANCED quiz generation completed successfully for:', lecture.title)
 
+                // 🆕 NEW: Return enhanced response with class info
                 res.json({
                     success: true,
                     message: `Enhanced quiz generated successfully with ${generatedQuiz.length} questions and detailed explanations!`,
                     quizId: savedQuiz._id,
                     totalQuestions: generatedQuiz.length,
                     title: lecture.title,
+                    className: lecture.className,
                     explanationsGenerated: true
                 })
                 
@@ -778,7 +1748,7 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
             message: 'Failed to generate enhanced quiz: ' + error.message 
         })
     }
-})
+});
 
 // ==================== DELETE LECTURE ROUTE ====================
 
@@ -826,20 +1796,78 @@ app.post('/delete_lecture/:id', isAuthenticated, async (req, res) => {
 app.get('/api/student/available-quizzes', isAuthenticated, async (req, res) => {
     try {
         if (req.session.userType !== 'student') {
-            return res.status(403).json({ success: false, message: 'Access denied. Not a student account.' });
+            return res.status(403).json({ success: false, message: 'Access denied. Students only.' });
         }
 
-        const quizzes = await quizCollection.find({})
-                                            .select('lectureTitle totalQuestions lectureId')
-                                            .sort({ generatedDate: -1 })
-                                            .lean();
+        const studentId = req.session.userId;
 
-        res.json({ success: true, quizzes: quizzes });
+        // Get all classes the student is enrolled in
+        const enrollments = await classStudentCollection.find({
+            studentId: studentId,
+            isActive: true
+        }).lean();
+
+        if (enrollments.length === 0) {
+            return res.json({
+                success: true,
+                quizzes: [],
+                message: 'Not enrolled in any classes.'
+            });
+        }
+
+        const enrolledClassIds = enrollments.map(e => e.classId);
+
+        // Get all available quizzes from enrolled classes
+        const availableQuizzes = await quizCollection.find({
+            classId: { $in: enrolledClassIds },
+            isActive: true
+        })
+        .select('lectureTitle totalQuestions classId generatedDate')
+        .sort({ generatedDate: -1 })
+        .lean();
+
+        // Get quizzes already taken by student
+        const takenQuizIds = await quizResultCollection.find({
+            studentId: studentId
+        }).distinct('quizId');
+
+        // Filter out taken quizzes and add class information
+        const quizzesWithClassInfo = await Promise.all(
+            availableQuizzes
+                .filter(quiz => !takenQuizIds.includes(quiz._id.toString()))
+                .map(async (quiz) => {
+                    const classInfo = await classCollection.findById(quiz.classId).select('name subject').lean();
+                    return {
+                        _id: quiz._id,
+                        lectureTitle: quiz.lectureTitle,
+                        totalQuestions: quiz.totalQuestions,
+                        generatedDate: quiz.generatedDate,
+                        classId: quiz.classId,
+                        className: classInfo ? classInfo.name : 'Unknown Class',
+                        classSubject: classInfo ? classInfo.subject : 'Unknown Subject'
+                    };
+                })
+        );
+
+        console.log(`🎯 Found ${quizzesWithClassInfo.length} available quizzes across all enrolled classes`);
+
+        res.json({
+            success: true,
+            quizzes: quizzesWithClassInfo,
+            totalQuizzes: quizzesWithClassInfo.length
+        });
+
     } catch (error) {
-        console.error('❌ Error fetching available quizzes for student:', error);
-        res.status(500).json({ success: false, message: 'Failed to load available quizzes.' });
+        console.error('❌ Error fetching available quizzes:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to load available quizzes: ' + error.message
+        });
     }
 });
+
+
+// 🔄 REPLACE your existing /take_quiz/:quizId route with this enhanced version:
 
 app.get('/take_quiz/:quizId', isAuthenticated, async (req, res) => {
     try {
@@ -848,15 +1876,57 @@ app.get('/take_quiz/:quizId', isAuthenticated, async (req, res) => {
         }
 
         const quizId = req.params.quizId;
-        const quiz = await quizCollection.findById(quizId).select('lectureTitle totalQuestions').lean();
+        const classId = req.query.classId; // Optional class context
+
+        // Get quiz details
+        const quiz = await quizCollection.findById(quizId).select('lectureTitle totalQuestions classId').lean();
 
         if (!quiz) {
             return res.status(404).send('Quiz not found.');
         }
 
+        // If student is coming from a class context, verify enrollment
+        if (classId || quiz.classId) {
+            const targetClassId = classId || quiz.classId;
+            const enrollment = await classStudentCollection.findOne({
+                studentId: req.session.userId,
+                classId: targetClassId,
+                isActive: true
+            });
+
+            if (!enrollment) {
+                return res.status(403).send('You are not enrolled in this class.');
+            }
+        }
+
+        // Check if student has already taken this quiz
+        const existingResult = await quizResultCollection.findOne({
+            quizId: quizId,
+            studentId: req.session.userId
+        });
+
+        if (existingResult) {
+            return res.redirect(`/quiz-results?alreadyTaken=true&quizTitle=${encodeURIComponent(quiz.lectureTitle)}`);
+        }
+
+        // Get class information for context
+        let classInfo = null;
+        if (quiz.classId) {
+            classInfo = await classCollection.findById(quiz.classId).select('name subject').lean();
+        }
+
+        console.log(`🎯 Rendering take quiz page for: ${quiz.lectureTitle} (Class: ${classInfo?.name || 'N/A'})`);
+
+        // 🆕 ENHANCED: Pass complete class context to template
         res.render('takeQuiz', {
-            quiz: quiz,
-            userName: req.session.userName
+            quiz: {
+                ...quiz,
+                classId: quiz.classId, // 🔥 IMPORTANT: Pass classId to template
+                className: classInfo?.name,
+                classSubject: classInfo?.subject
+            },
+            userName: req.session.userName,
+            classContext: !!classId
         });
 
     } catch (error) {
@@ -900,6 +1970,7 @@ app.get('/api/quiz/:quizId', isAuthenticated, async (req, res) => {
     }
 });
 
+// 🔄 UPDATED: Enhanced quiz submission (class-aware)
 app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
     try {
         if (req.session.userType !== 'student') {
@@ -912,16 +1983,45 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
         const studentId = req.session.userId;
         const studentName = req.session.userName;
 
-        // Get complete quiz data including lecture ID
+        // Get complete quiz data including class information
         const quiz = await quizCollection.findById(quizId).lean();
         if (!quiz) {
             return res.status(404).json({ success: false, message: 'Quiz not found for scoring.' });
         }
 
+        // Verify class enrollment if quiz belongs to a class
+        if (quiz.classId) {
+            const enrollment = await classStudentCollection.findOne({
+                studentId: studentId,
+                classId: quiz.classId,
+                isActive: true
+            });
+
+            if (!enrollment) {
+                return res.status(403).json({ 
+                    success: false, 
+                    message: 'You are not enrolled in the class for this quiz.' 
+                });
+            }
+        }
+
+        // Check for duplicate submission
+        const existingResult = await quizResultCollection.findOne({
+            quizId: quizId,
+            studentId: studentId
+        });
+
+        if (existingResult) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'You have already submitted this quiz.' 
+            });
+        }
+
         let score = 0;
         const totalQuestions = quiz.totalQuestions;
         const detailedAnswers = [];
-        const enhancedQuestionDetails = []; // For detailed results page
+        const enhancedQuestionDetails = [];
 
         // Score the quiz and prepare detailed results
         studentAnswers.forEach(sAnswer => {
@@ -932,7 +2032,6 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
                     score++;
                 }
                 
-                // For quiz results storage
                 detailedAnswers.push({
                     questionIndex: sAnswer.questionIndex,
                     question: sAnswer.question,
@@ -941,7 +2040,6 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
                     isCorrect: isCorrect
                 });
 
-                // Enhanced data for results page with all question details
                 enhancedQuestionDetails.push({
                     questionIndex: sAnswer.questionIndex,
                     questionText: correspondingQuestion.question,
@@ -955,10 +2053,11 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
 
         const percentage = (totalQuestions > 0) ? (score / totalQuestions) * 100 : 0;
 
-        // Save quiz result to database
+        // Save quiz result to database (with class information)
         const newQuizResult = {
             quizId: quizId,
             lectureId: quiz.lectureId,
+            classId: quiz.classId || null, // Include class ID
             studentId: studentId,
             studentName: studentName,
             score: score,
@@ -969,10 +2068,15 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
             answers: detailedAnswers
         };
 
-        await quizResultCollection.create(newQuizResult);
+        const savedResult = await quizResultCollection.create(newQuizResult);
         console.log(`✅ Quiz result saved for student ${studentName} on quiz ${quiz.lectureTitle}: Score ${score}/${totalQuestions}`);
 
-        // Return enhanced response with all needed data for explanations
+        // Get class information for response
+        let classInfo = null;
+        if (quiz.classId) {
+            classInfo = await classCollection.findById(quiz.classId).select('name subject').lean();
+        }
+
         res.json({
             success: true,
             message: 'Quiz submitted and scored successfully!',
@@ -980,12 +2084,14 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
             totalQuestions: totalQuestions,
             percentage: percentage,
             timeTakenSeconds: timeTakenSeconds,
-            quizResultId: newQuizResult._id,
-            // Add these for the results page
+            quizResultId: savedResult._id,
+            // Enhanced response with class context
             lectureId: quiz.lectureId,
+            classId: quiz.classId,
+            className: classInfo?.name,
             quizTitle: quiz.lectureTitle,
             questionDetails: enhancedQuestionDetails,
-            quizId: quizId // Include quizId for explanations
+            quizId: quizId
         });
 
     } catch (error) {
@@ -994,8 +2100,283 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
     }
 });
 
+app.get('/api/teacher/class/:classId/quizzes', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'teacher') {
+            return res.status(403).json({ success: false, message: 'Access denied. Teachers only.' });
+        }
+
+        const classId = req.params.classId;
+        const teacherId = req.session.userId;
+
+        // Verify class ownership
+        const classDoc = await classCollection.findOne({
+            _id: classId,
+            teacherId: teacherId,
+            isActive: true
+        });
+
+        if (!classDoc) {
+            return res.status(404).json({
+                success: false,
+                message: 'Class not found or access denied.'
+            });
+        }
+
+        // Get all quizzes for this class
+        const quizzes = await quizCollection.find({
+            classId: classId,
+            isActive: true
+        })
+        .sort({ generatedDate: -1 })
+        .lean();
+
+        // Enhance quiz data with performance stats
+        const enhancedQuizzes = await Promise.all(
+            quizzes.map(async (quiz) => {
+                const quizResults = await quizResultCollection.find({
+                    quizId: quiz._id
+                }).lean();
+
+                return {
+                    _id: quiz._id,
+                    lectureId: quiz.lectureId,
+                    lectureTitle: quiz.lectureTitle,
+                    totalQuestions: quiz.totalQuestions,
+                    generatedDate: quiz.generatedDate,
+                    isActive: quiz.isActive,
+                    totalAttempts: quizResults.length,
+                    averageScore: quizResults.length > 0 
+                        ? (quizResults.reduce((sum, r) => sum + r.percentage, 0) / quizResults.length).toFixed(1)
+                        : 0,
+                    highestScore: quizResults.length > 0 
+                        ? Math.max(...quizResults.map(r => r.percentage)).toFixed(1)
+                        : 0
+                };
+            })
+        );
+
+        console.log(`📝 Found ${enhancedQuizzes.length} quizzes for class ${classDoc.name}`);
+
+        res.json({
+            success: true,
+            quizzes: enhancedQuizzes,
+            totalQuizzes: enhancedQuizzes.length,
+            className: classDoc.name
+        });
+
+    } catch (error) {
+        console.error('❌ Error fetching class quizzes:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch quizzes: ' + error.message
+        });
+    }
+});
+
+// 🏫 Get student's enrolled classes
+app.get('/api/student/enrolled-classes', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'student') {
+            return res.status(403).json({ success: false, message: 'Access denied. Students only.' });
+        }
+
+        const studentId = req.session.userId;
+        
+        // Get classes the student is enrolled in
+        const enrollments = await classStudentCollection.find({
+            studentId: studentId,
+            isActive: true
+        }).lean();
+
+        if (enrollments.length === 0) {
+            return res.json({
+                success: true,
+                classes: [],
+                message: 'No enrolled classes found.'
+            });
+        }
+
+        // Get class details and student's performance in each class
+        const enrolledClasses = await Promise.all(
+            enrollments.map(async (enrollment) => {
+                // Get class details
+                const classDetails = await classCollection.findById(enrollment.classId).lean();
+                
+                if (!classDetails) {
+                    return null; // Skip if class doesn't exist
+                }
+
+                // Get teacher name
+                const teacher = await teacherCollection.findById(classDetails.teacherId).select('name').lean();
+
+                // Get available quizzes for this class
+                const availableQuizzes = await quizCollection.countDocuments({
+                    classId: enrollment.classId,
+                    isActive: true
+                });
+
+                // Get student's quiz results for this class
+                const studentResults = await quizResultCollection.find({
+                    studentId: studentId,
+                    classId: enrollment.classId
+                }).lean();
+
+                // Calculate student's stats for this class
+                const quizzesTaken = studentResults.length;
+                const averageScore = quizzesTaken > 0 
+                    ? (studentResults.reduce((sum, result) => sum + result.percentage, 0) / quizzesTaken).toFixed(1)
+                    : 0;
+
+                return {
+                    classId: classDetails._id,
+                    className: classDetails.name,
+                    classSubject: classDetails.subject,
+                    classDescription: classDetails.description,
+                    teacherName: teacher ? teacher.name : 'Unknown Teacher',
+                    enrolledAt: enrollment.enrolledAt,
+                    // Student's performance in this class
+                    quizzesTaken: quizzesTaken,
+                    averageScore: parseFloat(averageScore),
+                    availableQuizzes: availableQuizzes
+                };
+            })
+        );
+
+        // Filter out null values (deleted classes)
+        const validClasses = enrolledClasses.filter(cls => cls !== null);
+
+        console.log(`🏫 Found ${validClasses.length} enrolled classes for student ${req.session.userName}`);
+
+        res.json({
+            success: true,
+            classes: validClasses,
+            totalClasses: validClasses.length
+        });
+
+    } catch (error) {
+        console.error('❌ Error fetching enrolled classes:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch enrolled classes: ' + error.message
+        });
+    }
+});
+
+
+// ==================== SIMPLE STUDENT CLASS REDIRECT (ADD THIS TO INDEX.JS) ====================
+
+// 🎓 Simple redirect for student class view (breadcrumb navigation)
+app.get('/student/class/:classId', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'student') {
+            return res.status(403).redirect('/login?message=Access denied. Students only.');
+        }
+
+        const studentId = req.session.userId;
+        const classId = req.params.classId;
+
+        // Verify student enrollment
+        const enrollment = await classStudentCollection.findOne({
+            studentId: studentId,
+            classId: classId,
+            isActive: true
+        });
+
+        if (!enrollment) {
+            return res.status(403).redirect('/homeStudent?message=You are not enrolled in this class.');
+        }
+
+        // Get class name for context
+        const classInfo = await classCollection.findById(classId).select('name').lean();
+        const className = classInfo ? classInfo.name : 'Unknown Class';
+
+        console.log(`🎓 Student ${req.session.userName} accessing class: ${className}`);
+
+        // For now, redirect to student dashboard with class context
+        // Later you can create a dedicated student class view page
+        res.redirect(`/homeStudent?class=${classId}&className=${encodeURIComponent(className)}`);
+
+    } catch (error) {
+        console.error('❌ Error accessing student class:', error);
+        res.status(500).redirect('/homeStudent?message=Failed to access class information.');
+    }
+});
+
+// 🎯 Get available quizzes for a specific class (student enrolled)
+app.get('/api/student/class/:classId/quizzes', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'student') {
+            return res.status(403).json({ success: false, message: 'Access denied. Students only.' });
+        }
+
+        const studentId = req.session.userId;
+        const classId = req.params.classId;
+
+        // Verify student is enrolled in this class
+        const enrollment = await classStudentCollection.findOne({
+            studentId: studentId,
+            classId: classId,
+            isActive: true
+        });
+
+        if (!enrollment) {
+            return res.status(403).json({
+                success: false,
+                message: 'You are not enrolled in this class.'
+            });
+        }
+
+        // Get available quizzes for this class
+        const quizzes = await quizCollection.find({
+            classId: classId,
+            isActive: true
+        })
+        .select('lectureTitle totalQuestions generatedDate')
+        .sort({ generatedDate: -1 })
+        .lean();
+
+        // Check which quizzes the student has already taken
+        const takenQuizIds = await quizResultCollection.find({
+            studentId: studentId,
+            classId: classId
+        }).distinct('quizId');
+
+        // Mark quizzes as taken or available
+        const quizzesWithStatus = quizzes.map(quiz => ({
+            _id: quiz._id,
+            lectureTitle: quiz.lectureTitle,
+            totalQuestions: quiz.totalQuestions,
+            generatedDate: quiz.generatedDate,
+            status: takenQuizIds.includes(quiz._id.toString()) ? 'taken' : 'available'
+        }));
+
+        // Separate available and taken quizzes
+        const availableQuizzes = quizzesWithStatus.filter(q => q.status === 'available');
+        const takenQuizzes = quizzesWithStatus.filter(q => q.status === 'taken');
+
+        console.log(`🎯 Found ${availableQuizzes.length} available quizzes for student in class ${classId}`);
+
+        res.json({
+            success: true,
+            quizzes: availableQuizzes, // Only return available quizzes
+            takenQuizzes: takenQuizzes, // Also return taken quizzes for reference
+            totalAvailable: availableQuizzes.length,
+            totalTaken: takenQuizzes.length
+        });
+
+    } catch (error) {
+        console.error('❌ Error fetching class quizzes:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch class quizzes: ' + error.message
+        });
+    }
+});
+
 // ==================== TEACHER RESULTS ROUTES ====================
 
+// ==================== UPDATED LECTURE RESULTS ROUTE ====================
 app.get('/lecture_results/:lectureId', isAuthenticated, async (req, res) => {
     try {
         if (req.session.userType !== 'teacher') {
@@ -1003,39 +2384,74 @@ app.get('/lecture_results/:lectureId', isAuthenticated, async (req, res) => {
         }
 
         const lectureId = req.params.lectureId;
+        
+        // Get lecture details
         const lecture = await lectureCollection.findById(lectureId).lean();
         if (!lecture) {
             return res.status(404).send('Lecture not found.');
         }
 
+        // Verify ownership
         if (!lecture.professorId.equals(req.session.userId)) {
-             return res.status(403).send('Access denied. You can only view results for your own lectures.');
+            return res.status(403).send('Access denied. You can only view results for your own lectures.');
         }
 
-        const quizResults = await quizResultCollection.find({ lectureId: lectureId })
-                                                     .sort({ submissionDate: -1 })
-                                                     .lean();
+        // Get quiz for this lecture
+        const quiz = await quizCollection.findOne({ lectureId: lectureId }).lean();
+        if (!quiz) {
+            return res.render('lectureResults', {
+                lectureTitle: lecture.title,
+                className: lecture.className,
+                subject: lecture.classSubject || 'Unknown Subject',
+                quizResults: [],
+                userName: req.session.userName || "Teacher",
+                message: 'No quiz found for this lecture.'
+            });
+        }
 
-        const formattedResults = quizResults.map(result => ({
+        // Get quiz results
+        const quizResults = await quizResultCollection.find({ 
+            lectureId: lectureId 
+        })
+        .sort({ percentage: -1, timeTakenSeconds: 1 }) // Sort by score desc, then time asc
+        .lean();
+
+        // Format results with rankings
+        const formattedResults = quizResults.map((result, index) => ({
             ...result,
-            submissionDate: result.submissionDate.toLocaleString()
+            rank: index + 1,
+            submissionDate: result.submissionDate.toLocaleString(),
+            rankInClass: index + 1 // For class context if needed
         }));
+
+        // Get class information if available
+        let classInfo = null;
+        if (lecture.classId) {
+            classInfo = await classCollection.findById(lecture.classId).select('name subject').lean();
+        }
+
+        console.log(`📊 Rendering lecture results for: ${lecture.title} (${formattedResults.length} results)`);
 
         res.render('lectureResults', {
             lectureTitle: lecture.title,
+            className: classInfo ? classInfo.name : lecture.className,
+            subject: classInfo ? classInfo.subject : (lecture.classSubject || 'Unknown Subject'),
             quizResults: formattedResults,
-            userName: req.session.userName || "Teacher"
+            userName: req.session.userName || "Teacher",
+            totalStudents: formattedResults.length,
+            quizId: quiz._id.toString()
         });
 
     } catch (error) {
         console.error('❌ Error fetching lecture results:', error);
-        res.status(500).send('Failed to load quiz results.');
+        res.status(500).send('Failed to load quiz results: ' + error.message);
     }
 });
 
 // ==================== ANALYTICS ROUTES ====================
 
 // Student Performance Analytics
+// 🔄 FIXED: Student Performance Analytics Route 
 app.get('/api/student/performance-data', isAuthenticated, async (req, res) => {
     try {
         if (req.session.userType !== 'student') {
@@ -1045,22 +2461,35 @@ app.get('/api/student/performance-data', isAuthenticated, async (req, res) => {
         const studentId = req.session.userId;
         const fifteenDaysAgo = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000);
 
-        // Get student's quiz results from last 15 days
+        // Get student's quiz results from last 15 days (class-aware)
         const studentResults = await quizResultCollection
             .find({ 
                 studentId: studentId,
                 submissionDate: { $gte: fifteenDaysAgo }
             })
             .sort({ submissionDate: -1 })
-            .populate('quizId', 'lectureTitle')
             .lean();
 
-        // Get all quiz results for class averages (last 15 days)
+        // Get all quiz results for comparison (from all classes)
         const allResults = await quizResultCollection
             .find({ submissionDate: { $gte: fifteenDaysAgo } })
             .lean();
 
-        // Calculate student statistics
+        // Get class information for student's results
+        const resultsWithClassInfo = await Promise.all(
+            studentResults.map(async (result) => {
+                const quiz = await quizCollection.findById(result.quizId).select('lectureTitle classId').lean();
+                const classInfo = quiz ? await classCollection.findById(quiz.classId).select('name').lean() : null;
+                
+                return {
+                    ...result,
+                    quizTitle: quiz ? quiz.lectureTitle : 'Unknown Quiz',
+                    className: classInfo ? classInfo.name : 'Unknown Class'
+                };
+            })
+        );
+
+        // Calculate statistics
         const totalQuizzes = studentResults.length;
         const averageScore = totalQuizzes > 0 
             ? (studentResults.reduce((sum, result) => sum + result.percentage, 0) / totalQuizzes).toFixed(1)
@@ -1072,22 +2501,21 @@ app.get('/api/student/performance-data', isAuthenticated, async (req, res) => {
             ? (allScores.reduce((sum, score) => sum + score, 0) / allScores.length).toFixed(1)
             : 0;
 
-        // Calculate performance trend (last 5 vs previous 5)
+        // Calculate performance trend
         let trendIndicator = '→';
         if (studentResults.length >= 6) {
-            const recent5 = studentResults.slice(0, 5).reduce((sum, r) => sum + r.percentage, 0) / 5;
-            const previous5 = studentResults.slice(5, 10).reduce((sum, r) => sum + r.percentage, 0) / 5;
+            const recent3 = studentResults.slice(0, 3).reduce((sum, r) => sum + r.percentage, 0) / 3;
+            const previous3 = studentResults.slice(3, 6).reduce((sum, r) => sum + r.percentage, 0) / 3;
             
-            if (recent5 > previous5 + 5) trendIndicator = '↗️';
-            else if (recent5 < previous5 - 5) trendIndicator = '↘️';
+            if (recent3 > previous3 + 5) trendIndicator = '↗️';
+            else if (recent3 < previous3 - 5) trendIndicator = '↘️';
         }
 
-        // Get top 3 performers (by average score in last 15 days)
+        // Get top 3 performers
         const studentPerformances = {};
         allResults.forEach(result => {
             if (!studentPerformances[result.studentId]) {
                 studentPerformances[result.studentId] = {
-                    studentId: result.studentId,
                     studentName: result.studentName,
                     scores: [],
                     totalQuizzes: 0
@@ -1112,14 +2540,23 @@ app.get('/api/student/performance-data', isAuthenticated, async (req, res) => {
         }));
 
         // Find current student's rank
-        const currentStudentRank = rankedStudents.findIndex(s => s.studentId.toString() === studentId.toString()) + 1;
+        const currentStudentRank = rankedStudents.findIndex(s => s.studentName === req.session.userName) + 1;
 
         // Prepare trend data for charts
-        const trendData = studentResults.reverse().map(result => ({
+        const trendData = resultsWithClassInfo.reverse().map(result => ({
             date: result.submissionDate.toLocaleDateString(),
             score: result.percentage,
-            quizTitle: result.quizId?.lectureTitle || 'Quiz',
+            quizTitle: result.quizTitle,
+            className: result.className,
             timeTaken: result.timeTakenSeconds
+        }));
+
+        // Recent results for table (RENAMED to avoid conflict)
+        const displayRecentResults = resultsWithClassInfo.slice(0, 10).map(result => ({
+            quizTitle: `${result.className} - ${result.quizTitle}`,
+            score: result.percentage,
+            submissionDate: result.submissionDate.toLocaleDateString(),
+            timeTaken: Math.floor(result.timeTakenSeconds / 60) + 'm ' + (result.timeTakenSeconds % 60) + 's'
         }));
 
         res.json({
@@ -1130,15 +2567,10 @@ app.get('/api/student/performance-data', isAuthenticated, async (req, res) => {
                     averageScore: parseFloat(averageScore),
                     classAverage: parseFloat(classAverage),
                     trendIndicator,
-                    currentRank: currentStudentRank,
+                    currentRank: currentStudentRank || rankedStudents.length + 1,
                     totalStudents: rankedStudents.length
                 },
-                recentResults: studentResults.slice(0, 10).map(result => ({
-                    quizTitle: result.quizId?.lectureTitle || 'Quiz',
-                    score: result.percentage,
-                    submissionDate: result.submissionDate.toLocaleDateString(),
-                    timeTaken: Math.floor(result.timeTakenSeconds / 60) + 'm ' + (result.timeTakenSeconds % 60) + 's'
-                })),
+                recentResults: displayRecentResults, // RENAMED variable
                 trendData,
                 top3Performers,
                 performanceBreakdown: {
@@ -1155,9 +2587,6 @@ app.get('/api/student/performance-data', isAuthenticated, async (req, res) => {
         res.status(500).json({ success: false, message: 'Failed to load performance data.' });
     }
 });
-
-// Teacher Class Analytics
-
 
 // Helper functions for safe calculations
 function safeNumber(value, defaultValue = 0) {
@@ -1499,6 +2928,8 @@ app.get('/api/teacher/class-analytics', requireAuth, async (req, res) => {
 });
 
 // Individual Student Analytics for Teachers
+// 🔄 REPLACE your existing /api/teacher/student-analytics/:studentId route with this enhanced version:
+
 app.get('/api/teacher/student-analytics/:studentId', isAuthenticated, async (req, res) => {
     try {
         if (req.session.userType !== 'teacher') {
@@ -1506,7 +2937,15 @@ app.get('/api/teacher/student-analytics/:studentId', isAuthenticated, async (req
         }
 
         const studentId = req.params.studentId;
+        const classId = req.query.classId; // Optional class filter
+        const teacherId = req.session.userId;
         const fifteenDaysAgo = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000);
+
+        console.log('📊 Loading student analytics API:', {
+            studentId: studentId,
+            classId: classId,
+            teacherId: teacherId
+        });
 
         // Get student info
         const student = await studentCollection.findById(studentId).select('name enrollment').lean();
@@ -1514,35 +2953,115 @@ app.get('/api/teacher/student-analytics/:studentId', isAuthenticated, async (req
             return res.status(404).json({ success: false, message: 'Student not found.' });
         }
 
-        // Get student's last 10 quiz results
-        const studentResults = await quizResultCollection
-            .find({ 
+        // 🆕 NEW: Build query filter based on class context
+        let quizResultsFilter = {
+            studentId: studentId,
+            submissionDate: { $gte: fifteenDaysAgo }
+        };
+
+        let classAverageFilter = {
+            submissionDate: { $gte: fifteenDaysAgo }
+        };
+
+        // 🏫 Apply class filtering if specified
+        if (classId) {
+            // Verify teacher access to class
+            const classDoc = await classCollection.findOne({
+                _id: classId,
+                teacherId: teacherId,
+                isActive: true
+            }).lean();
+
+            if (!classDoc) {
+                return res.status(403).json({ 
+                    success: false, 
+                    message: 'Class not found or access denied.' 
+                });
+            }
+
+            // Verify student enrollment
+            const enrollment = await classStudentCollection.findOne({
                 studentId: studentId,
-                submissionDate: { $gte: fifteenDaysAgo }
-            })
+                classId: classId,
+                isActive: true
+            }).lean();
+
+            if (!enrollment) {
+                return res.status(403).json({ 
+                    success: false, 
+                    message: 'Student is not enrolled in this class.' 
+                });
+            }
+
+            // Filter by specific class
+            quizResultsFilter.classId = classId;
+            classAverageFilter.classId = classId;
+
+            console.log(`🏫 Filtering analytics for class: ${classDoc.name}`);
+        } else {
+            // 🔍 Verify teacher has access to student through any class
+            const teacherClasses = await classCollection.find({
+                teacherId: teacherId,
+                isActive: true
+            }).select('_id').lean();
+
+            const teacherClassIds = teacherClasses.map(c => c._id);
+
+            const studentEnrollment = await classStudentCollection.findOne({
+                studentId: studentId,
+                classId: { $in: teacherClassIds },
+                isActive: true
+            }).lean();
+
+            if (!studentEnrollment) {
+                return res.status(403).json({ 
+                    success: false, 
+                    message: 'You do not have access to this student\'s analytics.' 
+                });
+            }
+
+            // Filter by teacher's classes only
+            classAverageFilter.classId = { $in: teacherClassIds };
+            quizResultsFilter.classId = { $in: teacherClassIds };
+
+            console.log('📊 Loading analytics across all teacher\'s classes');
+        }
+
+        // 📊 Get student's quiz results (filtered)
+        const studentResults = await quizResultCollection
+            .find(quizResultsFilter)
             .sort({ submissionDate: -1 })
-            .limit(10)
-            .populate('quizId', 'lectureTitle totalQuestions')
             .lean();
 
-        // Get all results for class comparison
-        const allResults = await quizResultCollection
-            .find({ submissionDate: { $gte: fifteenDaysAgo } })
+        // 📈 Get class average for comparison (filtered)
+        const allClassResults = await quizResultCollection
+            .find(classAverageFilter)
             .lean();
 
-        // Calculate class averages
-        const classAverage = allResults.length > 0 
-            ? (allResults.reduce((sum, r) => sum + r.percentage, 0) / allResults.length).toFixed(1)
-            : 0;
+        // 🔄 Enhanced: Get quiz details with class information
+        const enhancedStudentResults = await Promise.all(
+            studentResults.map(async (result) => {
+                const quiz = await quizCollection.findById(result.quizId).select('lectureTitle classId').lean();
+                const classInfo = quiz && quiz.classId ? await classCollection.findById(quiz.classId).select('name').lean() : null;
+                
+                return {
+                    ...result,
+                    quizTitle: quiz ? quiz.lectureTitle : 'Unknown Quiz',
+                    className: classInfo ? classInfo.name : 'Unknown Class'
+                };
+            })
+        );
 
-        // Calculate student's performance metrics
+        // Calculate statistics
         const totalQuizzes = studentResults.length;
         const averageScore = totalQuizzes > 0 
             ? (studentResults.reduce((sum, result) => sum + result.percentage, 0) / totalQuizzes).toFixed(1)
             : 0;
 
-        const averageTime = totalQuizzes > 0 
-            ? Math.floor(studentResults.reduce((sum, result) => sum + result.timeTakenSeconds, 0) / totalQuizzes / 60)
+        // Calculate class average (filtered by same criteria)
+        const classScores = allClassResults.map(r => r.percentage);
+        const classAverage = classScores.length > 0 
+            ? (classScores.reduce((sum, score) => sum + score, 0) / classScores.length).toFixed(1)
             : 0;
 
         // Calculate improvement trend
@@ -1555,54 +3074,139 @@ app.get('/api/teacher/student-analytics/:studentId', isAuthenticated, async (req
             else if (recent3 < previous3 - 5) trendIndicator = '↘️';
         }
 
-        // Detailed quiz breakdown
-        const detailedResults = studentResults.map(result => ({
-            quizTitle: result.quizId?.lectureTitle || 'Quiz',
+        // Calculate average time
+        const averageTime = totalQuizzes > 0 
+            ? Math.floor(studentResults.reduce((sum, result) => sum + result.timeTakenSeconds, 0) / totalQuizzes / 60)
+            : 0;
+
+        // 📊 Prepare trend data for charts
+        const trendData = enhancedStudentResults.reverse().map(result => ({
+            date: result.submissionDate.toLocaleDateString(),
+            score: result.percentage,
+            classAvg: parseFloat(classAverage) // Use filtered class average
+        }));
+
+        // 📋 Format detailed results (limit to 10 most recent)
+        const detailedResults = enhancedStudentResults.slice(0, 10).map(result => ({
+            quizTitle: result.quizTitle,
             score: result.score,
             totalQuestions: result.totalQuestions,
             percentage: result.percentage,
             timeTaken: result.timeTakenSeconds,
             submissionDate: result.submissionDate,
+            className: result.className,
             answers: result.answers
         }));
 
+        // 📈 Prepare time analysis data
+        const timeAnalysisData = enhancedStudentResults.slice(0, 10).map(result => ({
+            quiz: result.quizTitle,
+            timeMinutes: Math.floor(result.timeTakenSeconds / 60)
+        }));
+
+        // 🎯 ENHANCED: Return class-aware analytics data
+        const analyticsData = {
+            studentInfo: {
+                name: student.name,
+                enrollment: student.enrollment,
+                studentId: studentId
+            },
+            performanceMetrics: {
+                totalQuizzes,
+                averageScore: parseFloat(averageScore),
+                classAverage: parseFloat(classAverage),
+                averageTime: averageTime + 'm',
+                trendIndicator
+            },
+            detailedResults,
+            chartData: {
+                scoresTrend: trendData,
+                timeAnalysis: timeAnalysisData
+            },
+            // 🆕 NEW: Include class context in response
+            classContext: {
+                hasClassFilter: !!classId,
+                classId: classId,
+                totalResultsFound: studentResults.length
+            }
+        };
+
+        console.log(`📊 Analytics data prepared for ${student.name}:`, {
+            totalQuizzes: analyticsData.performanceMetrics.totalQuizzes,
+            averageScore: analyticsData.performanceMetrics.averageScore,
+            classFiltered: !!classId
+        });
+
         res.json({
             success: true,
-            data: {
-                studentInfo: {
-                    name: student.name,
-                    enrollment: student.enrollment,
-                    studentId: studentId
-                },
-                performanceMetrics: {
-                    totalQuizzes,
-                    averageScore: parseFloat(averageScore),
-                    classAverage: parseFloat(classAverage),
-                    averageTime: averageTime + 'm',
-                    trendIndicator
-                },
-                detailedResults,
-                chartData: {
-                    scoresTrend: studentResults.reverse().map(r => ({
-                        date: r.submissionDate.toLocaleDateString(),
-                        score: r.percentage,
-                        classAvg: parseFloat(classAverage)
-                    })),
-                    timeAnalysis: studentResults.map(r => ({
-                        quiz: r.quizId?.lectureTitle || 'Quiz',
-                        timeMinutes: Math.floor(r.timeTakenSeconds / 60)
-                    }))
-                }
-            }
+            data: analyticsData
         });
 
     } catch (error) {
         console.error('❌ Error fetching student analytics:', error);
-        res.status(500).json({ success: false, message: 'Failed to load student analytics.' });
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to load student analytics.' 
+        });
+    }
+});
+
+
+
+// 🆕 NEW: Add this route to index.js for class-context student analytics access
+
+// Class-specific student analytics route
+app.get('/class/:classId/student-analytics/:studentId', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'teacher') {
+            return res.status(403).redirect('/login?message=Access denied. Teachers only.');
+        }
+
+        const { classId, studentId } = req.params;
+        const teacherId = req.session.userId;
+
+        console.log('🏫 Class-context student analytics access:', {
+            classId: classId,
+            studentId: studentId,
+            teacherId: teacherId
+        });
+
+        // Verify class ownership
+        const classDoc = await classCollection.findOne({
+            _id: classId,
+            teacherId: teacherId,
+            isActive: true
+        }).lean();
+
+        if (!classDoc) {
+            return res.status(403).redirect('/homeTeacher?message=Class not found or access denied.');
+        }
+
+        // Verify student enrollment
+        const enrollment = await classStudentCollection.findOne({
+            studentId: studentId,
+            classId: classId,
+            isActive: true
+        }).lean();
+
+        if (!enrollment) {
+            return res.status(403).redirect(`/class/manage/${classId}?message=Student not found in this class.`);
+        }
+
+        console.log(`✅ Redirecting to analytics for ${enrollment.studentName} in ${classDoc.name}`);
+
+        // Redirect to student analytics with class context
+        res.redirect(`/teacher/student-analytics/${studentId}?classId=${classId}`);
+
+    } catch (error) {
+        console.error('❌ Error accessing class student analytics:', error);
+        res.status(500).redirect('/homeTeacher?message=Failed to access student analytics.');
     }
 });
 
 // Student Analytics Page for Teachers
+// 🔄 REPLACE your existing /teacher/student-analytics/:studentId route with this enhanced version:
+
 app.get('/teacher/student-analytics/:studentId', isAuthenticated, async (req, res) => {
     try {
         if (req.session.userType !== 'teacher') {
@@ -1610,16 +3214,90 @@ app.get('/teacher/student-analytics/:studentId', isAuthenticated, async (req, re
         }
 
         const studentId = req.params.studentId;
+        const classId = req.query.classId; // Optional class context
+        const teacherId = req.session.userId;
+
+        console.log('📊 Loading student analytics page:', {
+            studentId: studentId,
+            classId: classId,
+            teacherId: teacherId,
+            requestedBy: req.session.userName
+        });
+
+        // Get student info
         const student = await studentCollection.findById(studentId).select('name enrollment').lean();
-        
         if (!student) {
             return res.status(404).send('Student not found.');
         }
 
+        // 🆕 NEW: Class context verification and data
+        let classContext = {
+            classId: null,
+            className: null,
+            hasAccess: false
+        };
+
+        if (classId) {
+            // Verify teacher owns the class
+            const classDoc = await classCollection.findOne({
+                _id: classId,
+                teacherId: teacherId,
+                isActive: true
+            }).lean();
+
+            if (classDoc) {
+                // Verify student is enrolled in this class
+                const enrollment = await classStudentCollection.findOne({
+                    studentId: studentId,
+                    classId: classId,
+                    isActive: true
+                }).lean();
+
+                if (enrollment) {
+                    classContext = {
+                        classId: classId,
+                        className: classDoc.name,
+                        hasAccess: true
+                    };
+                    console.log('✅ Class context verified:', classContext.className);
+                } else {
+                    console.log('⚠️ Student not enrolled in specified class');
+                    return res.status(403).send('Student is not enrolled in this class.');
+                }
+            } else {
+                console.log('⚠️ Class not found or access denied');
+                return res.status(403).send('Class not found or access denied.');
+            }
+        } else {
+            // 🔍 Check if teacher has access to student through any class
+            const teacherClasses = await classCollection.find({
+                teacherId: teacherId,
+                isActive: true
+            }).select('_id').lean();
+
+            const teacherClassIds = teacherClasses.map(c => c._id);
+
+            const studentEnrollment = await classStudentCollection.findOne({
+                studentId: studentId,
+                classId: { $in: teacherClassIds },
+                isActive: true
+            }).lean();
+
+            if (!studentEnrollment) {
+                return res.status(403).send('You do not have access to this student\'s analytics.');
+            }
+
+            console.log('✅ Teacher access to student verified through class enrollment');
+        }
+
+        console.log(`📊 Rendering analytics page for ${student.name}${classContext.className ? ` (${classContext.className})` : ''}`);
+
+        // 🎯 ENHANCED: Pass complete class context to template
         res.render('studentAnalytics', {
             student: student,
             studentId: studentId,
-            userName: req.session.userName
+            userName: req.session.userName,
+            classContext: classContext // 🆕 NEW: Pass class context
         });
 
     } catch (error) {
@@ -1876,14 +3554,33 @@ app.get('/debug/quiz/:quizId/question/:questionIndex', isAuthenticated, async (r
 
 // ==================== QUIZ RESULTS PAGE ROUTE ====================
 
+// 🔄 OPTIONAL: Replace your existing /quiz-results route with this enhanced version:
+
 app.get('/quiz-results', isAuthenticated, (req, res) => {
     try {
         if (req.session.userType !== 'student') {
             return res.status(403).redirect('/login?message=Access denied. Only students can view quiz results.');
         }
 
+        // 🆕 ENHANCED: Handle query parameters for better error handling
+        const queryParams = {
+            alreadyTaken: req.query.alreadyTaken === 'true',
+            quizTitle: req.query.quizTitle || null,
+            error: req.query.error || null,
+            message: req.query.message || null
+        };
+
+        console.log('📊 Quiz results page accessed:', {
+            student: req.session.userName,
+            queryParams: queryParams
+        });
+
+        // 🎯 ENHANCED: Pass additional context for better error handling
         res.render('quizResults', {
-            userName: req.session.userName || 'Student'
+            userName: req.session.userName || 'Student',
+            userType: req.session.userType || 'student',
+            queryParams: queryParams, // Pass query parameters to template
+            // Note: Main quiz data comes from localStorage, set by takeQuiz.hbs
         });
 
     } catch (error) {
@@ -1969,7 +3666,6 @@ app.listen(PORT, () => {
 // Schedule cleanup functions to run periodically
 setInterval(cleanupOldQuizResults, 24 * 60 * 60 * 1000); // Every 24 hours
 setInterval(cleanupOldExplanations, 15 * 24 * 60 * 60 * 1000); // Every 15 days
-
 
 // 🛠️ HELPER FUNCTIONS (Add these at the bottom of your index.js file)
 

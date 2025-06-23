@@ -1,24 +1,17 @@
 const mongoose = require("mongoose")
 
-// Create two separate connections
-const loginSignupConnection = mongoose.createConnection("mongodb://localhost:27017/LoginSignup");
+// 🔄 UPDATED: Single QuizAI Database Connection
 const quizAIConnection = mongoose.createConnection("mongodb://localhost:27017/QuizAI");
 
-loginSignupConnection.on('connected', () => {
-    console.log("✅ Connected to LoginSignup database");
-});
-
 quizAIConnection.on('connected', () => {
-    console.log("✅ Connected to QuizAI database");
-});
-
-loginSignupConnection.on('error', (error) => {
-    console.log("❌ Failed to connect to LoginSignup database:", error);
+    console.log("✅ Connected to QuizAI database - All collections unified!");
 });
 
 quizAIConnection.on('error', (error) => {
     console.log("❌ Failed to connect to QuizAI database:", error);
 });
+
+// ==================== EXISTING SCHEMAS ====================
 
 // For Student
 const studentSchema = new mongoose.Schema({
@@ -62,7 +55,99 @@ const teacherSchema = new mongoose.Schema({
     }
 })
 
-// For Lectures
+// ==================== NEW: CLASS MANAGEMENT SCHEMAS ====================
+
+// 🆕 Classes Schema - Core class information
+const classSchema = new mongoose.Schema({
+    name: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    subject: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    description: {
+        type: String,
+        trim: true,
+        default: ''
+    },
+    teacherId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'TeacherCollection',
+        required: true
+    },
+    teacherName: {
+        type: String,
+        required: true
+    },
+    // 📊 Quick stats (computed fields)
+    studentCount: {
+        type: Number,
+        default: 0
+    },
+    lectureCount: {
+        type: Number,
+        default: 0
+    },
+    quizCount: {
+        type: Number,
+        default: 0
+    },
+    averageScore: {
+        type: Number,
+        default: 0
+    },
+    // 🗓️ Timestamps
+    createdAt: {
+        type: Date,
+        default: Date.now
+    },
+    updatedAt: {
+        type: Date,
+        default: Date.now
+    },
+    isActive: {
+        type: Boolean,
+        default: true
+    }
+});
+
+// 🆕 ClassStudents Junction Table - Many-to-many relationship
+const classStudentSchema = new mongoose.Schema({
+    classId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'ClassCollection',
+        required: true
+    },
+    studentId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'StudentCollection',
+        required: true
+    },
+    studentName: {
+        type: String,
+        required: true
+    },
+    studentEnrollment: {
+        type: String,
+        required: true
+    },
+    enrolledAt: {
+        type: Date,
+        default: Date.now
+    },
+    isActive: {
+        type: Boolean,
+        default: true
+    }
+});
+
+// ==================== ENHANCED EXISTING SCHEMAS ====================
+
+// 🔄 UPDATED: Lectures Schema - Now supports classes
 const lectureSchema = new mongoose.Schema({
     title: {
         type: String,
@@ -118,12 +203,20 @@ const lectureSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'TeacherCollection',
         required: true
+    },
+    // 🆕 NEW: Class association
+    classId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'ClassCollection',
+        required: false // Optional for backward compatibility
+    },
+    className: {
+        type: String,
+        required: false
     }
 });
 
-// For Quizzes generated from lectures
-// STEP 1: Replace your quizSchema in mongodb.js with this enhanced version
-
+// 🔄 UPDATED: Quizzes Schema - Now supports classes
 const quizSchema = new mongoose.Schema({
     lectureId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -133,6 +226,16 @@ const quizSchema = new mongoose.Schema({
     lectureTitle: {
         type: String,
         required: true
+    },
+    // 🆕 NEW: Class association
+    classId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'ClassCollection',
+        required: false // Optional for backward compatibility
+    },
+    className: {
+        type: String,
+        required: false
     },
     questions: [{
         question: {
@@ -150,7 +253,7 @@ const quizSchema = new mongoose.Schema({
             enum: ['A', 'B', 'C', 'D'],
             required: true
         },
-        // NEW: Add these explanation fields
+        // Enhanced explanation fields
         explanations: {
             A: { type: String, default: "" },
             B: { type: String, default: "" }, 
@@ -178,10 +281,23 @@ const quizSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'TeacherCollection',
         required: true
+    },
+    // 📊 Performance stats (computed)
+    totalAttempts: {
+        type: Number,
+        default: 0
+    },
+    averageScore: {
+        type: Number,
+        default: 0
+    },
+    highestScore: {
+        type: Number,
+        default: 0
     }
 });
 
-// For Quiz Results (Student attempts)
+// 🔄 UPDATED: Quiz Results Schema - Now supports classes
 const quizResultSchema = new mongoose.Schema({
     quizId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -192,6 +308,12 @@ const quizResultSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'LectureCollection',
         required: true
+    },
+    // 🆕 NEW: Class association
+    classId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'ClassCollection',
+        required: false // Optional for backward compatibility
     },
     studentId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -252,7 +374,7 @@ const quizResultSchema = new mongoose.Schema({
     }]
 });
 
-// AI Explanations Cache Schema
+// AI Explanations Cache Schema (unchanged)
 const explanationCacheSchema = new mongoose.Schema({
     questionText: {
         type: String,
@@ -295,12 +417,26 @@ const explanationCacheSchema = new mongoose.Schema({
     }
 });
 
-// Create indexes for better performance
+// ==================== INDEXES FOR PERFORMANCE ====================
+
+// Existing indexes
 studentSchema.index({ enrollment: 1 });
 teacherSchema.index({ email: 1 });
 lectureSchema.index({ professorId: 1, uploadDate: -1 });
 quizSchema.index({ lectureId: 1, generatedDate: -1 });
 quizResultSchema.index({ studentId: 1, submissionDate: -1 });
+
+// 🆕 NEW: Class management indexes
+classSchema.index({ teacherId: 1, createdAt: -1 }); // Find teacher's classes
+classSchema.index({ isActive: 1, teacherId: 1 }); // Active classes for teacher
+classStudentSchema.index({ classId: 1, isActive: 1 }); // Students in a class
+classStudentSchema.index({ studentId: 1, isActive: 1 }); // Classes for a student
+classStudentSchema.index({ classId: 1, studentId: 1 }, { unique: true }); // Prevent duplicates
+
+// 🆕 NEW: Enhanced indexes for class-based queries
+lectureSchema.index({ classId: 1, uploadDate: -1 }); // Class lectures
+quizSchema.index({ classId: 1, generatedDate: -1 }); // Class quizzes
+quizResultSchema.index({ classId: 1, submissionDate: -1 }); // Class results
 
 // Create compound index for fast explanation lookups
 explanationCacheSchema.index({ 
@@ -310,19 +446,119 @@ explanationCacheSchema.index({
     lectureId: 1 
 });
 
-// Create Collections - FIXED: Lectures now in QuizAI database with quizzes
-const studentCollection = loginSignupConnection.model("StudentCollection", studentSchema);
-const teacherCollection = loginSignupConnection.model("TeacherCollection", teacherSchema);
-const lectureCollection = quizAIConnection.model("LectureCollection", lectureSchema); // MOVED TO QuizAI
+// ==================== SCHEMA MIDDLEWARE ====================
+
+// 🆕 Update class stats when students are added/removed
+classStudentSchema.post('save', async function() {
+    const ClassCollection = this.constructor.model('ClassCollection');
+    const classDoc = await ClassCollection.findById(this.classId);
+    if (classDoc) {
+        const activeStudents = await this.constructor.countDocuments({ 
+            classId: this.classId, 
+            isActive: true 
+        });
+        await ClassCollection.findByIdAndUpdate(this.classId, { 
+            studentCount: activeStudents,
+            updatedAt: new Date()
+        });
+    }
+});
+
+// 🆕 Update class stats when lectures are added
+lectureSchema.post('save', async function() {
+    if (this.classId) {
+        const ClassCollection = this.constructor.db.model('ClassCollection');
+        const lectureCount = await this.constructor.countDocuments({ 
+            classId: this.classId 
+        });
+        await ClassCollection.findByIdAndUpdate(this.classId, { 
+            lectureCount: lectureCount,
+            updatedAt: new Date()
+        });
+    }
+});
+
+// 🆕 Update class and quiz stats when quizzes are added
+quizSchema.post('save', async function() {
+    if (this.classId) {
+        const ClassCollection = this.constructor.db.model('ClassCollection');
+        const quizCount = await this.constructor.countDocuments({ 
+            classId: this.classId 
+        });
+        await ClassCollection.findByIdAndUpdate(this.classId, { 
+            quizCount: quizCount,
+            updatedAt: new Date()
+        });
+    }
+});
+
+// 🆕 Update quiz stats when results are submitted
+quizResultSchema.post('save', async function() {
+    const QuizCollection = this.constructor.db.model('QuizCollection');
+    const allResults = await this.constructor.find({ quizId: this.quizId });
+    
+    const totalAttempts = allResults.length;
+    const averageScore = totalAttempts > 0 
+        ? allResults.reduce((sum, result) => sum + result.percentage, 0) / totalAttempts 
+        : 0;
+    const highestScore = totalAttempts > 0 
+        ? Math.max(...allResults.map(result => result.percentage)) 
+        : 0;
+    
+    await QuizCollection.findByIdAndUpdate(this.quizId, {
+        totalAttempts,
+        averageScore,
+        highestScore
+    });
+    
+    // Update class average score
+    if (this.classId) {
+        const ClassCollection = this.constructor.db.model('ClassCollection');
+        const classResults = await this.constructor.find({ classId: this.classId });
+        
+        if (classResults.length > 0) {
+            const classAverageScore = classResults.reduce((sum, result) => sum + result.percentage, 0) / classResults.length;
+            await ClassCollection.findByIdAndUpdate(this.classId, { 
+                averageScore: classAverageScore,
+                updatedAt: new Date()
+            });
+        }
+    }
+});
+
+// ==================== CREATE COLLECTIONS ====================
+// 🔄 UPDATED: All collections now in single QuizAI Database
+
+// User authentication collections
+const studentCollection = quizAIConnection.model("StudentCollection", studentSchema);
+const teacherCollection = quizAIConnection.model("TeacherCollection", teacherSchema);
+
+// Lecture and quiz system collections
+const lectureCollection = quizAIConnection.model("LectureCollection", lectureSchema);
 const quizCollection = quizAIConnection.model("QuizCollection", quizSchema);
 const quizResultCollection = quizAIConnection.model("QuizResultCollection", quizResultSchema);
 const explanationCacheCollection = quizAIConnection.model("ExplanationCache", explanationCacheSchema);
 
+// 🆕 NEW: Class management collections
+const classCollection = quizAIConnection.model("ClassCollection", classSchema);
+const classStudentCollection = quizAIConnection.model("ClassStudentCollection", classStudentSchema);
+
+// ==================== EXPORT ALL COLLECTIONS ====================
+// 🎯 All collections now unified in single QuizAI Database!
+
 module.exports = {
+    // User authentication collections
     studentCollection,
     teacherCollection,
+    
+    // Lecture and quiz system collections
     lectureCollection,
     quizCollection,
     quizResultCollection,
-    explanationCacheCollection
+    explanationCacheCollection,
+    
+    // 🆕 NEW: Class management collections
+    classCollection,
+    classStudentCollection
 }
+
