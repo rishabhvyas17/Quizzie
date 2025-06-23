@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Take Quiz - {{quiz.lectureTitle}} - QuizAI</title>
+    <title>Take Quiz - {{quiz.lectureTitle}} - Quizzie</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <style>
         * {
             margin: 0;
@@ -389,7 +390,7 @@
         let startTime = Date.now();
         let timerInterval = null;
         const quizId = window.location.pathname.split('/').pop(); // Extract quiz ID from URL
-        const QUIZ_TIME_LIMIT = 30 * 60; // 30 minutes in seconds
+        const QUIZ_TIME_LIMIT = 3 * 60; // 30 minutes in seconds
 
         // Utility function to format time
         function formatTime(seconds) {

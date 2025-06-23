@@ -37,6 +37,7 @@ const templatePath = path.join(__dirname, '../tempelates')
 // Express configuration
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
+app.use(express.static(path.join(__dirname, '../public')))
 app.set("view engine", "hbs")
 app.set("views", templatePath)
 
@@ -56,7 +57,8 @@ app.use(session({
         secure: true, // IMPORTANT: Set to true in production (requires HTTPS, which Render/GCP provide)
         httpOnly: true, // Prevents client-side JavaScript from accessing the cookie
         sameSite: 'lax' // Recommended for security: 'strict', 'lax', or 'none'. 'lax' is often a good balance.
-    }
+    },
+    proxy: true // IMPORTANT: Trust the reverse proxy (Cloud Run)
 }));
 
 // Middleware to check if user is authenticated

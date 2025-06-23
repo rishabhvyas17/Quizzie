@@ -1,7 +1,7 @@
 # STEP 1: Choose a base image.
 # We use a Node.js LTS (Long Term Support) version that is 'slim'
 # to keep the final image size small.
-FROM node:20-slim
+FROM node:20
 
 # STEP 2: Set the working directory inside the container.
 # All subsequent instructions (COPY, RUN, CMD) will be executed
@@ -17,7 +17,10 @@ COPY package*.json ./
 # STEP 4: Install Node.js dependencies.
 # We use --production to only install dependencies needed for runtime,
 # not development dependencies, further reducing image size.
-RUN npm install --production
+RUN npm install 
+
+RUN npm install connect-mongo@5.1.0 
+
 
 # STEP 5: Copy the rest of your application code into the container.
 # The '.' refers to the current working directory on your host (where Dockerfile is),
