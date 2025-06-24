@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Take Quiz - {{quiz.lectureTitle}} - QuizAI</title>
+    <title>{{#if quiz.className}}{{quiz.className}} - {{/if}}{{quiz.lectureTitle}} - QuizAI</title>
     <style>
         * {
             margin: 0;
@@ -29,12 +29,46 @@
         }
 
         .header-content {
-            max-width: 1000px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 0 1rem;
+        }
+
+        /* Breadcrumb Navigation */
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        .breadcrumb a {
+            color: #3b82f6;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .breadcrumb a:hover {
+            color: #2563eb;
+        }
+
+        .breadcrumb-separator {
+            color: #94a3b8;
+        }
+
+        /* Quiz Header Info */
+        .quiz-header-info {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .quiz-info {
+            flex: 1;
         }
 
         .quiz-info h1 {
@@ -44,8 +78,30 @@
         }
 
         .quiz-meta {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
             font-size: 0.85rem;
             color: #64748b;
+            flex-wrap: wrap;
+        }
+
+        .class-badge {
+            background: #3b82f6;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .subject-badge {
+            background: #10b981;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
         }
 
         .timer-container {
@@ -61,14 +117,17 @@
             border-radius: 8px;
             font-weight: bold;
             font-size: 1.1rem;
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
         }
 
         .timer.warning {
             background: #f59e0b;
+            box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
         }
 
         .timer.danger {
             background: #ef4444;
+            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
             animation: pulse 1s infinite;
         }
 
@@ -79,7 +138,7 @@
 
         /* Main Content */
         .main-content {
-            max-width: 1000px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 2rem 1rem;
         }
@@ -100,24 +159,26 @@
 
         .progress-bar {
             width: 100%;
-            height: 8px;
+            height: 10px;
             background: #e2e8f0;
-            border-radius: 4px;
+            border-radius: 5px;
             overflow: hidden;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
         .progress-fill {
             height: 100%;
-            background: #3b82f6;
-            border-radius: 4px;
+            background: linear-gradient(to right, #3b82f6, #1d4ed8);
+            border-radius: 5px;
             transition: width 0.3s ease;
         }
 
         .progress-text {
-            margin-top: 0.5rem;
+            margin-top: 0.75rem;
             font-size: 0.9rem;
             color: #64748b;
             text-align: center;
+            font-weight: 500;
         }
 
         /* Question Styles */
@@ -125,10 +186,27 @@
             margin-bottom: 2rem;
         }
 
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
         .question-number {
             font-size: 0.9rem;
             color: #64748b;
-            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .question-difficulty {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            background: #f1f5f9;
+            color: #475569;
         }
 
         .question-text {
@@ -136,7 +214,11 @@
             font-weight: 600;
             color: #1e293b;
             margin-bottom: 1.5rem;
-            line-height: 1.5;
+            line-height: 1.6;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 8px;
+            border-left: 4px solid #3b82f6;
         }
 
         /* Options Styles */
@@ -149,18 +231,22 @@
         .option {
             background: #f8fafc;
             border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 1rem;
+            border-radius: 10px;
+            padding: 1.25rem;
             cursor: pointer;
             transition: all 0.2s ease;
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 1rem;
+            position: relative;
+            overflow: hidden;
         }
 
         .option:hover {
             border-color: #3b82f6;
             background: #eff6ff;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.1);
         }
 
         .option.selected {
@@ -169,27 +255,41 @@
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
+        .option.selected::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: #3b82f6;
+        }
+
         .option-letter {
             background: #3b82f6;
             color: white;
             border-radius: 50%;
-            width: 30px;
-            height: 30px;
+            width: 35px;
+            height: 35px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
+            flex-shrink: 0;
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
         }
 
         .option.selected .option-letter {
             background: #1d4ed8;
+            box-shadow: 0 2px 4px rgba(29, 78, 216, 0.3);
         }
 
         .option-text {
             flex: 1;
             font-size: 0.95rem;
             color: #334155;
+            line-height: 1.5;
         }
 
         /* Navigation Buttons */
@@ -206,23 +306,28 @@
             background: #3b82f6;
             color: white;
             border: none;
-            padding: 0.75rem 1.5rem;
+            padding: 0.875rem 1.75rem;
             border-radius: 8px;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.2s ease;
             font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .btn:hover {
             background: #2563eb;
             transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.2);
         }
 
         .btn:disabled {
             background: #94a3b8;
             cursor: not-allowed;
             transform: none;
+            box-shadow: none;
         }
 
         .btn-secondary {
@@ -241,20 +346,56 @@
             background: #059669;
         }
 
+        /* Question Indicators */
+        .question-indicators {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .question-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .question-dot:hover {
+            transform: scale(1.2);
+        }
+
+        .question-dot.current {
+            background: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        .question-dot.answered {
+            background: #10b981;
+        }
+
+        .question-dot.unanswered {
+            background: #e2e8f0;
+        }
+
         /* Loading and Result States */
         .loading-container {
             text-align: center;
-            padding: 3rem;
+            padding: 4rem 2rem;
         }
 
         .loading-spinner {
             border: 4px solid #e2e8f0;
             border-top: 4px solid #3b82f6;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
+            width: 50px;
+            height: 50px;
             animation: spin 1s linear infinite;
-            margin: 0 auto 1rem;
+            margin: 0 auto 1.5rem;
         }
 
         @keyframes spin {
@@ -264,30 +405,78 @@
 
         .result-container {
             text-align: center;
-            padding: 2rem;
+            padding: 3rem 2rem;
             background: white;
             border-radius: 12px;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
         .result-score {
-            font-size: 3rem;
+            font-size: 4rem;
             font-weight: bold;
             color: #10b981;
             margin-bottom: 1rem;
+            text-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
         }
 
         .result-details {
             color: #64748b;
             margin-bottom: 2rem;
+            font-size: 1.1rem;
+        }
+
+        .result-details p {
+            margin-bottom: 0.5rem;
+        }
+
+        /* Class Context Alert */
+        .class-context {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .class-context-icon {
+            background: #3b82f6;
+            color: white;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+        }
+
+        .class-context-text {
+            color: #1e40af;
         }
 
         /* Mobile Responsiveness */
         @media (max-width: 768px) {
             .header-content {
+                padding: 0 0.5rem;
+            }
+
+            .quiz-header-info {
                 flex-direction: column;
-                gap: 1rem;
-                text-align: center;
+                align-items: flex-start;
+            }
+
+            .quiz-meta {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+
+            .timer-container {
+                width: 100%;
+                justify-content: center;
             }
 
             .main-content {
@@ -305,7 +494,63 @@
 
             .btn {
                 width: 100%;
+                justify-content: center;
             }
+
+            .question-indicators {
+                gap: 0.25rem;
+            }
+
+            .question-dot {
+                width: 12px;
+                height: 12px;
+            }
+
+            .breadcrumb {
+                font-size: 0.8rem;
+            }
+        }
+
+        /* Additional Animations */
+        .quiz-container {
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Status Messages */
+        .status-message {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+
+        .status-message.info {
+            background: #eff6ff;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+
+        .status-message.warning {
+            background: #fefce8;
+            color: #a16207;
+            border: 1px solid #fde047;
+        }
+
+        .status-message.error {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
         }
     </style>
 </head>
@@ -313,25 +558,56 @@
     <!-- Header -->
     <header class="quiz-header">
         <div class="header-content">
-            <div class="quiz-info">
-                <h1 id="quizTitle">Loading Quiz...</h1>
-                <div class="quiz-meta">
-                    <span id="questionCount">- questions</span> | Student: {{userName}}
+            <!-- Breadcrumb Navigation -->
+            <nav class="breadcrumb">
+                <a href="/homeStudent">🏠 Dashboard</a>
+                <span class="breadcrumb-separator">›</span>
+                {{#if quiz.className}}
+                    <a href="/student/class/{{quiz.classId}}">{{quiz.className}}</a>
+                    <span class="breadcrumb-separator">›</span>
+                {{/if}}
+                <span>Quiz</span>
+            </nav>
+
+            <!-- Quiz Header Info -->
+            <div class="quiz-header-info">
+                <div class="quiz-info">
+                    <h1 id="quizTitle">Loading Quiz...</h1>
+                    <div class="quiz-meta">
+                        {{#if quiz.className}}
+                            <span class="class-badge">📚 {{quiz.className}}</span>
+                        {{/if}}
+                        {{#if quiz.classSubject}}
+                            <span class="subject-badge">🎯 {{quiz.classSubject}}</span>
+                        {{/if}}
+                        <span id="questionCount">- questions</span>
+                        <span>👤 {{userName}}</span>
+                    </div>
                 </div>
-            </div>
-            <div class="timer-container">
-                <div class="timer" id="timer">--:--</div>
+                <div class="timer-container">
+                    <div class="timer" id="timer">--:--</div>
+                </div>
             </div>
         </div>
     </header>
 
     <!-- Main Content -->
     <main class="main-content">
+        <!-- Class Context Alert -->
+        {{#if quiz.className}}
+        <div class="class-context">
+            <div class="class-context-icon">📚</div>
+            <div class="class-context-text">
+                <strong>Class Quiz:</strong> This quiz is part of your {{quiz.className}} class. Your results will be tracked for class performance.
+            </div>
+        </div>
+        {{/if}}
+
         <!-- Loading State -->
         <div id="loadingContainer" class="loading-container">
             <div class="loading-spinner"></div>
             <h3>Loading Quiz Questions...</h3>
-            <p>Please wait while we prepare your quiz.</p>
+            <p>Please wait while we prepare your {{#if quiz.className}}{{quiz.className}} {{/if}}quiz.</p>
         </div>
 
         <!-- Quiz Container -->
@@ -346,7 +622,10 @@
 
             <!-- Question -->
             <div class="question-container">
-                <div class="question-number" id="questionNumber">Question 1</div>
+                <div class="question-header">
+                    <div class="question-number" id="questionNumber">Question 1</div>
+                    <div class="question-difficulty" id="questionDifficulty">Standard</div>
+                </div>
                 <div class="question-text" id="questionText">Loading question...</div>
             </div>
 
@@ -360,7 +639,7 @@
                 <button class="btn btn-secondary" id="prevBtn" onclick="previousQuestion()" disabled>
                     ← Previous
                 </button>
-                <div class="question-indicator" id="questionIndicator">
+                <div class="question-indicators" id="questionIndicators">
                     <!-- Question dots will be inserted here -->
                 </div>
                 <button class="btn" id="nextBtn" onclick="nextQuestion()">
@@ -388,8 +667,18 @@
         let studentAnswers = [];
         let startTime = Date.now();
         let timerInterval = null;
-        const quizId = window.location.pathname.split('/').pop(); // Extract quiz ID from URL
+        const quizId = window.location.pathname.split('/').pop();
         const QUIZ_TIME_LIMIT = 30 * 60; // 30 minutes in seconds
+
+        // Class context data from server
+        const classContext = {
+            hasClass: {{#if quiz.className}}true{{else}}false{{/if}},
+            className: '{{quiz.className}}' || null,
+            classSubject: '{{quiz.classSubject}}' || null,
+            classId: '{{quiz.classId}}' || null
+        };
+
+        console.log('🏫 Class context:', classContext);
 
         // Utility function to format time
         function formatTime(seconds) {
@@ -400,7 +689,7 @@
 
         // Initialize quiz when page loads
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🎯 Initializing quiz with ID:', quizId);
+            console.log('🎯 Initializing class-aware quiz with ID:', quizId);
             loadQuizData();
         });
 
@@ -414,6 +703,12 @@
                 if (data.success && data.quiz) {
                     quizData = data.quiz;
                     console.log('✅ Quiz loaded:', quizData.lectureTitle);
+                    
+                    // Update quiz title in header if not already set
+                    if (document.getElementById('quizTitle').textContent === 'Loading Quiz...') {
+                        document.getElementById('quizTitle').textContent = quizData.lectureTitle;
+                    }
+                    
                     initializeQuiz();
                 } else {
                     console.error('❌ Failed to load quiz:', data.message);
@@ -447,7 +742,7 @@
             // Create question indicators
             createQuestionIndicators();
             
-            console.log('🚀 Quiz initialized successfully');
+            console.log('🚀 Class-aware quiz initialized successfully');
         }
 
         // Display a specific question
@@ -514,7 +809,7 @@
             // Update question indicators
             updateQuestionIndicators();
             
-            // Auto-advance to next question after a short delay (optional)
+            // Auto-advance to next question after a short delay
             setTimeout(() => {
                 if (currentQuestionIndex < quizData.totalQuestions - 1) {
                     nextQuestion();
@@ -556,37 +851,31 @@
 
         // Create question indicators (dots)
         function createQuestionIndicators() {
-            const container = document.getElementById('questionIndicator');
+            const container = document.getElementById('questionIndicators');
             container.innerHTML = '';
             
             for (let i = 0; i < quizData.totalQuestions; i++) {
-                const dot = document.createElement('span');
-                dot.style.cssText = `
-                    display: inline-block;
-                    width: 12px;
-                    height: 12px;
-                    border-radius: 50%;
-                    background: #e2e8f0;
-                    margin: 0 3px;
-                    cursor: pointer;
-                    transition: all 0.2s ease;
-                `;
+                const dot = document.createElement('div');
+                dot.className = 'question-dot';
                 dot.onclick = () => displayQuestion(i);
+                dot.title = `Question ${i + 1}`;
                 container.appendChild(dot);
             }
         }
 
         function updateQuestionIndicators() {
-            const dots = document.getElementById('questionIndicator').children;
+            const dots = document.getElementById('questionIndicators').children;
             
             for (let i = 0; i < dots.length; i++) {
                 const dot = dots[i];
+                dot.className = 'question-dot';
+                
                 if (i === currentQuestionIndex) {
-                    dot.style.background = '#3b82f6'; // Current question - blue
+                    dot.classList.add('current');
                 } else if (studentAnswers[i] !== null) {
-                    dot.style.background = '#10b981'; // Answered - green
+                    dot.classList.add('answered');
                 } else {
-                    dot.style.background = '#e2e8f0'; // Unanswered - gray
+                    dot.classList.add('unanswered');
                 }
             }
         }
@@ -627,16 +916,15 @@
             }
         }
 
-        // Enhanced submit quiz function with better data handling
+        // Enhanced submit quiz function with class context
         async function submitQuiz() {
-            // Debug check
-            console.log('🔍 Quiz data check:', {
+            console.log('🔍 Quiz submission check:', {
                 quizData: quizData,
                 studentAnswers: studentAnswers,
-                quizId: quizId
+                quizId: quizId,
+                classContext: classContext
             });
 
-            // Check if quizData exists and has questions
             if (!quizData || !quizData.questions) {
                 console.error('❌ Quiz data is missing!');
                 alert('Quiz data is missing. Please refresh and try again.');
@@ -647,7 +935,11 @@
             const unansweredCount = studentAnswers.filter(answer => answer === null).length;
             
             if (unansweredCount > 0) {
-                if (!confirm(`You have ${unansweredCount} unanswered questions. Are you sure you want to submit?`)) {
+                const confirmMessage = classContext.hasClass 
+                    ? `You have ${unansweredCount} unanswered questions. This quiz is part of ${classContext.className} class and your results will be recorded. Are you sure you want to submit?`
+                    : `You have ${unansweredCount} unanswered questions. Are you sure you want to submit?`;
+                    
+                if (!confirm(confirmMessage)) {
                     return;
                 }
             }
@@ -660,17 +952,18 @@
             // Calculate time taken
             const timeTakenSeconds = Math.floor((Date.now() - startTime) / 1000);
             
-            // Prepare submission data with question details
+            // Prepare submission data with class context
             const submissionData = {
                 studentAnswers: studentAnswers.map((answer, index) => ({
                     questionIndex: index,
                     question: quizData.questions[index].question,
                     selectedOption: answer
-                })).filter(item => item.selectedOption !== null), // Only include answered questions
-                timeTakenSeconds: timeTakenSeconds
+                })).filter(item => item.selectedOption !== null),
+                timeTakenSeconds: timeTakenSeconds,
+                classContext: classContext // Include class context
             };
             
-            console.log('📤 Submitting quiz with enhanced data:', submissionData);
+            console.log('📤 Submitting class-aware quiz:', submissionData);
             
             // Show loading state
             showSubmissionLoading();
@@ -689,10 +982,11 @@
                 if (result.success) {
                     console.log('✅ Quiz submitted successfully:', result);
                     
-                    // Enhanced result object with lecture ID for explanations
+                    // Enhanced result object with class context
                     const enhancedResult = {
                         ...result,
-                        lectureId: quizData.lectureId || null
+                        lectureId: quizData.lectureId || null,
+                        classContext: classContext
                     };
                     
                     showResults(enhancedResult);
@@ -710,17 +1004,19 @@
         function showSubmissionLoading() {
             document.getElementById('quizContainer').style.display = 'none';
             document.getElementById('loadingContainer').style.display = 'block';
+            
+            const loadingText = classContext.hasClass 
+                ? `Submitting Your ${classContext.className} Quiz...`
+                : 'Submitting Your Quiz...';
+                
             document.getElementById('loadingContainer').innerHTML = `
                 <div class="loading-spinner"></div>
-                <h3>Submitting Your Quiz...</h3>
-                <p>Please wait while we process your answers.</p>
+                <h3>${loadingText}</h3>
+                <p>Please wait while we process your answers and update your class performance.</p>
             `;
         }
 
-        // Enhanced showResults function with detailed question data
-        // Replace the showResults function in your takeQuiz.hbs with this enhanced version
-
-        // Enhanced showResults function with proper data handling
+        // Enhanced showResults function with class context
         function showResults(result) {
             document.getElementById('loadingContainer').style.display = 'none';
             document.getElementById('resultsContainer').style.display = 'block';
@@ -729,13 +1025,23 @@
             const timeFormatted = formatTime(result.timeTakenSeconds);
             
             document.getElementById('resultScore').textContent = `${percentage}%`;
-            document.getElementById('resultDetails').innerHTML = `
+            
+            let resultDetailsHTML = `
                 <p><strong>Score:</strong> ${result.score} out of ${result.totalQuestions} correct</p>
                 <p><strong>Time Taken:</strong> ${timeFormatted}</p>
                 <p><strong>Percentage:</strong> ${percentage}%</p>
             `;
+            
+            if (classContext.hasClass) {
+                resultDetailsHTML += `
+                    <p><strong>Class:</strong> ${classContext.className}</p>
+                    <p style="color: #3b82f6; font-weight: 500;">✅ Your result has been recorded for class performance tracking.</p>
+                `;
+            }
+            
+            document.getElementById('resultDetails').innerHTML = resultDetailsHTML;
 
-            // Use the enhanced question details from server response
+            // Enhanced results data with class context
             const detailedResults = {
                 quizId: quizId,
                 lectureId: result.lectureId || quizData.lectureId,
@@ -745,15 +1051,16 @@
                 percentage: result.percentage,
                 timeTakenSeconds: result.timeTakenSeconds,
                 submissionDate: new Date().toISOString(),
-                questionDetails: result.questionDetails || prepareQuestionDetails() // Use server data if available
+                questionDetails: result.questionDetails || prepareQuestionDetails(),
+                classContext: classContext
             };
 
             // Store results in localStorage for the results page
             localStorage.setItem('quizResults', JSON.stringify(detailedResults));
-            console.log('📊 Results data prepared for detailed view:', detailedResults);
+            console.log('📊 Enhanced results data prepared:', detailedResults);
         }
 
-        // New function to prepare detailed question data
+        // Prepare detailed question data
         function prepareQuestionDetails() {
             if (!quizData || !quizData.questions) {
                 console.error('❌ Quiz data not available for detailed results');
@@ -772,37 +1079,51 @@
                     correctAnswer: question.correct_answer,
                     isCorrect: studentAnswer === question.correct_answer
                 };
-            }).filter(item => item !== null); // Remove any null entries
+            }).filter(item => item !== null);
         }
 
-        // Update the goToDashboard function to redirect to results page
+        // Enhanced goToDashboard function with class context
         function goToDashboard() {
-            // Check if we have detailed results to show
             const storedResults = localStorage.getItem('quizResults');
             if (storedResults) {
                 // Redirect to detailed results page
                 window.location.href = '/quiz-results';
+            } else if (classContext.hasClass) {
+                // Redirect to class dashboard if in class context
+                window.location.href = `/student/class/${classContext.classId}`;
             } else {
-                // Fallback to dashboard
+                // Fallback to student dashboard
                 window.location.href = '/homeStudent';
             }
         }
 
         function showError(message) {
+            const backButtonText = classContext.hasClass 
+                ? `Back to ${classContext.className}`
+                : 'Back to Dashboard';
+                
+            const backUrl = classContext.hasClass 
+                ? `/student/class/${classContext.classId}`
+                : '/homeStudent';
+                
             document.getElementById('loadingContainer').innerHTML = `
                 <h3 style="color: #ef4444;">❌ Error</h3>
                 <p>${message}</p>
-                <button class="btn" onclick="goToDashboard()" style="margin-top: 1rem;">
-                    Back to Dashboard
+                <button class="btn" onclick="window.location.href='${backUrl}'" style="margin-top: 1rem;">
+                    ${backButtonText}
                 </button>
             `;
         }
 
-        // Prevent page reload/back button during quiz
+        // Prevent page reload/back button during quiz with class warning
         window.addEventListener('beforeunload', function(e) {
             if (quizData && timerInterval) {
+                const warningMessage = classContext.hasClass 
+                    ? `Are you sure you want to leave? This is a ${classContext.className} class quiz and your progress will be lost.`
+                    : 'Are you sure you want to leave? Your quiz progress will be lost.';
+                    
                 e.preventDefault();
-                e.returnValue = 'Are you sure you want to leave? Your quiz progress will be lost.';
+                e.returnValue = warningMessage;
                 return e.returnValue;
             }
         });
