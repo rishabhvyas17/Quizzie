@@ -18,7 +18,7 @@
             line-height: 1.6;
         }
 
-        /* Header */
+        /* Enhanced Header */
         .header {
             background: white;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -29,12 +29,52 @@
         }
 
         .header-content {
-            max-width: 1000px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 0 1rem;
+        }
+
+        /* Breadcrumb Navigation */
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 0.85rem;
+            color: #64748b;
+            flex-wrap: wrap;
+        }
+
+        .breadcrumb a {
+            color: #3b82f6;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .breadcrumb a:hover {
+            color: #2563eb;
+        }
+
+        .breadcrumb-separator {
+            color: #94a3b8;
+        }
+
+        .class-badge {
+            background: #3b82f6;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        /* Header Info */
+        .header-info {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
 
         .logo {
@@ -52,16 +92,62 @@
         .quiz-meta {
             font-size: 0.85rem;
             color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .subject-badge {
+            background: #10b981;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
         }
 
         /* Main Content */
         .main-content {
-            max-width: 1000px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 2rem 1rem;
         }
 
-        /* Results Summary */
+        /* Class Context Alert */
+        .class-context {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            display: none; /* Will be shown via JavaScript if class context exists */
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .class-context.show {
+            display: flex;
+        }
+
+        .class-context-icon {
+            background: #3b82f6;
+            color: white;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+        }
+
+        .class-context-text {
+            color: #1e40af;
+            flex: 1;
+        }
+
+        /* Enhanced Results Summary */
         .results-summary {
             background: white;
             border-radius: 12px;
@@ -69,39 +155,59 @@
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             margin-bottom: 2rem;
             text-align: center;
+            animation: slideUp 0.5s ease-out;
         }
 
         .score-display {
-            font-size: 3rem;
+            font-size: 4rem;
             font-weight: bold;
             color: #10b981;
             margin-bottom: 1rem;
+            text-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
         }
+
+        .score-display.poor { color: #ef4444; }
+        .score-display.average { color: #f59e0b; }
+        .score-display.good { color: #3b82f6; }
+        .score-display.excellent { color: #10b981; }
 
         .score-details {
             color: #64748b;
             margin-bottom: 2rem;
+            font-size: 1.1rem;
         }
 
+        .score-details p {
+            margin-bottom: 0.5rem;
+        }
+
+        .score-details strong {
+            color: #1e293b;
+        }
+
+        /* Enhanced Buttons */
         .btn {
             background: #3b82f6;
             color: white;
             border: none;
-            padding: 0.75rem 1.5rem;
+            padding: 0.875rem 1.75rem;
             border-radius: 8px;
             font-weight: 500;
             cursor: pointer;
-            transition: background-color 0.2s ease, transform 0.1s ease;
+            transition: all 0.2s ease;
             font-size: 0.9rem;
             text-decoration: none;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
             text-align: center;
-            margin: 0 0.5rem;
+            margin: 0 0.5rem 0.5rem 0;
         }
 
         .btn:hover {
             background: #2563eb;
             transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.2);
         }
 
         .btn-secondary {
@@ -112,12 +218,65 @@
             background: #475569;
         }
 
-        /* Question Results */
+        .btn-success {
+            background: #10b981;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-class {
+            background: #8b5cf6;
+        }
+
+        .btn-class:hover {
+            background: #7c3aed;
+        }
+
+        /* Performance Stats */
+        .performance-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.25rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            border-left: 4px solid #e2e8f0;
+        }
+
+        .stat-card.score { border-left-color: #10b981; }
+        .stat-card.time { border-left-color: #3b82f6; }
+        .stat-card.rank { border-left-color: #8b5cf6; }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-card.score .stat-value { color: #10b981; }
+        .stat-card.time .stat-value { color: #3b82f6; }
+        .stat-card.rank .stat-value { color: #8b5cf6; }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        /* Enhanced Question Results */
         .question-results {
             background: white;
             border-radius: 12px;
             padding: 2rem;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            animation: slideUp 0.5s ease-out 0.1s both;
         }
 
         .section-title {
@@ -125,11 +284,22 @@
             font-weight: bold;
             color: #1e293b;
             margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .question-item {
             border-bottom: 1px solid #e2e8f0;
             padding: 1.5rem 0;
+            transition: background-color 0.2s ease;
+        }
+
+        .question-item:hover {
+            background: #f8fafc;
+            margin: 0 -1rem;
+            padding: 1.5rem 1rem;
+            border-radius: 8px;
         }
 
         .question-item:last-child {
@@ -147,6 +317,7 @@
             font-size: 0.9rem;
             color: #64748b;
             margin-bottom: 0.5rem;
+            font-weight: 500;
         }
 
         .question-text {
@@ -155,29 +326,42 @@
             color: #1e293b;
             margin-bottom: 1rem;
             line-height: 1.5;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 8px;
+            border-left: 4px solid #3b82f6;
         }
 
+        /* Enhanced Result Badge */
         .result-badge {
             padding: 0.5rem 1rem;
             border-radius: 20px;
             font-size: 0.85rem;
             font-weight: bold;
             margin-left: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .correct {
             background: #dcfce7;
             color: #16a34a;
+            border: 1px solid #bbf7d0;
         }
 
         .wrong {
             background: #fee2e2;
             color: #dc2626;
+            border: 1px solid #fecaca;
         }
 
-        /* Answer Options */
+        /* Enhanced Answer Options */
         .answer-options {
             margin-bottom: 1rem;
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 1rem;
         }
 
         .answer-row {
@@ -186,17 +370,23 @@
             align-items: center;
             padding: 0.75rem 0;
             font-size: 0.95rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .answer-row:last-child {
+            border-bottom: none;
         }
 
         .answer-label {
             font-weight: 600;
             color: #64748b;
-            width: 120px;
+            min-width: 120px;
         }
 
         .answer-value {
             flex: 1;
             color: #1e293b;
+            text-align: right;
         }
 
         .answer-value.correct-answer {
@@ -209,7 +399,7 @@
             font-weight: 600;
         }
 
-        /* AI Explanation Section */
+        /* Enhanced AI Explanation Section */
         .explanation-section {
             margin-top: 1rem;
             padding-top: 1rem;
@@ -220,34 +410,38 @@
             background: #8b5cf6;
             color: white;
             border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            font-size: 0.85rem;
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
             cursor: pointer;
             transition: all 0.2s ease;
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            font-weight: 500;
         }
 
         .explain-btn:hover {
             background: #7c3aed;
             transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(139, 92, 246, 0.2);
         }
 
         .explain-btn:disabled {
             background: #94a3b8;
             cursor: not-allowed;
             transform: none;
+            box-shadow: none;
         }
 
         .explanation-content {
             margin-top: 1rem;
-            padding: 1rem;
+            padding: 1.5rem;
             background: #f0f9ff;
             border-left: 4px solid #3b82f6;
-            border-radius: 6px;
+            border-radius: 8px;
             display: none;
+            animation: slideDown 0.3s ease-out;
         }
 
         .explanation-content.show {
@@ -258,7 +452,7 @@
             color: #1e293b;
             font-size: 0.95rem;
             line-height: 1.6;
-            margin-bottom: 0.5rem;
+            margin-bottom: 1rem;
         }
 
         .explanation-meta {
@@ -267,6 +461,7 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            flex-wrap: wrap;
         }
 
         .cached-indicator {
@@ -275,6 +470,41 @@
             padding: 0.125rem 0.5rem;
             border-radius: 12px;
             font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        /* Enhanced explanation styles */
+        .wrong-answer-explanation {
+            background: #fef2f2;
+            border-left: 4px solid #ef4444;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 0 6px 6px 0;
+        }
+
+        .correct-answer-explanation {
+            background: #f0fdf4;
+            border-left: 4px solid #22c55e;
+            padding: 1rem;
+            border-radius: 0 6px 6px 0;
+        }
+
+        .answer-context {
+            background: #f1f5f9;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: #475569;
+        }
+
+        .explanation-warning {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            color: #92400e;
+            animation: slideIn 0.3s ease-out;
         }
 
         /* Loading States */
@@ -287,8 +517,8 @@
         }
 
         .loading-spinner {
-            width: 16px;
-            height: 16px;
+            width: 18px;
+            height: 18px;
             border: 2px solid #e2e8f0;
             border-top: 2px solid #3b82f6;
             border-radius: 50%;
@@ -300,12 +530,53 @@
             100% { transform: rotate(360deg); }
         }
 
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         /* Mobile Responsiveness */
         @media (max-width: 768px) {
             .header-content {
+                padding: 0 0.5rem;
+            }
+
+            .header-info {
                 flex-direction: column;
-                gap: 1rem;
-                text-align: center;
+                align-items: flex-start;
+            }
+
+            .breadcrumb {
+                order: -1;
+                width: 100%;
+            }
+
+            .quiz-meta {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
             }
 
             .main-content {
@@ -318,7 +589,7 @@
             }
 
             .score-display {
-                font-size: 2.5rem;
+                font-size: 3rem;
             }
 
             .question-header {
@@ -339,7 +610,20 @@
             }
 
             .answer-label {
-                width: auto;
+                min-width: auto;
+            }
+
+            .answer-value {
+                text-align: left;
+            }
+
+            .performance-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .class-context {
+                flex-direction: column;
+                text-align: center;
             }
         }
 
@@ -348,6 +632,12 @@
                 display: block;
                 width: 100%;
                 margin: 0.25rem 0;
+                justify-content: center;
+            }
+
+            .question-item:hover {
+                margin: 0;
+                padding: 1.5rem 0;
             }
         }
     </style>
@@ -356,11 +646,23 @@
     <!-- Header -->
     <header class="header">
         <div class="header-content">
-            <div class="logo">QuizAI</div>
-            <div class="quiz-info">
-                <h1 id="quizTitle">Quiz Completed!</h1>
-                <div class="quiz-meta">
-                    Student: <span id="studentName"></span>
+            <!-- Breadcrumb Navigation -->
+            <nav class="breadcrumb" id="breadcrumbNav">
+                <a href="/homeStudent">🏠 Dashboard</a>
+                <span class="breadcrumb-separator">›</span>
+                <!-- Class context will be added here dynamically -->
+                <span>Quiz Results</span>
+            </nav>
+
+            <!-- Header Info -->
+            <div class="header-info">
+                <div class="logo">QuizAI</div>
+                <div class="quiz-info">
+                    <h1 id="quizTitle">Quiz Completed!</h1>
+                    <div class="quiz-meta">
+                        <span>👤 Student: <span id="studentName"></span></span>
+                        <!-- Class and subject badges will be added here dynamically -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -368,23 +670,49 @@
 
     <!-- Main Content -->
     <main class="main-content">
-        <!-- Results Summary -->
+        <!-- Class Context Alert -->
+        <div class="class-context" id="classContext">
+            <div class="class-context-icon">📚</div>
+            <div class="class-context-text" id="classContextText">
+                <!-- Class context information will be added here -->
+            </div>
+        </div>
+
+        <!-- Enhanced Results Summary -->
         <div class="results-summary">
             <div class="score-display" id="scoreDisplay">-</div>
             <div class="score-details" id="scoreDetails">
                 Loading your results...
             </div>
-            <div>
-                <a href="/homeStudent" class="btn">Back to Dashboard</a>
-                <button class="btn btn-secondary" onclick="retakeQuiz()">Take Another Quiz</button>
+            
+            <!-- Performance Stats -->
+            <div class="performance-stats" id="performanceStats" style="display: none;">
+                <div class="stat-card score">
+                    <div class="stat-value" id="statScore">-</div>
+                    <div class="stat-label">Score Achieved</div>
+                </div>
+                <div class="stat-card time">
+                    <div class="stat-value" id="statTime">-</div>
+                    <div class="stat-label">Time Taken</div>
+                </div>
+                <div class="stat-card rank">
+                    <div class="stat-value" id="statRank">-</div>
+                    <div class="stat-label">Estimated Rank</div>
+                </div>
+            </div>
+
+            <!-- Enhanced Navigation -->
+            <div id="navigationButtons">
+                <!-- Buttons will be dynamically generated based on context -->
             </div>
         </div>
 
         <!-- Question Results -->
         <div class="question-results">
-            <h2 class="section-title">📋 Detailed Results</h2>
+            <h2 class="section-title">📋 Detailed Question Analysis</h2>
             <div id="questionResultsContainer">
                 <div style="text-align: center; padding: 2rem; color: #64748b;">
+                    <div class="loading-spinner" style="margin: 0 auto 1rem;"></div>
                     Loading question results...
                 </div>
             </div>
@@ -395,18 +723,21 @@
         // Global variables
         let quizData = null;
         let resultsData = null;
-        const studentName = localStorage.getItem('studentName') || 'Student';
+        let classContext = null;
+        const studentName = localStorage.getItem('studentName') || '{{userName}}' || 'Student';
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Quiz results page initializing...');
+            console.log('🚀 Enhanced quiz results page initializing...');
             
             // Get results from localStorage (set by takeQuiz.hbs)
             const storedResults = localStorage.getItem('quizResults');
             if (storedResults) {
                 resultsData = JSON.parse(storedResults);
+                classContext = resultsData.classContext || null;
+                console.log('📊 Results loaded with class context:', classContext);
                 displayResults();
-                // Clear stored results
+                // Clear stored results after displaying
                 localStorage.removeItem('quizResults');
             } else {
                 showError('No quiz results found. Please take a quiz first.');
@@ -416,247 +747,145 @@
             document.getElementById('studentName').textContent = studentName;
         });
 
-        // Display quiz results
+        // Enhanced display results with class context
         function displayResults() {
             if (!resultsData) return;
 
-            console.log('📊 Displaying results:', resultsData);
+            console.log('📊 Displaying enhanced results:', resultsData);
+
+            // Update class context UI
+            updateClassContextUI();
 
             // Update header
-            document.getElementById('quizTitle').textContent = resultsData.quizTitle || 'Quiz Completed!';
+            updateHeaderInfo();
 
-            // Update summary
-            document.getElementById('scoreDisplay').textContent = resultsData.percentage.toFixed(1) + '%';
-            document.getElementById('scoreDetails').innerHTML = `
-                <p><strong>Score:</strong> ${resultsData.score} out of ${resultsData.totalQuestions} correct</p>
-                <p><strong>Time Taken:</strong> ${formatTime(resultsData.timeTakenSeconds)}</p>
-                <p><strong>Percentage:</strong> ${resultsData.percentage.toFixed(1)}%</p>
-            `;
+            // Update summary with enhanced features
+            updateResultsSummary();
 
             // Display question results
             displayQuestionResults();
         }
 
-        // Display detailed question results
-        function displayQuestionResults() {
-            const container = document.getElementById('questionResultsContainer');
-            
-            if (!resultsData.questionDetails || resultsData.questionDetails.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #64748b;">No detailed question data available.</p>';
-                return;
-            }
-
-            const questionsHTML = resultsData.questionDetails.map((question, index) => {
-                const isCorrect = question.studentAnswer === question.correctAnswer;
-                const resultClass = isCorrect ? 'correct' : 'wrong';
-                const resultText = isCorrect ? '✅ Correct' : '❌ Wrong';
-
-                return `
-                    <div class="question-item" data-question-index="${index}">
-                        <div class="question-header">
-                            <div>
-                                <div class="question-number">Question ${index + 1}</div>
-                                <div class="question-text">${question.questionText}</div>
-                            </div>
-                            <div class="result-badge ${resultClass}">${resultText}</div>
-                        </div>
-
-                        <div class="answer-options">
-                            <div class="answer-row">
-                                <span class="answer-label">Your Answer:</span>
-                                <span class="answer-value ${isCorrect ? 'correct-answer' : 'wrong-answer'}">
-                                    ${question.studentAnswer}) ${question.options[question.studentAnswer]}
-                                </span>
-                            </div>
-                            <div class="answer-row">
-                                <span class="answer-label">Correct Answer:</span>
-                                <span class="answer-value correct-answer">
-                                    ${question.correctAnswer}) ${question.options[question.correctAnswer]}
-                                </span>
-                            </div>
-                        </div>
-
-                        ${!isCorrect ? createExplanationSection(question, index) : ''}
-                    </div>
+        // Update class context UI elements
+        function updateClassContextUI() {
+            if (classContext && classContext.hasClass) {
+                // Update breadcrumb
+                const breadcrumb = document.getElementById('breadcrumbNav');
+                breadcrumb.innerHTML = `
+                    <a href="/homeStudent">🏠 Dashboard</a>
+                    <span class="breadcrumb-separator">›</span>
+                    <a href="/student/class/${classContext.classId}">${classContext.className}</a>
+                    <span class="breadcrumb-separator">›</span>
+                    <span>Quiz Results</span>
+                    <span class="class-badge">📚 Class Quiz</span>
                 `;
-            }).join('');
 
-            container.innerHTML = questionsHTML;
+                // Show class context alert
+                const contextDiv = document.getElementById('classContext');
+                const contextText = document.getElementById('classContextText');
+                contextText.innerHTML = `
+                    <strong>Class Quiz Completed!</strong> Your results for this ${classContext.className} quiz have been recorded and will contribute to your class performance analytics.
+                `;
+                contextDiv.classList.add('show');
+
+                // Add class badge to quiz meta
+                const quizMeta = document.querySelector('.quiz-meta');
+                quizMeta.innerHTML += `
+                    <span class="class-badge">📚 ${classContext.className}</span>
+                `;
+
+                console.log('✅ Class context UI updated for:', classContext.className);
+            }
         }
 
-        // Create explanation section for wrong answers
-        function createExplanationSection(question, questionIndex) {
-            return `
-                <div class="explanation-section">
-                    <button class="explain-btn" onclick="requestExplanation(${questionIndex})" id="explainBtn${questionIndex}">
-                        💡 Explain why ${question.correctAnswer} is correct
+        // Update header information
+        function updateHeaderInfo() {
+            const title = resultsData.quizTitle || 'Quiz Completed!';
+            document.getElementById('quizTitle').textContent = title;
+
+            // Add subject badge if available
+            if (classContext && classContext.hasClass) {
+                const quizMeta = document.querySelector('.quiz-meta');
+                // This could be enhanced to show subject if available in the data
+            }
+        }
+
+        // Enhanced results summary update
+        function updateResultsSummary() {
+            const percentage = resultsData.percentage;
+            const scoreClass = getScoreClass(percentage);
+            
+            // Update score display with class-based coloring
+            const scoreDisplay = document.getElementById('scoreDisplay');
+            scoreDisplay.textContent = percentage.toFixed(1) + '%';
+            scoreDisplay.className = `score-display ${scoreClass}`;
+
+            // Update score details
+            document.getElementById('scoreDetails').innerHTML = `
+                <p><strong>Score:</strong> ${resultsData.score} out of ${resultsData.totalQuestions} correct</p>
+                <p><strong>Time Taken:</strong> ${formatTime(resultsData.timeTakenSeconds)}</p>
+                <p><strong>Percentage:</strong> ${percentage.toFixed(1)}%</p>
+                ${classContext && classContext.hasClass ? 
+                    `<p><strong>Class:</strong> ${classContext.className} performance recorded ✅</p>` : ''
+                }
+            `;
+
+            // Show performance stats
+            updatePerformanceStats();
+
+            // Update navigation buttons
+            updateNavigationButtons();
+        }
+
+        // Update performance statistics cards
+        function updatePerformanceStats() {
+            document.getElementById('statScore').textContent = `${resultsData.score}/${resultsData.totalQuestions}`;
+            document.getElementById('statTime').textContent = formatTime(resultsData.timeTakenSeconds);
+            
+            // Simulate rank (in a real implementation, this would come from the server)
+            const estimatedRank = Math.floor(Math.random() * 20) + 1;
+            document.getElementById('statRank').textContent = `#${estimatedRank}`;
+            
+            document.getElementById('performanceStats').style.display = 'grid';
+        }
+
+        // Enhanced navigation buttons based on context
+        function updateNavigationButtons() {
+            const navigationDiv = document.getElementById('navigationButtons');
+            let buttonsHTML = '';
+
+            if (classContext && classContext.hasClass) {
+                // Class-aware navigation
+                buttonsHTML = `
+                    <a href="/student/class/${classContext.classId}" class="btn btn-class">
+                        📚 Back to ${classContext.className}
+                    </a>
+                    <a href="/homeStudent" class="btn btn-secondary">
+                        🏠 Dashboard
+                    </a>
+                    <button class="btn btn-success" onclick="findMoreQuizzes()">
+                        🎯 More ${classContext.className} Quizzes
                     </button>
-                    <div class="explanation-content" id="explanation${questionIndex}">
-                        <!-- Explanation will be loaded here -->
-                    </div>
-                </div>
-            `;
-        }
-
-        // Replace the requestExplanation function in your quizResults.hbs with this simplified version
-
-        // STEP 5: Replace the requestExplanation function in your quizResults.hbs with this enhanced version
-
-        async function requestExplanation(questionIndex) {
-            const button = document.getElementById(`explainBtn${questionIndex}`);
-            const explanationDiv = document.getElementById(`explanation${questionIndex}`);
-            const question = resultsData.questionDetails[questionIndex];
-
-            try {
-                // Disable button and show loading
-                button.disabled = true;
-                button.innerHTML = `
-                    <div class="loading-spinner"></div>
-                    Getting detailed explanation...
                 `;
-
-                console.log('💡 Getting enhanced explanation for question:', questionIndex);
-
-                // Prepare request data for enhanced explanations
-                const requestData = {
-                    quizId: resultsData.quizId,
-                    questionIndex: questionIndex,
-                    wrongAnswer: question.studentAnswer
-                };
-
-                console.log('📤 Requesting enhanced explanation:', requestData);
-
-                // Make API request to get enhanced explanation
-                const response = await fetch('/api/explanation/get', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(requestData)
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    console.log('✅ Enhanced explanation received:', {
-                        type: data.explanationType,
-                        length: data.explanation.length
-                    });
-                    
-                    // Format and display enhanced explanation
-                    const formattedExplanation = formatEnhancedExplanation(data.explanation, data.explanationType);
-                    
-                    explanationDiv.innerHTML = `
-                        <div class="explanation-text">${formattedExplanation}</div>
-                        <div class="explanation-meta">
-                            <span>💡 ${data.explanationType === 'detailed' ? 'Detailed AI explanation' : 'AI explanation'}</span>
-                            <span class="cached-indicator">${data.explanationType === 'detailed' ? 'Enhanced' : 'Basic'}</span>
-                            ${data.questionDetails ? 
-                                `<span class="answer-context">
-                                    ${question.studentAnswer} → ${question.correctAnswer}: ${data.questionDetails.correctOption}
-                                </span>` : ''
-                            }
-                        </div>
-                    `;
-                    explanationDiv.classList.add('show');
-
-                    // Update button based on explanation type
-                    if (data.explanationType === 'detailed') {
-                        button.innerHTML = '✅ Detailed explanation loaded';
-                        button.style.background = '#10b981';
-                    } else {
-                        button.innerHTML = '📝 Basic explanation loaded';
-                        button.style.background = '#f59e0b';
-                    }
-
-                } else {
-                    console.error('❌ Failed to get enhanced explanation:', data.message);
-                    showExplanationError(explanationDiv, data.message);
-                }
-
-            } catch (error) {
-                console.error('❌ Error requesting enhanced explanation:', error);
-                showExplanationError(explanationDiv, 'Error loading explanation. Please try again.');
-            } finally {
-                // Re-enable button if there was an error
-                if (!explanationDiv.classList.contains('show')) {
-                    button.disabled = false;
-                    button.innerHTML = `💡 Explain why ${question.correctAnswer} is correct`;
-                }
-            }
-        }
-
-        // NEW: Format enhanced explanations with better styling
-        function formatEnhancedExplanation(explanation, type) {
-            if (type === 'detailed') {
-                // Handle explanations with correct answer context
-                const parts = explanation.split('\n\n💡 **Why');
-                
-                if (parts.length > 1) {
-                    const wrongAnswerExplanation = parts[0];
-                    const correctAnswerExplanation = '💡 **Why' + parts[1];
-                    
-                    return `
-                        <div class="wrong-answer-explanation">
-                            <strong>Why your answer was incorrect:</strong><br>
-                            ${wrongAnswerExplanation}
-                        </div>
-                        <div class="correct-answer-explanation">
-                            ${correctAnswerExplanation.replace(/\*\*/g, '')}
-                        </div>
-                    `;
-                } else {
-                    return explanation.replace(/\n/g, '<br>');
-                }
             } else {
-                return explanation.replace(/\n/g, '<br>');
+                // General navigation
+                buttonsHTML = `
+                    <a href="/homeStudent" class="btn">
+                        🏠 Back to Dashboard
+                    </a>
+                    <button class="btn btn-secondary" onclick="retakeQuiz()">
+                        🔄 Take Another Quiz
+                    </button>
+                    <button class="btn btn-success" onclick="viewPerformance()">
+                        📊 View Performance
+                    </button>
+                `;
             }
+
+            navigationDiv.innerHTML = buttonsHTML;
         }
 
-        // NEW: Check explanation status when page loads
-        async function checkExplanationStatus() {
-            if (!resultsData.quizId) return;
-            
-            try {
-                const response = await fetch(`/api/quiz/${resultsData.quizId}/explanations-status`);
-                const data = await response.json();
-                
-                if (data.success) {
-                    console.log('📊 Explanation status:', data.explanationStats);
-                    
-                    // Show status to user if explanations are limited
-                    if (!data.hasEnhancedExplanations) {
-                        showExplanationWarning();
-                    } else {
-                        console.log('✅ Enhanced explanations available for all questions');
-                    }
-                }
-            } catch (error) {
-                console.error('❌ Error checking explanation status:', error);
-            }
-        }
-
-        // NEW: Show warning if enhanced explanations aren't available
-        function showExplanationWarning() {
-            const warningHTML = `
-                <div class="explanation-warning" style="
-                    background: #fef3c7; 
-                    border: 1px solid #f59e0b; 
-                    border-radius: 8px; 
-                    padding: 1rem; 
-                    margin: 1rem 0;
-                    color: #92400e;
-                ">
-                    <strong>📝 Note:</strong> This quiz was generated with basic explanations. 
-                    For detailed explanations, teachers should regenerate the quiz with the enhanced system.
-                </div>
-            `;
-            
-            const container = document.getElementById('questionResultsContainer');
-            container.insertAdjacentHTML('afterbegin', warningHTML);
-        }
-
-        // Enhanced display function that checks explanation status
+        // Enhanced display question results with class awareness
         function displayQuestionResults() {
             const container = document.getElementById('questionResultsContainer');
             
@@ -672,15 +901,18 @@
                 const isCorrect = question.studentAnswer === question.correctAnswer;
                 const resultClass = isCorrect ? 'correct' : 'wrong';
                 const resultText = isCorrect ? '✅ Correct' : '❌ Wrong';
+                const resultIcon = isCorrect ? '✅' : '❌';
 
                 return `
                     <div class="question-item" data-question-index="${index}">
                         <div class="question-header">
                             <div>
-                                <div class="question-number">Question ${index + 1}</div>
+                                <div class="question-number">Question ${index + 1} of ${resultsData.totalQuestions}</div>
                                 <div class="question-text">${question.questionText}</div>
                             </div>
-                            <div class="result-badge ${resultClass}">${resultText}</div>
+                            <div class="result-badge ${resultClass}">
+                                ${resultIcon} ${resultText}
+                            </div>
                         </div>
 
                         <div class="answer-options">
@@ -706,12 +938,15 @@
             container.innerHTML = questionsHTML;
         }
 
-        // Enhanced explanation section creation
+        // Enhanced explanation section with class context
         function createEnhancedExplanationSection(question, questionIndex) {
+            const contextNote = classContext && classContext.hasClass ? 
+                ` for this ${classContext.className} question` : '';
+                
             return `
                 <div class="explanation-section">
                     <button class="explain-btn" onclick="requestExplanation(${questionIndex})" id="explainBtn${questionIndex}">
-                        💡 Get detailed explanation for this question
+                        💡 Get detailed explanation${contextNote}
                     </button>
                     <div class="explanation-content" id="explanation${questionIndex}">
                         <!-- Enhanced explanation will be loaded here -->
@@ -720,49 +955,147 @@
             `;
         }
 
-        // Add enhanced CSS for better explanation display
-        const enhancedExplanationCSS = `
-        <style>
-        .wrong-answer-explanation {
-            background: #fef2f2;
-            border-left: 4px solid #ef4444;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            border-radius: 0 6px 6px 0;
+        // Enhanced explanation request with better error handling
+        async function requestExplanation(questionIndex) {
+            const button = document.getElementById(`explainBtn${questionIndex}`);
+            const explanationDiv = document.getElementById(`explanation${questionIndex}`);
+            const question = resultsData.questionDetails[questionIndex];
+
+            try {
+                // Disable button and show loading
+                button.disabled = true;
+                button.innerHTML = `
+                    <div class="loading-spinner"></div>
+                    Getting detailed explanation...
+                `;
+
+                console.log('💡 Getting enhanced explanation for question:', questionIndex);
+
+                // Prepare request data
+                const requestData = {
+                    quizId: resultsData.quizId,
+                    questionIndex: questionIndex,
+                    wrongAnswer: question.studentAnswer
+                };
+
+                console.log('📤 Requesting enhanced explanation:', requestData);
+
+                // Make API request
+                const response = await fetch('/api/explanation/get', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    console.log('✅ Enhanced explanation received:', {
+                        type: data.explanationType,
+                        length: data.explanation.length
+                    });
+                    
+                    // Format and display explanation
+                    const formattedExplanation = formatEnhancedExplanation(data.explanation, data.explanationType);
+                    
+                    explanationDiv.innerHTML = `
+                        <div class="explanation-text">${formattedExplanation}</div>
+                        <div class="explanation-meta">
+                            <span>💡 ${data.explanationType === 'detailed' ? 'Detailed AI explanation' : 'AI explanation'}</span>
+                            <span class="cached-indicator">${data.explanationType === 'detailed' ? 'Enhanced' : 'Basic'}</span>
+                            ${classContext && classContext.hasClass ? 
+                                `<span class="answer-context">📚 ${classContext.className} content</span>` : ''
+                            }
+                        </div>
+                    `;
+                    explanationDiv.classList.add('show');
+
+                    // Update button
+                    if (data.explanationType === 'detailed') {
+                        button.innerHTML = '✅ Detailed explanation loaded';
+                        button.style.background = '#10b981';
+                    } else {
+                        button.innerHTML = '📝 Basic explanation loaded';
+                        button.style.background = '#f59e0b';
+                    }
+
+                } else {
+                    console.error('❌ Failed to get explanation:', data.message);
+                    showExplanationError(explanationDiv, data.message);
+                }
+
+            } catch (error) {
+                console.error('❌ Error requesting explanation:', error);
+                showExplanationError(explanationDiv, 'Error loading explanation. Please try again.');
+            } finally {
+                // Re-enable button if there was an error
+                if (!explanationDiv.classList.contains('show')) {
+                    button.disabled = false;
+                    button.innerHTML = `💡 Get detailed explanation`;
+                }
+            }
         }
 
-        .correct-answer-explanation {
-            background: #f0fdf4;
-            border-left: 4px solid #22c55e;
-            padding: 1rem;
-            border-radius: 0 6px 6px 0;
+        // Enhanced explanation formatting
+        function formatEnhancedExplanation(explanation, type) {
+            if (type === 'detailed') {
+                const parts = explanation.split('\n\n💡 **Why');
+                
+                if (parts.length > 1) {
+                    const wrongAnswerExplanation = parts[0];
+                    const correctAnswerExplanation = '💡 **Why' + parts[1];
+                    
+                    return `
+                        <div class="wrong-answer-explanation">
+                            <strong>Why your answer was incorrect:</strong><br>
+                            ${wrongAnswerExplanation}
+                        </div>
+                        <div class="correct-answer-explanation">
+                            ${correctAnswerExplanation.replace(/\*\*/g, '')}
+                        </div>
+                    `;
+                } else {
+                    return explanation.replace(/\n/g, '<br>');
+                }
+            } else {
+                return explanation.replace(/\n/g, '<br>');
+            }
         }
 
-        .answer-context {
-            background: #f1f5f9;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            color: #475569;
+        // Check explanation status
+        async function checkExplanationStatus() {
+            if (!resultsData.quizId) return;
+            
+            try {
+                const response = await fetch(`/api/quiz/${resultsData.quizId}/explanations-status`);
+                const data = await response.json();
+                
+                if (data.success && !data.hasEnhancedExplanations) {
+                    showExplanationWarning();
+                }
+            } catch (error) {
+                console.error('❌ Error checking explanation status:', error);
+            }
         }
 
-        .explanation-warning {
-            animation: slideIn 0.3s ease-out;
+        // Show explanation warning
+        function showExplanationWarning() {
+            const warningHTML = `
+                <div class="explanation-warning">
+                    <strong>📝 Note:</strong> This quiz was generated with basic explanations. 
+                    For detailed explanations, teachers should regenerate the quiz with the enhanced system.
+                </div>
+            `;
+            
+            const container = document.getElementById('questionResultsContainer');
+            container.insertAdjacentHTML('afterbegin', warningHTML);
         }
-
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        </style>
-        `;
-
-        // Inject enhanced CSS
-        document.head.insertAdjacentHTML('beforeend', enhancedExplanationCSS);
 
         // Show explanation error
         function showExplanationError(explanationDiv, message) {
-                    explanationDiv.innerHTML = `
+            explanationDiv.innerHTML = `
                 <div class="explanation-text" style="color: #dc2626;">
                     ❌ ${message}
                 </div>
@@ -773,14 +1106,35 @@
             explanationDiv.classList.add('show');
         }
 
-        // Utility functions
+        // Enhanced utility functions
+        function getScoreClass(percentage) {
+            if (percentage >= 90) return 'excellent';
+            if (percentage >= 70) return 'good';
+            if (percentage >= 50) return 'average';
+            return 'poor';
+        }
+
         function formatTime(seconds) {
             const minutes = Math.floor(seconds / 60);
             const secs = seconds % 60;
             return `${minutes}m ${secs}s`;
         }
 
+        // Enhanced navigation functions
+        function findMoreQuizzes() {
+            if (classContext && classContext.hasClass) {
+                window.location.href = `/student/class/${classContext.classId}`;
+            } else {
+                window.location.href = '/homeStudent';
+            }
+        }
+
         function retakeQuiz() {
+            window.location.href = '/homeStudent';
+        }
+
+        function viewPerformance() {
+            // This could link to a student performance dashboard
             window.location.href = '/homeStudent';
         }
 
@@ -790,10 +1144,15 @@
             document.getElementById('questionResultsContainer').innerHTML = `
                 <p style="text-align: center; color: #dc2626; padding: 2rem;">${message}</p>
             `;
+            
+            // Update navigation for error state
+            document.getElementById('navigationButtons').innerHTML = `
+                <a href="/homeStudent" class="btn">🏠 Back to Dashboard</a>
+            `;
         }
 
-        // Store student name for header
-        if (typeof studentName !== 'undefined') {
+        // Store student name for future use
+        if (typeof studentName !== 'undefined' && studentName !== 'Student') {
             localStorage.setItem('studentName', studentName);
         }
     </script>

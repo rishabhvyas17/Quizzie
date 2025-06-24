@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lecture Results - {{lectureTitle}} - QuizAI</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+            line-height: 1.6;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.75rem;
+            font-weight: bold;
+            color: #3b82f6;
+        }
+
+        .lecture-info h1 {
+            font-size: 1.5rem;
+            color: #1e293b;
+            margin-bottom: 0.25rem;
+        }
+
+        .lecture-meta {
+            font-size: 0.9rem;
+            color: #64748b;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .class-badge {
+            background: #eff6ff;
+            color: #3b82f6;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .nav-link {
+            background: #3b82f6;
+            color: white;
+            text-decoration: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+
+        .nav-link:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .nav-link.secondary {
+            background: #64748b;
+        }
+
+        .nav-link.secondary:hover {
+            background: #475569;
+        }
+
+        /* Main Content */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        /* Stats Section */
+        .stats-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .stat-card.blue { border-left: 4px solid #3b82f6; }
+        .stat-card.green { border-left: 4px solid #10b981; }
+        .stat-card.orange { border-left: 4px solid #f59e0b; }
+        .stat-card.red { border-left: 4px solid #ef4444; }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card.blue .stat-value { color: #3b82f6; }
+        .stat-card.green .stat-value { color: #10b981; }
+        .stat-card.orange .stat-value { color: #f59e0b; }
+        .stat-card.red .stat-value { color: #ef4444; }
+
+        .stat-label {
+            color: #64748b;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* Charts Section */
+        .charts-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 1rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        /* Results Table */
+        .results-section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1e293b;
+        }
+
+        .export-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+
+        .export-btn:hover {
+            background: #059669;
+            transform: translateY(-1px);
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .results-table th,
+        .results-table td {
+            padding: 1rem 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .results-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .results-table tr:hover {
+            background: #f8fafc;
+        }
+
+        .rank-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .rank-1 { background: #ffd700; color: #1e293b; }
+        .rank-2 { background: #c0c0c0; color: #1e293b; }
+        .rank-3 { background: #cd7f32; color: white; }
+        .rank-other { background: #e2e8f0; color: #64748b; }
+
+        .score-cell {
+            font-weight: bold;
+        }
+
+        .score-excellent { color: #10b981; }
+        .score-good { color: #3b82f6; }
+        .score-average { color: #f59e0b; }
+        .score-poor { color: #ef4444; }
+
+        .student-name {
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .time-taken {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #64748b;
+        }
+
+        .empty-state h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: #1e293b;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .lecture-meta {
+                justify-content: center;
+            }
+
+            .nav-links {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .nav-link {
+                text-align: center;
+            }
+
+            .main-content {
+                padding: 1rem 0.5rem;
+            }
+
+            .stats-section {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+
+            .section-header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+
+            .results-table {
+                font-size: 0.9rem;
+            }
+
+            .results-table th,
+            .results-table td {
+                padding: 0.75rem 0.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-section {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-container {
+                height: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">QuizAI</div>
+            <div class="lecture-info">
+                <h1>{{lectureTitle}}</h1>
+                <div class="lecture-meta">
+                    {{#if className}}
+                        <span class="class-badge">{{className}} - {{subject}}</span>
+                    {{/if}}
+                    <span>Quiz Results</span>
+                    <span>Teacher: {{userName}}</span>
+                </div>
+            </div>
+            <div class="nav-links">
+                <a href="/homeTeacher" class="nav-link secondary">← Dashboard</a>
+                {{#if className}}
+                    <a href="/homeTeacher#classes" class="nav-link">Manage {{className}}</a>
+                {{/if}}
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Statistics Section -->
+        <div class="stats-section">
+            <div class="stat-card blue">
+                <div class="stat-value">{{quizResults.length}}</div>
+                <div class="stat-label">Students Participated</div>
+            </div>
+            <div class="stat-card green">
+                <div class="stat-value" id="averageScoreValue">-</div>
+                <div class="stat-label">Class Average</div>
+            </div>
+            <div class="stat-card orange">
+                <div class="stat-value" id="highestScoreValue">-</div>
+                <div class="stat-label">Highest Score</div>
+            </div>
+            <div class="stat-card red">
+                <div class="stat-value">100%</div>
+                <div class="stat-label">Completion Rate</div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-section">
+            <!-- Score Distribution Chart -->
+            <div class="chart-card">
+                <h3 class="chart-title">📊 Score Distribution</h3>
+                <div class="chart-container">
+                    <canvas id="scoreDistributionChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Performance Breakdown Chart -->
+            <div class="chart-card">
+                <h3 class="chart-title">🎯 Performance Breakdown</h3>
+                <div class="chart-container">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Table -->
+        <div class="results-section">
+            <div class="section-header">
+                <h2 class="section-title">🏆 Individual Student Results</h2>
+                <button class="export-btn" onclick="exportResults()">📊 Export Results</button>
+            </div>
+
+            {{#if quizResults}}
+                <div style="overflow-x: auto;">
+                    <table class="results-table">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Student Name</th>
+                                <th>Score</th>
+                                <th>Percentage</th>
+                                <th>Time Taken</th>
+                                <th>Submission Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{#each quizResults}}
+                                <tr>
+                                    <td>
+                                        <span class="rank-badge {{getRankClass @index}}">
+                                            {{add @index 1}}
+                                        </span>
+                                    </td>
+                                    <td class="student-name">{{this.studentName}}</td>
+                                    <td class="score-cell score-{{getScoreClass this.percentage}}">
+                                        {{this.score}}/{{this.totalQuestions}}
+                                    </td>
+                                    <td class="score-cell score-{{getScoreClass this.percentage}}">
+                                        {{toFixed this.percentage}}%
+                                    </td>
+                                    <td class="time-taken">{{formatTime this.timeTakenSeconds}}</td>
+                                    <td>{{this.submissionDate}}</td>
+                                </tr>
+                            {{/each}}
+                        </tbody>
+                    </table>
+                </div>
+            {{else}}
+                <div class="empty-state">
+                    <h3>📝 No Quiz Results Yet</h3>
+                    <p>No students have taken this quiz yet. Share the quiz with your students!</p>
+                    {{#if message}}
+                        <p style="color: #f59e0b; margin-top: 1rem;">{{message}}</p>
+                    {{/if}}
+                </div>
+            {{/if}}
+        </div>
+    </main>
+
+    <script>
+        // Global variables
+        const quizResults = {{{json quizResults}}};
+        const lectureTitle = '{{lectureTitle}}';
+        const className = '{{className}}';
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Lecture Results page initializing...');
+            console.log('📊 Quiz results data:', quizResults);
+            calculateStatistics();
+            createCharts();
+        });
+
+        // Calculate and display statistics
+        function calculateStatistics() {
+            if (!quizResults || quizResults.length === 0) {
+                document.getElementById('averageScoreValue').textContent = '0%';
+                document.getElementById('highestScoreValue').textContent = '0%';
+                return;
+            }
+
+            // Calculate statistics
+            const scores = quizResults.map(result => parseFloat(result.percentage));
+            const averageScore = scores.reduce((sum, score) => sum + score, 0) / scores.length;
+            const highestScore = Math.max(...scores);
+            
+            // Update display
+            document.getElementById('averageScoreValue').textContent = averageScore.toFixed(1) + '%';
+            document.getElementById('highestScoreValue').textContent = highestScore.toFixed(1) + '%';
+
+            console.log('📊 Statistics calculated:', {
+                totalStudents: quizResults.length,
+                averageScore: averageScore.toFixed(1),
+                highestScore: highestScore.toFixed(1)
+            });
+        }
+
+        // Create charts
+        function createCharts() {
+            if (!quizResults || quizResults.length === 0) {
+                console.log('⚠️ No data available for charts');
+                return;
+            }
+
+            createScoreDistributionChart();
+            createPerformanceBreakdownChart();
+        }
+
+        // Create score distribution chart
+        function createScoreDistributionChart() {
+            const ctx = document.getElementById('scoreDistributionChart');
+            if (!ctx) return;
+
+            const scores = quizResults.map(result => parseFloat(result.percentage));
+            const studentNames = quizResults.map(result => result.studentName);
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: studentNames,
+                    datasets: [{
+                        label: 'Score (%)',
+                        data: scores,
+                        backgroundColor: scores.map(score => {
+                            if (score >= 90) return '#10b981';
+                            if (score >= 70) return '#3b82f6';
+                            if (score >= 50) return '#f59e0b';
+                            return '#ef4444';
+                        }),
+                        borderWidth: 0,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const student = quizResults[context.dataIndex];
+                                    return `${student.studentName}: ${student.percentage}% (${student.score}/${student.totalQuestions})`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Score (%)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Students'
+                            },
+                            ticks: {
+                                maxRotation: 45
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Create performance breakdown chart
+        function createPerformanceBreakdownChart() {
+            const ctx = document.getElementById('performanceChart');
+            if (!ctx) return;
+
+            const scores = quizResults.map(result => parseFloat(result.percentage));
+            const excellent = scores.filter(score => score >= 90).length;
+            const good = scores.filter(score => score >= 70 && score < 90).length;
+            const average = scores.filter(score => score >= 50 && score < 70).length;
+            const poor = scores.filter(score => score < 50).length;
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Excellent (90%+)', 'Good (70-89%)', 'Average (50-69%)', 'Needs Improvement (<50%)'],
+                    datasets: [{
+                        data: [excellent, good, average, poor],
+                        backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = excellent + good + average + poor;
+                                    const percentage = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
+                                    return `${context.label}: ${context.parsed} students (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Export results function
+        function exportResults() {
+            if (!quizResults || quizResults.length === 0) {
+                alert('No results to export.');
+                return;
+            }
+
+            // Create CSV content
+            const headers = ['Rank', 'Student Name', 'Score', 'Total Questions', 'Percentage', 'Time Taken', 'Submission Date'];
+            let csvContent = headers.join(',') + '\n';
+            
+            quizResults.forEach((result, index) => {
+                const row = [
+                    index + 1,
+                    `"${result.studentName}"`,
+                    result.score,
+                    result.totalQuestions,
+                    result.percentage + '%',
+                    formatTime(result.timeTakenSeconds),
+                    `"${result.submissionDate}"`
+                ];
+                csvContent += row.join(',') + '\n';
+            });
+
+            // Download CSV
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${lectureTitle.replace(/[^a-z0-9]/gi, '_')}_results.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+
+            console.log('📊 Results exported for:', lectureTitle);
+        }
+
+        // Utility function to format time
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${minutes}m ${secs}s`;
+        }
+    </script>
+</body>
+</html>

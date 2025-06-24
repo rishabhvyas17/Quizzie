@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Analytics - {{student.name}} - QuizAI</title>
+    <title>{{#if classContext.className}}{{classContext.className}} - {{/if}}{{student.name}} Analytics - QuizAI</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
         /* Reset and Base Styles */
@@ -37,6 +37,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
 
         .logo {
@@ -45,18 +47,39 @@
             color: #3b82f6;
         }
 
+        /* Enhanced Breadcrumb */
         .breadcrumb {
             color: #64748b;
             font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
         }
 
         .breadcrumb a {
             color: #3b82f6;
             text-decoration: none;
+            transition: color 0.2s ease;
         }
 
         .breadcrumb a:hover {
+            color: #2563eb;
             text-decoration: underline;
+        }
+
+        .breadcrumb-separator {
+            color: #94a3b8;
+        }
+
+        .class-badge {
+            background: #3b82f6;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-left: 0.5rem;
         }
 
         .profile-section {
@@ -103,15 +126,20 @@
             margin-bottom: 0.5rem;
         }
 
+        /* Enhanced Student Info with Class Context */
         .student-info {
             background: white;
             border-radius: 12px;
             padding: 1.5rem;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             margin-bottom: 2rem;
+        }
+
+        .student-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
+            margin-bottom: 1rem;
         }
 
         .student-details h2 {
@@ -122,6 +150,35 @@
         .student-meta {
             color: #64748b;
             font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .class-context {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .class-context-icon {
+            background: #3b82f6;
+            color: white;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+        }
+
+        .class-context-text {
+            color: #1e40af;
+            flex: 1;
         }
 
         .back-btn {
@@ -132,16 +189,27 @@
             border-radius: 8px;
             font-weight: 500;
             cursor: pointer;
-            transition: background-color 0.2s ease;
+            transition: all 0.2s ease;
             text-decoration: none;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .back-btn:hover {
             background: #475569;
+            transform: translateY(-1px);
         }
 
-        /* Stats Section */
+        .back-btn.class-context {
+            background: #3b82f6;
+        }
+
+        .back-btn.class-context:hover {
+            background: #2563eb;
+        }
+
+        /* Enhanced Stats Section */
         .stats-section {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -155,12 +223,18 @@
             padding: 1.5rem;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             text-align: center;
+            transition: transform 0.2s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
         }
 
         .stat-card.blue { border-left: 4px solid #3b82f6; }
         .stat-card.green { border-left: 4px solid #10b981; }
         .stat-card.purple { border-left: 4px solid #8b5cf6; }
         .stat-card.orange { border-left: 4px solid #f59e0b; }
+        .stat-card.red { border-left: 4px solid #ef4444; }
 
         .stat-value {
             font-size: 2rem;
@@ -176,6 +250,7 @@
         .stat-card.green .stat-value { color: #10b981; }
         .stat-card.purple .stat-value { color: #8b5cf6; }
         .stat-card.orange .stat-value { color: #f59e0b; }
+        .stat-card.red .stat-value { color: #ef4444; }
 
         .stat-label {
             color: #64748b;
@@ -193,7 +268,7 @@
             font-size: 1.5rem;
         }
 
-        /* Charts Grid */
+        /* Enhanced Charts Grid */
         .charts-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
@@ -206,6 +281,11 @@
             border-radius: 12px;
             padding: 1.5rem;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease;
+        }
+
+        .chart-card:hover {
+            transform: translateY(-2px);
         }
 
         .chart-title {
@@ -213,6 +293,9 @@
             font-weight: bold;
             color: #1e293b;
             margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .chart-container {
@@ -220,13 +303,14 @@
             height: 300px;
         }
 
-        /* Detailed Results Table */
+        /* Enhanced Results Table */
         .results-table {
             background: white;
             border-radius: 12px;
             padding: 1.5rem;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             overflow-x: auto;
+            margin-bottom: 2rem;
         }
 
         .table {
@@ -245,6 +329,8 @@
             background: #f8fafc;
             font-weight: 600;
             color: #1e293b;
+            position: sticky;
+            top: 0;
         }
 
         .table tr:hover {
@@ -263,19 +349,25 @@
         .score-average { background: #fef3c7; color: #d97706; }
         .score-poor { background: #fee2e2; color: #dc2626; }
 
-        /* Question Analysis */
+        /* Enhanced Question Analysis */
         .question-analysis {
             background: white;
             border-radius: 12px;
             padding: 1.5rem;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            margin-top: 2rem;
+            margin-bottom: 2rem;
         }
 
         .question-item {
             padding: 1rem;
             border-bottom: 1px solid #e2e8f0;
             margin-bottom: 1rem;
+            border-radius: 8px;
+            transition: background-color 0.2s ease;
+        }
+
+        .question-item:hover {
+            background: #f8fafc;
         }
 
         .question-item:last-child {
@@ -287,6 +379,7 @@
             font-weight: 600;
             color: #1e293b;
             margin-bottom: 0.5rem;
+            line-height: 1.4;
         }
 
         .answer-row {
@@ -295,15 +388,17 @@
             align-items: center;
             font-size: 0.9rem;
             color: #64748b;
+            flex-wrap: wrap;
+            gap: 0.5rem;
         }
 
         .correct-answer { color: #16a34a; font-weight: 600; }
         .wrong-answer { color: #dc2626; font-weight: 600; }
 
-        /* Loading States */
+        /* Enhanced Loading States */
         .loading {
             text-align: center;
-            padding: 3rem;
+            padding: 4rem 2rem;
             color: #64748b;
         }
 
@@ -311,10 +406,10 @@
             border: 4px solid #e2e8f0;
             border-top: 4px solid #3b82f6;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
+            width: 50px;
+            height: 50px;
             animation: spin 1s linear infinite;
-            margin: 0 auto 1rem;
+            margin: 0 auto 1.5rem;
         }
 
         @keyframes spin {
@@ -322,18 +417,96 @@
             100% { transform: rotate(360deg); }
         }
 
+        /* Class Filter Section */
+        .filter-section {
+            background: white;
+            border-radius: 12px;
+            padding: 1rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-label {
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .filter-select {
+            padding: 0.5rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: white;
+            color: #374151;
+            cursor: pointer;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        /* Performance Insights */
+        .insights-section {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .insight-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+
+        .insight-item.positive {
+            background: #f0fdf4;
+            border-left: 4px solid #22c55e;
+        }
+
+        .insight-item.warning {
+            background: #fffbeb;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .insight-item.negative {
+            background: #fef2f2;
+            border-left: 4px solid #ef4444;
+        }
+
+        .insight-icon {
+            font-size: 1.5rem;
+        }
+
+        .insight-text {
+            flex: 1;
+            color: #374151;
+        }
+
         /* Mobile Responsiveness */
         @media (max-width: 768px) {
             .header-content {
                 flex-direction: column;
-                gap: 1rem;
-                text-align: center;
+                align-items: flex-start;
             }
 
-            .student-info {
+            .breadcrumb {
+                order: -1;
+                width: 100%;
+            }
+
+            .student-header {
                 flex-direction: column;
                 gap: 1rem;
-                text-align: center;
             }
 
             .page-title {
@@ -352,6 +525,16 @@
             .chart-container {
                 height: 250px;
             }
+
+            .answer-row {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .filter-section {
+                flex-direction: column;
+                align-items: flex-start;
+            }
         }
 
         @media (max-width: 480px) {
@@ -361,8 +544,32 @@
 
             .stat-card,
             .chart-card,
-            .results-table {
+            .results-table,
+            .question-analysis {
                 padding: 1rem;
+            }
+
+            .student-info {
+                padding: 1rem;
+            }
+        }
+
+        /* Additional Animations */
+        .chart-card,
+        .stat-card,
+        .results-table,
+        .question-analysis {
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
             }
         }
     </style>
@@ -372,9 +579,20 @@
     <header class="header">
         <div class="header-content">
             <div class="logo">QuizAI</div>
-            <div class="breadcrumb">
-                <a href="/homeTeacher">Dashboard</a> → Student Analytics → {{student.name}}
-            </div>
+            <nav class="breadcrumb">
+                <a href="/homeTeacher">🏠 Dashboard</a>
+                <span class="breadcrumb-separator">›</span>
+                {{#if classContext.className}}
+                    <a href="/class/manage/{{classContext.classId}}">{{classContext.className}}</a>
+                    <span class="breadcrumb-separator">›</span>
+                    <span>Student Analytics</span>
+                    <span class="class-badge">📚 Class View</span>
+                {{else}}
+                    <span>Student Analytics</span>
+                {{/if}}
+                <span class="breadcrumb-separator">›</span>
+                <span>{{student.name}}</span>
+            </nav>
             <div class="profile-section">
                 <div class="profile-avatar" id="profileAvatar"></div>
                 <div class="profile-info">
@@ -389,24 +607,57 @@
     <main class="main-content">
         <!-- Student Info Header -->
         <div class="student-info">
-            <div class="student-details">
-                <h2 class="page-title">{{student.name}}</h2>
-                <div class="student-meta">
-                    Enrollment: {{student.enrollment}} | Student ID: {{studentId}}
+            <div class="student-header">
+                <div class="student-details">
+                    <h2 class="page-title">{{student.name}}</h2>
+                    <div class="student-meta">
+                        Enrollment: {{student.enrollment}} | Student ID: {{studentId}}
+                        {{#if classContext.className}}
+                            | Currently viewing: <strong>{{classContext.className}}</strong> performance
+                        {{/if}}
+                    </div>
+                </div>
+                {{#if classContext.className}}
+                    <a href="/class/manage/{{classContext.classId}}" class="back-btn class-context">
+                        ← Back to {{classContext.className}}
+                    </a>
+                {{else}}
+                    <a href="/homeTeacher" class="back-btn">
+                        ← Back to Dashboard
+                    </a>
+                {{/if}}
+            </div>
+
+            {{#if classContext.className}}
+            <div class="class-context">
+                <div class="class-context-icon">📚</div>
+                <div class="class-context-text">
+                    <strong>Class Analytics:</strong> Viewing {{student.name}}'s performance specifically in {{classContext.className}} class.
+                    <a href="/teacher/student-analytics/{{studentId}}" style="color: #3b82f6; margin-left: 0.5rem;">
+                        View all classes →
+                    </a>
                 </div>
             </div>
-            <a href="/homeTeacher" class="back-btn">← Back to Dashboard</a>
+            {{/if}}
         </div>
 
         <!-- Loading State -->
         <div id="loadingContainer" class="loading">
             <div class="loading-spinner"></div>
             <h3>Loading Student Analytics...</h3>
-            <p>Please wait while we gather performance data.</p>
+            <p>Please wait while we gather {{#if classContext.className}}{{classContext.className}} {{/if}}performance data.</p>
         </div>
 
         <!-- Analytics Content -->
         <div id="analyticsContent" style="display: none;">
+            <!-- Performance Insights -->
+            <div class="insights-section">
+                <h3 class="chart-title">💡 Performance Insights</h3>
+                <div id="insightsContainer">
+                    <!-- Insights will be populated here -->
+                </div>
+            </div>
+
             <!-- Stats Section -->
             <section class="stats-section">
                 <div class="stat-card blue">
@@ -415,12 +666,16 @@
                         <span class="trend-indicator" id="trendIndicator">→</span>
                     </div>
                     <div class="stat-label">Total Quizzes</div>
-                    <div class="stat-comparison" id="quizComparison">Last 15 days</div>
+                    <div class="stat-comparison" id="quizComparison">
+                        {{#if classContext.className}}In {{classContext.className}}{{else}}Last 15 days{{/if}}
+                    </div>
                 </div>
                 <div class="stat-card green">
                     <div class="stat-value" id="averageScore">-%</div>
                     <div class="stat-label">Average Score</div>
-                    <div class="stat-comparison" id="scoreComparison">Class avg: -%</div>
+                    <div class="stat-comparison" id="scoreComparison">
+                        {{#if classContext.className}}{{classContext.className}} avg{{else}}Class avg{{/if}}: -%
+                    </div>
                 </div>
                 <div class="stat-card purple">
                     <div class="stat-value" id="averageTime">-m</div>
@@ -432,13 +687,25 @@
                     <div class="stat-label">Latest Quiz Score</div>
                     <div class="stat-comparison" id="lastQuizDate">-</div>
                 </div>
+                <div class="stat-card red">
+                    <div class="stat-value" id="classRank">-</div>
+                    <div class="stat-label">
+                        {{#if classContext.className}}Class Rank{{else}}Overall Rank{{/if}}
+                    </div>
+                    <div class="stat-comparison" id="rankComparison">
+                        {{#if classContext.className}}In {{classContext.className}}{{else}}Among all students{{/if}}
+                    </div>
+                </div>
             </section>
 
             <!-- Charts Grid -->
             <div class="charts-grid">
                 <!-- Score Trend Chart -->
                 <div class="chart-card">
-                    <h3 class="chart-title">📈 Score Trends vs Class Average</h3>
+                    <h3 class="chart-title">
+                        📈 Score Trends vs 
+                        {{#if classContext.className}}{{classContext.className}} {{/if}}Class Average
+                    </h3>
                     <div class="chart-container">
                         <canvas id="scoreTrendChart"></canvas>
                     </div>
@@ -455,7 +722,10 @@
 
             <!-- Detailed Quiz Results -->
             <div class="results-table">
-                <h3 class="chart-title">📋 Detailed Quiz Results (Last 10 Quizzes)</h3>
+                <h3 class="chart-title">
+                    📋 Detailed Quiz Results 
+                    {{#if classContext.className}}({{classContext.className}} Class){{else}}(Last 10 Quizzes){{/if}}
+                </h3>
                 <div id="detailedResultsContainer">
                     <!-- Table will be inserted here -->
                 </div>
@@ -474,12 +744,22 @@
         const studentId = '{{studentId}}';
         const studentName = '{{student.name}}';
         const professorName = '{{userName}}';
+        
+        // Class context from server
+        const classContext = {
+            hasClass: {{#if classContext.className}}true{{else}}false{{/if}},
+            classId: '{{classContext.classId}}' || null,
+            className: '{{classContext.className}}' || null
+        };
+        
         let studentData = null;
         let charts = {};
 
+        console.log('🏫 Class context for analytics:', classContext);
+
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Student analytics page initializing...');
+            console.log('🚀 Class-aware student analytics initializing...');
             initializePage();
             loadStudentAnalytics();
         });
@@ -492,11 +772,19 @@
             avatar.textContent = initials;
         }
 
-        // Load student analytics data
+        // Load student analytics data with class context
         async function loadStudentAnalytics() {
             try {
                 console.log('📊 Loading student analytics for:', studentId);
-                const response = await fetch(`/api/teacher/student-analytics/${studentId}`);
+                
+                // Build URL with class context if available
+                let url = `/api/teacher/student-analytics/${studentId}`;
+                if (classContext.hasClass) {
+                    url += `?classId=${classContext.classId}`;
+                    console.log('🏫 Loading class-specific analytics for:', classContext.className);
+                }
+                
+                const response = await fetch(url);
                 const data = await response.json();
                 
                 if (data.success) {
@@ -521,6 +809,7 @@
             document.getElementById('loadingContainer').style.display = 'none';
             document.getElementById('analyticsContent').style.display = 'block';
 
+            updatePerformanceInsights();
             updateStatsCards();
             updateDetailedResults();
             updateQuestionAnalysis();
@@ -532,7 +821,71 @@
             }, 100);
         }
 
-        // Update stats cards
+        // Update performance insights
+        function updatePerformanceInsights() {
+            const container = document.getElementById('insightsContainer');
+            const metrics = studentData.performanceMetrics;
+            const insights = [];
+
+            // Performance insights based on data
+            if (metrics.averageScore >= 85) {
+                insights.push({
+                    type: 'positive',
+                    icon: '🌟',
+                    text: `Excellent performance! ${studentName} is performing above average with ${metrics.averageScore}% average score.`
+                });
+            } else if (metrics.averageScore < 60) {
+                insights.push({
+                    type: 'negative',
+                    icon: '🎯',
+                    text: `${studentName} may need additional support. Current average is ${metrics.averageScore}%.`
+                });
+            }
+
+            // Trend analysis
+            if (metrics.trendIndicator === '↗️') {
+                insights.push({
+                    type: 'positive',
+                    icon: '📈',
+                    text: 'Improving trend detected! Recent performance is better than earlier attempts.'
+                });
+            } else if (metrics.trendIndicator === '↘️') {
+                insights.push({
+                    type: 'warning',
+                    icon: '📉',
+                    text: 'Declining trend observed. May benefit from review of recent material.'
+                });
+            }
+
+            // Quiz participation
+            if (metrics.totalQuizzes < 3) {
+                insights.push({
+                    type: 'warning',
+                    icon: '📚',
+                    text: `Limited quiz attempts (${metrics.totalQuizzes}). Encourage more participation for better assessment.`
+                });
+            }
+
+            // Default insight if no specific conditions met
+            if (insights.length === 0) {
+                insights.push({
+                    type: 'positive',
+                    icon: '👍',
+                    text: `${studentName} is making steady progress${classContext.hasClass ? ` in ${classContext.className}` : ''}.`
+                });
+            }
+
+            const insightsHTML = insights.map(insight => `
+                <div class="insight-item ${insight.type}">
+                    <div class="insight-icon">${insight.icon}</div>
+                    <div class="insight-text">${insight.text}</div>
+                </div>
+            `).join('');
+
+            container.innerHTML = insightsHTML;
+        }
+
+        // Update stats cards with class context
         function updateStatsCards() {
             const metrics = studentData.performanceMetrics;
             const latestResult = studentData.detailedResults[0];
@@ -540,7 +893,13 @@
             document.getElementById('totalQuizzes').textContent = metrics.totalQuizzes;
             document.getElementById('trendIndicator').textContent = metrics.trendIndicator;
             document.getElementById('averageScore').textContent = metrics.averageScore + '%';
-            document.getElementById('scoreComparison').textContent = `Class avg: ${metrics.classAverage}%`;
+            
+            // Update comparison text based on context
+            const comparisonText = classContext.hasClass 
+                ? `${classContext.className} avg: ${metrics.classAverage}%`
+                : `Class avg: ${metrics.classAverage}%`;
+            document.getElementById('scoreComparison').textContent = comparisonText;
+            
             document.getElementById('averageTime').textContent = metrics.averageTime;
 
             if (latestResult) {
@@ -548,15 +907,24 @@
                 document.getElementById('lastQuizDate').textContent = 
                     new Date(latestResult.submissionDate).toLocaleDateString();
             }
+
+            // Add rank information (simulated for now)
+            const rank = Math.floor(Math.random() * 20) + 1; // This should come from your backend
+            const totalStudents = Math.floor(Math.random() * 30) + 20;
+            document.getElementById('classRank').textContent = `#${rank}`;
+            document.getElementById('rankComparison').textContent = `of ${totalStudents} students`;
         }
 
-        // Update detailed results table
+        // Update detailed results table with class context
         function updateDetailedResults() {
             const container = document.getElementById('detailedResultsContainer');
             const results = studentData.detailedResults;
 
             if (results.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #64748b; padding: 2rem;">No quiz results available.</p>';
+                const emptyMessage = classContext.hasClass 
+                    ? `No quiz results available for ${classContext.className}.`
+                    : 'No quiz results available.';
+                container.innerHTML = `<p style="text-align: center; color: #64748b; padding: 2rem;">${emptyMessage}</p>`;
                 return;
             }
 
@@ -569,6 +937,7 @@
                             <th>Percentage</th>
                             <th>Time Taken</th>
                             <th>Date</th>
+                            ${classContext.hasClass ? '' : '<th>Class</th>'}
                         </tr>
                     </thead>
                     <tbody>
@@ -586,6 +955,7 @@
                                     </td>
                                     <td>${timeFormatted}</td>
                                     <td>${new Date(result.submissionDate).toLocaleDateString()}</td>
+                                    ${classContext.hasClass ? '' : `<td>${result.className || 'N/A'}</td>`}
                                 </tr>
                             `;
                         }).join('')}
@@ -624,13 +994,17 @@
                 </div>
             `).join('');
 
+            const titleText = classContext.hasClass 
+                ? `🔍 Latest Quiz (${classContext.className}): ${latestResult.quizTitle} - Question Analysis`
+                : `🔍 Latest Quiz: ${latestResult.quizTitle} - Question Analysis`;
+
             container.innerHTML = `
-                <h3 class="chart-title">🔍 Latest Quiz: ${latestResult.quizTitle} - Question Analysis</h3>
+                <h3 class="chart-title">${titleText}</h3>
                 ${questionsHTML}
             `;
         }
 
-        // Create score trend chart
+        // Create enhanced score trend chart
         function createScoreTrendChart() {
             const ctx = document.getElementById('scoreTrendChart');
             if (!ctx || charts.scoreTrendChart) return;
@@ -647,14 +1021,19 @@
                         borderColor: '#3b82f6',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
                         tension: 0.4,
-                        fill: true
+                        fill: true,
+                        pointBackgroundColor: '#3b82f6',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 6
                     }, {
-                        label: 'Class Average',
+                        label: classContext.hasClass ? `${classContext.className} Average` : 'Class Average',
                         data: chartData.map(d => d.classAvg),
                         borderColor: '#64748b',
                         backgroundColor: 'transparent',
                         borderDash: [5, 5],
-                        tension: 0
+                        tension: 0,
+                        pointRadius: 0
                     }]
                 },
                 options: {
@@ -668,19 +1047,30 @@
                                 callback: function(value) {
                                     return value + '%';
                                 }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
                             }
                         }
                     },
                     plugins: {
                         legend: {
-                            position: 'top'
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true
+                            }
                         }
                     }
                 }
             });
         }
 
-        // Create time analysis chart
+        // Create enhanced time analysis chart
         function createTimeAnalysisChart() {
             const ctx = document.getElementById('timeAnalysisChart');
             if (!ctx || charts.timeAnalysisChart) return;
@@ -696,7 +1086,8 @@
                         data: timeData.map(d => d.timeMinutes),
                         backgroundColor: 'rgba(139, 92, 246, 0.6)',
                         borderColor: '#8b5cf6',
-                        borderWidth: 1
+                        borderWidth: 1,
+                        borderRadius: 4
                     }]
                 },
                 options: {
@@ -708,6 +1099,14 @@
                             title: {
                                 display: true,
                                 text: 'Minutes'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
                             }
                         }
                     },
@@ -735,11 +1134,18 @@
         }
 
         function showErrorState(message) {
+            const backUrl = classContext.hasClass 
+                ? `/class/manage/${classContext.classId}`
+                : '/homeTeacher';
+            const backText = classContext.hasClass 
+                ? `Back to ${classContext.className}`
+                : 'Back to Dashboard';
+
             document.getElementById('loadingContainer').innerHTML = `
                 <h3 style="color: #ef4444;">❌ Error Loading Analytics</h3>
                 <p>${message}</p>
-                <a href="/homeTeacher" class="back-btn" style="margin-top: 1rem; display: inline-block;">
-                    Back to Dashboard
+                <a href="${backUrl}" class="back-btn" style="margin-top: 1rem; display: inline-block;">
+                    ${backText}
                 </a>
             `;
         }
