@@ -357,6 +357,46 @@ app.get('/logout', (req, res) => {
     });
 })
 
+
+
+// 🆕 NEW: Smart dashboard redirect based on user type
+app.get('/dashboard', isAuthenticated, (req, res) => {
+    try {
+        const userType = req.session.userType;
+        const userName = req.session.userName;
+
+        console.log('🔄 Dashboard redirect requested:', {
+            userType: userType,
+            userName: userName,
+            sessionId: req.sessionID
+        });
+
+        // Redirect based on user type
+        if (userType === 'teacher') {
+            console.log('👨‍🏫 Redirecting teacher to homeTeacher');
+            res.redirect('/homeTeacher');
+        } else if (userType === 'student') {
+            console.log('🎓 Redirecting student to homeStudent');
+            res.redirect('/homeStudent');
+        } else {
+            console.log('❌ Invalid user type or session, redirecting to login');
+            res.redirect('/login?message=Invalid session. Please login again.');
+        }
+    } catch (error) {
+        console.error('❌ Error in dashboard redirect:', error);
+        res.redirect('/login?message=Session error. Please login again.');
+    }
+});
+
+
+
+app.get('/about-developers', (req, res) => {
+    res.render('about-developers', {
+        title: 'Meet Our Developers - Quizzie'
+    });
+});
+
+
 // ==================== DASHBOARD ROUTES ====================
 
 // 🔄 UPDATED: homeStudent route to support new class-focused design
