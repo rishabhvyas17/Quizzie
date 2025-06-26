@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professor Dashboard - QuizAI</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <title>Professor Dashboard - Quizzie</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <style>
         /* Reset and Base Styles */
         * {
@@ -42,24 +42,6 @@
         .logo {
             font-size: 1.75rem;
             font-weight: bold;
-            color: #3b82f6;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 2rem;
-            list-style: none;
-        }
-
-        .nav-links a {
-            text-decoration: none;
-            color: #64748b;
-            font-weight: 500;
-            transition: color 0.3s ease;
-            cursor: pointer;
-        }
-
-        .nav-links a:hover, .nav-links a.active {
             color: #3b82f6;
         }
 
@@ -169,38 +151,6 @@
             font-weight: 500;
         }
 
-        /* Tab Navigation */
-        .tab-navigation {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 2rem;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .tab-button {
-            background: none;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            color: #64748b;
-            font-weight: 500;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s ease;
-        }
-
-        .tab-button.active {
-            color: #3b82f6;
-            border-bottom-color: #3b82f6;
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
         /* Section Styles */
         .section {
             margin-bottom: 3rem;
@@ -213,7 +163,7 @@
             margin-bottom: 1.5rem;
         }
 
-        /* 🆕 UPDATED: Section Header with Right-Aligned Button */
+        /* Section Header with Right-Aligned Button */
         .section-header {
             display: flex;
             justify-content: space-between;
@@ -228,7 +178,7 @@
             margin: 0;
         }
 
-        /* 🆕 NEW: Create Class Button (Similar to Claude's New Project Button) */
+        /* Create Class Button */
         .create-class-btn {
             background: #10b981;
             color: white;
@@ -289,7 +239,7 @@
             font-size: 1rem;
         }
 
-        /* 🆕 CLASS CARDS */
+        /* CLASS CARDS */
         .classes-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
@@ -334,7 +284,7 @@
             line-height: 1.4;
         }
 
-        /* 🆕 CLASS QUICK STATS */
+        /* CLASS QUICK STATS */
         .class-stats {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -362,7 +312,7 @@
             margin-top: 0.25rem;
         }
 
-        /* 🆕 CLASS ACTIONS */
+        /* CLASS ACTIONS */
         .class-actions {
             display: flex;
             gap: 0.75rem;
@@ -403,7 +353,7 @@
             background: #7c3aed;
         }
 
-        /* 🆕 MODAL STYLES */
+        /* MODAL STYLES */
         .modal {
             display: none;
             position: fixed;
@@ -471,7 +421,7 @@
             background: #f1f5f9;
         }
 
-        /* 🆕 FORM STYLES */
+        /* FORM STYLES */
         .form-group {
             margin-bottom: 1rem;
         }
@@ -507,117 +457,6 @@
             resize: vertical;
         }
 
-        /* Enhanced Analytics Section */
-        .analytics-section {
-            margin-top: 2rem;
-            padding: 2rem;
-            background: #f8fafc;
-            border-radius: 12px;
-        }
-
-        .refresh-btn {
-            background: #3b82f6;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .refresh-btn:hover {
-            background: #2563eb;
-            transform: translateY(-1px);
-        }
-
-        /* Enhanced Charts Grid */
-        .charts-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-            margin-bottom: 2rem;
-        }
-
-        .chart-container {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            border: 1px solid #e5e7eb;
-        }
-
-        .chart-wrapper {
-            position: relative;
-            height: 400px;
-            width: 100%;
-        }
-
-        /* Insights Panel */
-        .insights-panel {
-            background: white;
-            border-radius: 12px;
-            padding: 2rem;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            border: 1px solid #e5e7eb;
-        }
-
-        .insights-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
-            margin-top: 2rem;
-        }
-
-        .insight-card {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            border: 1px solid #e5e7eb;
-        }
-
-        .insight-card h3 {
-            margin: 0 0 1rem 0;
-            color: #1f2937;
-            font-size: 1.1rem;
-            font-weight: 600;
-        }
-
-        .metrics {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-
-        .metric {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.5rem;
-            background: #f9fafb;
-            border-radius: 6px;
-        }
-
-        .metric .label {
-            font-weight: 500;
-            color: #374151;
-        }
-
-        .metric .value {
-            font-weight: 600;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-        }
-
-        .value.excellent { background: #dcfce7; color: #16a34a; }
-        .value.good { background: #dbeafe; color: #2563eb; }
-        .value.average { background: #fef3c7; color: #d97706; }
-        .value.needs-help { background: #fee2e2; color: #dc2626; }
-
         .alert {
             padding: 1rem;
             border-radius: 8px;
@@ -642,155 +481,6 @@
             border: 1px solid #fca5a5;
         }
 
-        .student-list {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .student-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.75rem;
-            background: #f9fafb;
-            border-radius: 6px;
-            border-left: 3px solid #e5e7eb;
-        }
-
-        .student-item.top-performer {
-            border-left-color: #10b981;
-            background: #f0fdf4;
-        }
-
-        .student-item .rank {
-            font-weight: bold;
-            color: #10b981;
-            margin-right: 0.5rem;
-        }
-
-        .student-item .name {
-            font-weight: 500;
-            color: #374151;
-            flex: 1;
-        }
-
-        .student-item .stats {
-            font-size: 0.875rem;
-            color: #6b7280;
-        }
-
-        .no-issues {
-            text-align: center;
-            color: #16a34a;
-            font-weight: 500;
-            padding: 2rem;
-        }
-
-        /* Analytics Tables */
-        .analytics-table {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            margin-bottom: 2rem;
-            overflow-x: auto;
-        }
-
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .table th,
-        .table td {
-            padding: 0.75rem;
-            text-align: left;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .table th {
-            background: #f8fafc;
-            font-weight: 600;
-            color: #1e293b;
-        }
-
-        .table tr:hover {
-            background: #f8fafc;
-        }
-
-        .rank-badge {
-            display: inline-block;
-            padding: 0.25rem 0.5rem;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: bold;
-            min-width: 30px;
-            text-align: center;
-        }
-
-        .rank-1 { background: #ffd700; color: #1e293b; }
-        .rank-2 { background: #c0c0c0; color: #1e293b; }
-        .rank-3 { background: #cd7f32; color: white; }
-        .rank-other { background: #e2e8f0; color: #64748b; }
-
-        .view-student-btn {
-            background: #8b5cf6;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            cursor: pointer;
-            text-decoration: none;
-        }
-
-        .view-student-btn:hover {
-            background: #7c3aed;
-        }
-
-        /* Loading States */
-        .loading {
-            text-align: center;
-            padding: 2rem;
-            color: #64748b;
-        }
-
-        .loading-spinner {
-            border: 4px solid #e2e8f0;
-            border-top: 4px solid #3b82f6;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 1rem;
-        }
-
-        .error-message {
-            text-align: center;
-            padding: 2rem;
-            color: #dc2626;
-        }
-
-        .retry-btn {
-            background: #3b82f6;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            cursor: pointer;
-            margin-top: 1rem;
-        }
-
-        .retry-btn:hover {
-            background: #2563eb;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
         /* Empty State */
         .empty-state {
             text-align: center;
@@ -809,24 +499,9 @@
         }
 
         /* Mobile Responsiveness */
-        @media (max-width: 1024px) {
-            .charts-grid {
-                grid-template-columns: 1fr;
-                gap: 1.5rem;
-            }
-            
-            .chart-wrapper {
-                height: 350px;
-            }
-        }
-
         @media (max-width: 768px) {
             .header-content {
                 flex-direction: column;
-                gap: 1rem;
-            }
-
-            .nav-links {
                 gap: 1rem;
             }
 
@@ -852,41 +527,10 @@
                 width: 100%;
             }
 
-            .charts-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .tab-navigation {
-                overflow-x: auto;
-                white-space: nowrap;
-            }
-
-            .analytics-section {
-                padding: 1rem;
-            }
-            
             .section-header {
                 flex-direction: column;
                 gap: 1rem;
                 align-items: flex-start;
-            }
-            
-            .chart-container {
-                padding: 1rem;
-            }
-            
-            .chart-wrapper {
-                height: 300px;
-            }
-
-            .insights-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .student-item {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 0.25rem;
             }
 
             .class-stats {
@@ -898,7 +542,7 @@
                 padding: 1.5rem;
             }
 
-            /* 🆕 Mobile specific for create button */
+            /* Mobile specific for create button */
             .create-class-btn {
                 width: 100%;
                 justify-content: center;
@@ -911,14 +555,8 @@
             }
 
             .stat-card,
-            .class-card,
-            .chart-container {
+            .class-card {
                 padding: 1rem;
-            }
-
-            .refresh-btn {
-                width: 100%;
-                justify-content: center;
             }
         }
     </style>
@@ -927,13 +565,6 @@
     <header class="header">
         <div class="header-content">
             <div class="logo">QuizAI</div>
-            <nav>
-                <ul class="nav-links">
-                    <li><a onclick="showTab('classes')" class="active">My Classes</a></li>
-                    <li><a onclick="showTab('analytics')">Analytics</a></li>
-                    <li><a onclick="showTab('students')">Student Rankings</a></li>
-                </ul>
-            </nav>
             <div class="profile-section">
                 <div class="profile-avatar" id="profileAvatar"></div>
                 <div class="profile-info">
@@ -960,7 +591,7 @@
             </div>
         {{/if}}
 
-        <!-- 🔄 UPDATED: Class-focused Stats Section -->
+        <!-- Class-focused Stats Section -->
         <section class="stats-section">
             <div class="stat-card blue">
                 <div class="stat-value" id="totalClassesCount">{{totalClasses}}</div>
@@ -980,153 +611,70 @@
             </div>
         </section>
 
-        <!-- 🔄 UPDATED: Tab Navigation -->
-        <div class="tab-navigation">
-            <button class="tab-button active" onclick="showTab('classes')">My Classes</button>
-            <button class="tab-button" onclick="showTab('analytics')">Analytics</button>
-            <button class="tab-button" onclick="showTab('students')">Student Rankings</button>
-        </div>
-
-        <!-- 🆕 UPDATED: Classes Tab with New Header Style -->
-        <div id="classesTab" class="tab-content active">
-            <!-- 🔄 UPDATED: My Classes Section with Right-Aligned Button -->
-            <section class="section">
-                <div class="section-header">
-                    <h2>📚 My Classes</h2>
-                    <button class="create-class-btn" onclick="showCreateClassModal()">
-                        <span class="icon">➕</span>
-                        New Class
-                    </button>
-                </div>
-                <div id="classesContainer">
-                    {{#if classes}}
-                        <div class="classes-grid">
-                            {{#each classes}}
-                                <div class="class-card">
-                                    <div class="class-header">
-                                        <h3 class="class-name">{{this.name}}</h3>
-                                        <p class="class-subject">📖 {{this.subject}}</p>
-                                        {{#if this.description}}
-                                            <p class="class-description">{{this.description}}</p>
-                                        {{/if}}
+        <!-- My Classes Section -->
+        <section class="section">
+            <div class="section-header">
+                <h2>📚 My Classes</h2>
+                <button class="create-class-btn" onclick="showCreateClassModal()">
+                    <span class="icon">➕</span>
+                    New Class
+                </button>
+            </div>
+            <div id="classesContainer">
+                {{#if classes}}
+                    <div class="classes-grid">
+                        {{#each classes}}
+                            <div class="class-card">
+                                <div class="class-header">
+                                    <h3 class="class-name">{{this.name}}</h3>
+                                    <p class="class-subject">📖 {{this.subject}}</p>
+                                    {{#if this.description}}
+                                        <p class="class-description">{{this.description}}</p>
+                                    {{/if}}
+                                </div>
+                                
+                                <!-- Quick Stats -->
+                                <div class="class-stats">
+                                    <div class="class-stat">
+                                        <span class="class-stat-value">{{this.studentCount}}</span>
+                                        <span class="class-stat-label">Students</span>
                                     </div>
-                                    
-                                    <!-- 🆕 Quick Stats -->
-                                    <div class="class-stats">
-                                        <div class="class-stat">
-                                            <span class="class-stat-value">{{this.studentCount}}</span>
-                                            <span class="class-stat-label">Students</span>
-                                        </div>
-                                        <div class="class-stat">
-                                            <span class="class-stat-value">{{this.lectureCount}}</span>
-                                            <span class="class-stat-label">Lectures</span>
-                                        </div>
-                                        <div class="class-stat">
-                                            <span class="class-stat-value">{{this.averageScore}}%</span>
-                                            <span class="class-stat-label">Avg Score</span>
-                                        </div>
+                                    <div class="class-stat">
+                                        <span class="class-stat-value">{{this.lectureCount}}</span>
+                                        <span class="class-stat-label">Lectures</span>
                                     </div>
-                                    
-                                    <!-- 🆕 Class Actions -->
-                                    <div class="class-actions">
-                                        <a href="/class/manage/{{this.id}}" class="action-button manage-btn">
-                                            ⚙️ Manage Class
-                                        </a>
-                                        <button class="action-button quiz-btn" onclick="redirectToCreateQuiz('{{this.id}}')">
-                                            🎯 Create Quiz
-                                        </button>
+                                    <div class="class-stat">
+                                        <span class="class-stat-value">{{this.averageScore}}%</span>
+                                        <span class="class-stat-label">Avg Score</span>
                                     </div>
                                 </div>
-                            {{/each}}
-                        </div>
-                    {{else}}
-                        <div class="empty-state">
-                            <h3>🏫 No Classes Yet</h3>
-                            <p>Create your first class to start organizing your lectures and students!</p>
-                            <button class="btn btn-success" onclick="showCreateClassModal()">
-                                ➕ Create Your First Class
-                            </button>
-                        </div>
-                    {{/if}}
-                </div>
-            </section>
-        </div>
-
-        <!-- Analytics Tab (Unchanged) -->
-        <div id="analyticsTab" class="tab-content">
-            <div class="analytics-section">
-                <div class="section-header">
-                    <h2>📊 Enhanced Class Analytics</h2>
-                    <button onclick="refreshAnalytics()" class="refresh-btn">
-                        🔄 Refresh Data
-                    </button>
-                </div>
-
-                <!-- Enhanced Charts Grid -->
-                <div class="charts-grid">
-                    <!-- Chart 1: Performance Distribution -->
-                    <div class="chart-container">
-                        <div class="chart-wrapper">
-                            <canvas id="performanceChart"></canvas>
-                        </div>
+                                
+                                <!-- Class Actions -->
+                                <div class="class-actions">
+                                    <a href="/class/manage/{{this.id}}" class="action-button manage-btn">
+                                        ⚙️ Manage Class
+                                    </a>
+                                    <button class="action-button quiz-btn" onclick="redirectToCreateQuiz('{{this.id}}')">
+                                        🎯 Create Quiz
+                                    </button>
+                                </div>
+                            </div>
+                        {{/each}}
                     </div>
-
-                    <!-- Chart 2: Student Engagement -->
-                    <div class="chart-container">
-                        <div class="chart-wrapper">
-                            <canvas id="engagementChart"></canvas>
-                        </div>
+                {{else}}
+                    <div class="empty-state">
+                        <h3>🏫 No Classes Yet</h3>
+                        <p>Create your first class to start organizing your lectures and students!</p>
+                        <button class="btn btn-success" onclick="showCreateClassModal()">
+                            ➕ Create Your First Class
+                        </button>
                     </div>
-                </div>
-
-                <!-- Insights Panel -->
-                <div id="insightsPanel" class="insights-panel">
-                    <div class="loading">
-                        <div class="loading-spinner"></div>
-                        <p>📊 Loading analytics insights...</p>
-                    </div>
-                </div>
-
-                <!-- Traditional Analytics Tables -->
-                <div class="analytics-table">
-                    <h3>📋 Recent Quiz Activity</h3>
-                    <div id="recentActivityTable">
-                        <div class="loading">
-                            <div class="loading-spinner"></div>
-                            <p>Loading recent activity...</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="analytics-table">
-                    <h3>🎯 Quiz Performance Breakdown</h3>
-                    <div id="quizPerformanceTable">
-                        <div class="loading">
-                            <div class="loading-spinner"></div>
-                            <p>Loading quiz performance...</p>
-                        </div>
-                    </div>
-                </div>
+                {{/if}}
             </div>
-        </div>
-
-        <!-- Students Tab (Unchanged) -->
-        <div id="studentsTab" class="tab-content">
-            <section class="section">
-                <div class="analytics-table">
-                    <h3>🏆 Student Rankings (Last 15 Days)</h3>
-                    <div id="studentsContainer">
-                        <div class="loading">
-                            <div class="loading-spinner"></div>
-                            <p>🔄 Loading student rankings...</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </div>
+        </section>
     </main>
 
-    <!-- 🆕 NEW: Create Class Modal -->
+    <!-- Create Class Modal -->
     <div id="createClassModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -1164,12 +712,10 @@
     <script>
         // Global variables
         const professorName = '{{{userName}}}';
-        let analyticsData = null;
-        let charts = {};
 
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Enhanced Teacher dashboard initializing...');
+            console.log('🚀 Simplified Teacher dashboard initializing...');
             initializeDashboard();
             loadClasses();
         });
@@ -1190,7 +736,7 @@
             avatar.textContent = initials;
         }
 
-        // 🆕 NEW: Load classes
+        // Load classes
         async function loadClasses() {
             try {
                 console.log('📚 Loading classes...');
@@ -1212,7 +758,7 @@
             }
         }
 
-        // 🆕 NEW: Display classes
+        // Display classes
         function displayClasses(classes) {
             const container = document.getElementById('classesContainer');
             
@@ -1266,7 +812,7 @@
             container.innerHTML = `<div class="classes-grid">${classesHTML}</div>`;
         }
 
-        // 🆕 NEW: Update dashboard stats
+        // Update dashboard stats
         function updateDashboardStats(classes) {
             const totalClasses = classes.length;
             const totalStudents = classes.reduce((sum, cls) => sum + cls.studentCount, 0);
@@ -1279,7 +825,7 @@
             document.getElementById('totalQuizzesCount').textContent = totalQuizzes;
         }
 
-        // 🆕 NEW: Modal functions
+        // Modal functions
         function showCreateClassModal() {
             document.getElementById('createClassModal').classList.add('show');
             document.getElementById('className').focus();
@@ -1290,7 +836,7 @@
             document.getElementById('createClassForm').reset();
         }
 
-        // 🆕 NEW: Create class form handler
+        // Create class form handler
         document.getElementById('createClassForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -1338,29 +884,12 @@
             }
         });
 
-        // 🆕 NEW: Redirect to create quiz
+        // Redirect to create quiz
         function redirectToCreateQuiz(classId) {
             window.location.href = `/class/manage/${classId}?tab=quizzes`;
         }
 
-        // 🔄 UPDATED: Tab navigation
-        function showTab(tabName) {
-            // Update navigation
-            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.nav-links a').forEach(link => link.classList.remove('active'));
-            event.target.classList.add('active');
-
-            // Update content
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            document.getElementById(tabName + 'Tab').classList.add('active');
-
-            // Load data if needed
-            if (tabName === 'analytics' && !analyticsData) {
-                loadEnhancedAnalytics();
-            }
-        }
-
-        // 🆕 NEW: Success/Error message functions
+        // Success/Error message functions
         function showSuccess(message) {
             // Remove existing alerts
             document.querySelectorAll('.alert').forEach(alert => alert.remove());
@@ -1411,572 +940,6 @@
                 hideCreateClassModal();
             }
         });
-
-        // ============= ANALYTICS FUNCTIONS (UNCHANGED) =============
-
-        // Load enhanced analytics data
-        async function loadEnhancedAnalytics() {
-            try {
-                console.log('📊 Loading enhanced analytics data...');
-                
-                // Show loading state
-                showLoadingState();
-                
-                const response = await fetch('/api/teacher/class-analytics');
-                const result = await response.json();
-                
-                if (result.success) {
-                    analyticsData = result.data;
-                    console.log('✅ Enhanced analytics data loaded:', analyticsData);
-                    
-                    // Update all components
-                    updateStatsCards();
-                    createPerformanceDistributionChart();
-                    createEngagementLevelsChart();
-                    updateInsightsPanel();
-                    updateRecentActivityTable();
-                    updateQuizPerformanceTable();
-                    updateStudentsContent();
-                } else {
-                    console.error('❌ Failed to load analytics:', result.message);
-                    showAnalyticsError('Failed to load analytics data');
-                }
-            } catch (error) {
-                console.error('❌ Error loading analytics:', error);
-                showAnalyticsError('Network error while loading analytics');
-            }
-        }
-
-        function showLoadingState() {
-            const containers = ['performanceChart', 'engagementChart'];
-            containers.forEach(id => {
-                const container = document.getElementById(id);
-                if (container) {
-                    const canvas = container;
-                    const ctx = canvas.getContext('2d');
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    ctx.fillStyle = '#6b7280';
-                    ctx.font = '16px sans-serif';
-                    ctx.textAlign = 'center';
-                    ctx.fillText('Loading chart...', canvas.width / 2, canvas.height / 2);
-                }
-            });
-        }
-
-        // Update stats cards with enhanced data
-        function updateStatsCards() {
-            if (!analyticsData) return;
-
-            const stats = analyticsData.overallStats;
-            
-            document.getElementById('totalStudentsCount').textContent = stats.totalStudents;
-        }
-
-        // ENHANCED CHART 1: Performance Distribution (Stacked Bar Chart)
-        function createPerformanceDistributionChart() {
-            const ctx = document.getElementById('performanceChart');
-            if (!ctx || !analyticsData.performanceDistribution) {
-                console.log('⚠️ Performance chart container not found or no data');
-                return;
-            }
-
-            const data = analyticsData.performanceDistribution;
-            const metadata = analyticsData.chartMetadata.performanceChart;
-
-            // Destroy existing chart if it exists
-            if (charts.performanceChart) {
-                charts.performanceChart.destroy();
-            }
-
-            charts.performanceChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: data.map(d => d.quizTitle),
-                    datasets: [
-                        {
-                            label: 'Excellent (90-100%)',
-                            data: data.map(d => d.excellent),
-                            backgroundColor: metadata.colors.excellent,
-                            borderColor: metadata.colors.excellent,
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Good (70-89%)',
-                            data: data.map(d => d.good),
-                            backgroundColor: metadata.colors.good,
-                            borderColor: metadata.colors.good,
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Average (50-69%)',
-                            data: data.map(d => d.average),
-                            backgroundColor: metadata.colors.average,
-                            borderColor: metadata.colors.average,
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Needs Help (<50%)',
-                            data: data.map(d => d.needsHelp),
-                            backgroundColor: metadata.colors.needsHelp,
-                            borderColor: metadata.colors.needsHelp,
-                            borderWidth: 1
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: metadata.title,
-                            font: { size: 16, weight: 'bold' }
-                        },
-                        subtitle: {
-                            display: true,
-                            text: metadata.subtitle,
-                            font: { size: 12 },
-                            color: '#666'
-                        },
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                padding: 20,
-                                usePointStyle: true
-                            }
-                        },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false,
-                            callbacks: {
-                                title: function(context) {
-                                    const dataIndex = context[0].dataIndex;
-                                    return data[dataIndex].fullTitle;
-                                },
-                                afterTitle: function(context) {
-                                    const dataIndex = context[0].dataIndex;
-                                    const quiz = data[dataIndex];
-                                    return `Average Score: ${quiz.averageScore}% | Participants: ${quiz.totalParticipants}`;
-                                },
-                                label: function(context) {
-                                    const value = context.parsed.y;
-                                    const total = data[context.dataIndex].totalParticipants;
-                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                                    return `${context.dataset.label}: ${value} students (${percentage}%)`;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            stacked: true,
-                            title: {
-                                display: true,
-                                text: 'Quizzes'
-                            }
-                        },
-                        y: {
-                            stacked: true,
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Number of Students'
-                            },
-                            ticks: {
-                                stepSize: 1
-                            }
-                        }
-                    },
-                    interaction: {
-                        mode: 'index',
-                        intersect: false,
-                    }
-                }
-            });
-
-            console.log('✅ Performance distribution chart created');
-        }
-
-        // ENHANCED CHART 2: Student Engagement Levels (Donut Chart)
-        function createEngagementLevelsChart() {
-            const ctx = document.getElementById('engagementChart');
-            if (!ctx || !analyticsData.engagementLevels) {
-                console.log('⚠️ Engagement chart container not found or no data');
-                return;
-            }
-
-            const data = analyticsData.engagementLevels;
-            const metadata = analyticsData.chartMetadata.engagementChart;
-            const total = data.highlyActive + data.moderatelyActive + data.lowActivity + data.inactive;
-
-            // Destroy existing chart if it exists
-            if (charts.engagementChart) {
-                charts.engagementChart.destroy();
-            }
-
-            charts.engagementChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: [
-                        'Highly Active (80%+)',
-                        'Moderately Active (50-79%)', 
-                        'Low Activity (20-49%)',
-                        'Inactive (<20%)'
-                    ],
-                    datasets: [{
-                        data: [
-                            data.highlyActive,
-                            data.moderatelyActive,
-                            data.lowActivity,
-                            data.inactive
-                        ],
-                        backgroundColor: [
-                            metadata.colors.highlyActive,
-                            metadata.colors.moderatelyActive,
-                            metadata.colors.lowActivity,
-                            metadata.colors.inactive
-                        ],
-                        borderColor: '#ffffff',
-                        borderWidth: 2,
-                        hoverBorderWidth: 3
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: metadata.title,
-                            font: { size: 16, weight: 'bold' }
-                        },
-                        subtitle: {
-                            display: true,
-                            text: metadata.subtitle,
-                            font: { size: 12 },
-                            color: '#666'
-                        },
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                padding: 15,
-                                usePointStyle: true,
-                                generateLabels: function(chart) {
-                                    const dataset = chart.data.datasets[0];
-                                    return chart.data.labels.map((label, index) => {
-                                        const value = dataset.data[index];
-                                        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                                        return {
-                                            text: `${label}: ${value} (${percentage}%)`,
-                                            fillStyle: dataset.backgroundColor[index],
-                                            strokeStyle: dataset.backgroundColor[index],
-                                            pointStyle: 'circle'
-                                        };
-                                    });
-                                }
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const value = context.parsed;
-                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                                    return `${context.label}: ${value} students (${percentage}%)`;
-                                }
-                            }
-                        }
-                    },
-                    cutout: '50%',
-                    elements: {
-                        arc: {
-                            borderWidth: 0
-                        }
-                    }
-                },
-                plugins: [{
-                    id: 'centerText',
-                    beforeDatasetsDraw(chart, args, options) {
-                        const { ctx, width, height } = chart;
-                        ctx.save();
-                        
-                        const fontSize = Math.min(width, height) / 15;
-                        ctx.font = `bold ${fontSize}px sans-serif`;
-                        ctx.fillStyle = '#374151';
-                        ctx.textAlign = 'center';
-                        ctx.textBaseline = 'middle';
-                        
-                        const centerX = width / 2;
-                        const centerY = height / 2;
-                        
-                        ctx.fillText(total.toString(), centerX, centerY - 10);
-                        
-                        ctx.font = `${fontSize * 0.6}px sans-serif`;
-                        ctx.fillStyle = '#6B7280';
-                        ctx.fillText('Total Students', centerX, centerY + 15);
-                        
-                        ctx.restore();
-                    }
-                }]
-            });
-
-            console.log('✅ Engagement levels chart created');
-        }
-
-        // Update insights panel with actionable information
-        function updateInsightsPanel() {
-            if (!analyticsData.insights) return;
-
-            const insights = analyticsData.insights;
-            const insightsContainer = document.getElementById('insightsPanel');
-            
-            if (!insightsContainer) {
-                console.log('⚠️ Insights panel container not found');
-                return;
-            }
-
-            const insightsHTML = `
-                <div class="insights-grid">
-                    <!-- Class Health Score -->
-                    <div class="insight-card health-score">
-                        <h3>📊 Class Health Score</h3>
-                        <div class="metrics">
-                            <div class="metric">
-                                <span class="label">Engagement:</span>
-                                <span class="value ${getHealthColor(insights.classHealthScore.engagement)}">${insights.classHealthScore.engagement}%</span>
-                            </div>
-                            <div class="metric">
-                                <span class="label">Performance:</span>
-                                <span class="value ${getHealthColor(insights.classHealthScore.performance)}">${insights.classHealthScore.performance}%</span>
-                            </div>
-                            <div class="metric">
-                                <span class="label">Participation:</span>
-                                <span class="value ${getHealthColor(insights.classHealthScore.participation)}">${insights.classHealthScore.participation}%</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Quiz Insights -->
-                    <div class="insight-card quiz-insights">
-                        <h3>🎯 Quiz Insights</h3>
-                        ${insights.mostChallengingQuiz ? `
-                            <div class="alert alert-warning">
-                                <strong>⚠️ Needs Review:</strong><br>
-                                "${insights.mostChallengingQuiz.fullTitle}"<br>
-                                <small>Average: ${insights.mostChallengingQuiz.averageScore}% | ${insights.mostChallengingQuiz.needsHelp} students struggling</small>
-                            </div>
-                        ` : ''}
-                        ${insights.bestPerformingQuiz ? `
-                            <div class="alert alert-success">
-                                <strong>✅ Top Performance:</strong><br>
-                                "${insights.bestPerformingQuiz.fullTitle}"<br>
-                                <small>Average: ${insights.bestPerformingQuiz.averageScore}% | ${insights.bestPerformingQuiz.excellent} students excelled</small>
-                            </div>
-                        ` : ''}
-                    </div>
-
-                    <!-- Students Needing Attention -->
-                    <div class="insight-card student-attention">
-                        <h3>👥 Students Needing Attention</h3>
-                        ${insights.studentsNeedingAttention.length > 0 ? `
-                            <div class="student-list">
-                                ${insights.studentsNeedingAttention.map(student => `
-                                    <div class="student-item">
-                                        <span class="name">${student.studentName}</span>
-                                        <span class="stats">
-                                            ${student.participationRate}% participation | 
-                                            Avg: ${student.averageScore}%
-                                        </span>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        ` : '<p class="no-issues">🎉 All students are actively engaged!</p>'}
-                    </div>
-
-                    <!-- Top Performers -->
-                    <div class="insight-card top-performers">
-                        <h3>🏆 Top Performers</h3>
-                        <div class="student-list">
-                            ${insights.topPerformers.map(student => `
-                                <div class="student-item top-performer">
-                                    <span class="rank">#${student.rank}</span>
-                                    <span class="name">${student.studentName}</span>
-                                    <span class="stats">${student.averageScore}% avg</span>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            insightsContainer.innerHTML = insightsHTML;
-            console.log('✅ Insights panel updated');
-        }
-
-        // Helper function to determine health color
-        function getHealthColor(value) {
-            const numValue = parseFloat(value);
-            if (numValue >= 80) return 'excellent';
-            if (numValue >= 60) return 'good'; 
-            if (numValue >= 40) return 'average';
-            return 'needs-help';
-        }
-
-        // Update recent activity table
-        function updateRecentActivityTable() {
-            const container = document.getElementById('recentActivityTable');
-            if (!container || !analyticsData.recentActivity) return;
-
-            const recentActivity = analyticsData.recentActivity;
-            
-            if (recentActivity.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #64748b; padding: 2rem;">No recent quiz activity.</p>';
-                return;
-            }
-
-            const tableRows = recentActivity.map(activity => `
-                <tr>
-                    <td>${activity.studentName}</td>
-                    <td>${activity.quizTitle}</td>
-                    <td><strong>${activity.score}%</strong></td>
-                    <td>${activity.submissionDate}</td>
-                    <td>${activity.timeTaken}</td>
-                </tr>
-            `).join('');
-
-            container.innerHTML = `
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Student</th>
-                            <th>Quiz</th>
-                            <th>Score</th>
-                            <th>Date</th>
-                            <th>Time Taken</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${tableRows}
-                    </tbody>
-                </table>
-            `;
-        }
-
-        // Update quiz performance table
-        function updateQuizPerformanceTable() {
-            const container = document.getElementById('quizPerformanceTable');
-            if (!container || !analyticsData.quizPerformance) return;
-
-            const quizPerformance = analyticsData.quizPerformance;
-            
-            if (quizPerformance.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #64748b; padding: 2rem;">No quiz performance data available.</p>';
-                return;
-            }
-
-            const tableRows = quizPerformance.map(quiz => `
-                <tr>
-                    <td>${quiz.quizTitle}</td>
-                    <td>${quiz.participants}</td>
-                    <td><strong>${quiz.averageScore}%</strong></td>
-                    <td>${quiz.highestScore}%</td>
-                    <td>${quiz.lowestScore}%</td>
-                </tr>
-            `).join('');
-
-            container.innerHTML = `
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Quiz Title</th>
-                            <th>Participants</th>
-                            <th>Average Score</th>
-                            <th>Highest Score</th>
-                            <th>Lowest Score</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${tableRows}
-                    </tbody>
-                </table>
-            `;
-        }
-
-        // Update students content
-        function updateStudentsContent() {
-            if (!analyticsData) return;
-
-            const container = document.getElementById('studentsContainer');
-            const rankedStudents = analyticsData.rankedStudents || [];
-            
-            if (rankedStudents.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #64748b; padding: 2rem;">No student data available.</p>';
-                return;
-            }
-
-            const tableRows = rankedStudents.map(student => {
-                const rankClass = student.rank <= 3 ? `rank-${student.rank}` : 'rank-other';
-                return `
-                    <tr>
-                        <td>
-                            <span class="rank-badge ${rankClass}">${student.rank}</span>
-                        </td>
-                        <td>${student.studentName}</td>
-                        <td><strong>${student.averageScore}%</strong></td>
-                        <td>${student.totalQuizzes}</td>
-                        <td>${student.averageTime}</td>
-                        <td>
-                            <a href="/teacher/student-analytics/${student.studentId}" 
-                               class="view-student-btn" target="_blank">
-                                View Details
-                            </a>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-
-            container.innerHTML = `
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Rank</th>
-                            <th>Student Name</th>
-                            <th>Average Score</th>
-                            <th>Quizzes Taken</th>
-                            <th>Avg Time</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${tableRows}
-                    </tbody>
-                </table>
-            `;
-        }
-
-        // Error handling
-        function showAnalyticsError(message) {
-            const containers = ['performanceChart', 'engagementChart', 'insightsPanel'];
-            containers.forEach(id => {
-                const container = document.getElementById(id);
-                if (container) {
-                    container.innerHTML = `
-                        <div class="error-message">
-                            <p>❌ ${message}</p>
-                            <button onclick="loadEnhancedAnalytics()" class="retry-btn">🔄 Retry</button>
-                        </div>
-                    `;
-                }
-            });
-        }
-
-        // Refresh analytics data
-        function refreshAnalytics() {
-            console.log('🔄 Refreshing enhanced analytics...');
-            loadEnhancedAnalytics();
-        }
-
-        // Auto-refresh analytics every 5 minutes
-        setInterval(refreshAnalytics, 5 * 60 * 1000);
     </script>
 </body>
 </html>
