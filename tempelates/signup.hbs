@@ -17,6 +17,7 @@
             background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
             min-height: 100vh;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             padding: 20px;
@@ -31,6 +32,7 @@
             max-width: 460px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
+            margin-bottom: 2rem;
         }
         
         h1 {
@@ -160,6 +162,42 @@
         .login-link a:hover {
             color: #1da8d6;
         }
+
+        /* Footer Styles */
+        .footer {
+            
+            backdrop-filter: blur(20px);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            width: 100%;
+            max-width: 460px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+           
+            margin-top: auto;
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            color: #090909;
+        }
+
+        .footer-copyright {
+            font-weight: 400;
+        }
+
+        .footer-link {
+            color: #f6f8fa;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .footer-link:hover {
+            color: #a0bcff;
+        }
         
         @media (max-width: 480px) {
             .container {
@@ -169,6 +207,17 @@
             
             h1 {
                 font-size: 24px;
+            }
+
+            .footer {
+                margin: 20px;
+                padding: 1rem;
+            }
+
+            .footer-content {
+                flex-direction: column;
+                gap: 0.5rem;
+                text-align: center;
             }
         }
     </style>
@@ -217,6 +266,18 @@
             <p>Already have an account? <a href="/login">Login here</a></p>
         </div>
     </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-copyright">
+                © 2025 All rights reserved by www.Quizzie.in
+            </div>
+            <div class="footer-links">
+                <a href="/about-developers" class="footer-link">Meet Our Developers</a>
+            </div>
+        </div>
+    </footer>
 
     <script>
         function selectUserType(type) {
