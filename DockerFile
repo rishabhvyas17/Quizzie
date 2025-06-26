@@ -1,0 +1,39 @@
+# STEP 1: Choose a base image.
+# We use a Node.js LTS (Long Term Support) version that is 'slim'
+# to keep the final image size small.
+FROM node:20
+
+# STEP 2: Set the working directory inside the container.
+# All subsequent instructions (COPY, RUN, CMD) will be executed
+# relative to this directory inside the container.
+WORKDIR /app
+
+# STEP 3: Copy package.json and package-lock.json first.
+# This step is crucial for Docker's layer caching.
+# If these files don't change, Docker will use a cached layer for npm install,
+# making subsequent builds much faster.
+COPY package*.json ./
+
+# STEP 4: Install Node.js dependencies.
+# We use --production to only install dependencies needed for runtime,
+# not development dependencies, further reducing image size.
+RUN npm install 
+
+RUN npm install connect-mongo@5.1.0 
+
+
+# STEP 5: Copy the rest of your application code into the container.
+# The '.' refers to the current working directory on your host (where Dockerfile is),
+# and the second '.' refers to the WORKDIR (/app) inside the container.
+COPY . .
+
+# STEP 6: Inform Docker that the container listens on port 8080.
+# This is documentation and a convention for Cloud Run. It does not
+# actually publish the port to the host system or outside world.
+# Cloud Run will provide the actual PORT environment variable (which is 8080).
+EXPOSE 8080
+
+# STEP 7: Define the command to run your application when the container starts.
+# We use the executable form for CMD, which is generally preferred.
+# This assumes you have "start": "node src/index.js" in your package.json.
+CMD [ "npm", "start" ]

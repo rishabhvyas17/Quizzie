@@ -1,14 +1,15 @@
-const mongoose = require("mongoose")
+const mongoose = require("mongoose");
+// Use the MONGODB_URI environment variable for a single connection
+// This URI will connect to your MongoDB Atlas cluster, and you can specify the default database name within the URI itself (e.g., /quizai_db)
+mongoose.connect(process.env.MONGODB_URI)
+.then(() => {
+    console.log("✅ Successfully connected to MongoDB Atlas");
+})
+.catch((error) => {
+    console.error("❌ Failed to connect to MongoDB Atlas:", error);
+    // You might want to exit the process if the database connection fails on startup
+    process.exit(1); 
 
-// 🔄 UPDATED: Single QuizAI Database Connection
-const quizAIConnection = mongoose.createConnection("mongodb://localhost:27017/QuizAI");
-
-quizAIConnection.on('connected', () => {
-    console.log("✅ Connected to QuizAI database - All collections unified!");
-});
-
-quizAIConnection.on('error', (error) => {
-    console.log("❌ Failed to connect to QuizAI database:", error);
 });
 
 // ==================== EXISTING SCHEMAS ====================
@@ -216,7 +217,9 @@ const lectureSchema = new mongoose.Schema({
     }
 });
 
-// 🔄 UPDATED: Quizzes Schema - Now supports classes
+
+// For Quizzes generated from lectures
+
 const quizSchema = new mongoose.Schema({
     lectureId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -254,6 +257,7 @@ const quizSchema = new mongoose.Schema({
             required: true
         },
         // Enhanced explanation fields
+
         explanations: {
             A: { type: String, default: "" },
             B: { type: String, default: "" }, 
@@ -426,6 +430,7 @@ lectureSchema.index({ professorId: 1, uploadDate: -1 });
 quizSchema.index({ lectureId: 1, generatedDate: -1 });
 quizResultSchema.index({ studentId: 1, submissionDate: -1 });
 
+
 // 🆕 NEW: Class management indexes
 classSchema.index({ teacherId: 1, createdAt: -1 }); // Find teacher's classes
 classSchema.index({ isActive: 1, teacherId: 1 }); // Active classes for teacher
@@ -439,12 +444,14 @@ quizSchema.index({ classId: 1, generatedDate: -1 }); // Class quizzes
 quizResultSchema.index({ classId: 1, submissionDate: -1 }); // Class results
 
 // Create compound index for fast explanation lookups
+
 explanationCacheSchema.index({ 
     questionText: 1, 
     correctAnswer: 1, 
     wrongAnswer: 1,
     lectureId: 1 
 });
+
 
 // ==================== SCHEMA MIDDLEWARE ====================
 
@@ -538,6 +545,7 @@ const lectureCollection = quizAIConnection.model("LectureCollection", lectureSch
 const quizCollection = quizAIConnection.model("QuizCollection", quizSchema);
 const quizResultCollection = quizAIConnection.model("QuizResultCollection", quizResultSchema);
 const explanationCacheCollection = quizAIConnection.model("ExplanationCache", explanationCacheSchema);
+
 
 // 🆕 NEW: Class management collections
 const classCollection = quizAIConnection.model("ClassCollection", classSchema);
