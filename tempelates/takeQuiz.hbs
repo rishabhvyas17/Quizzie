@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{#if quiz.className}}{{quiz.className}} - {{/if}}{{quiz.lectureTitle}} - QuizzieI</title>
+    <title>{{#if quiz.className}}{{quiz.className}} - {{/if}}{{quiz.lectureTitle}} - Quizzie</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <style>
         * {
@@ -668,8 +668,8 @@
         let studentAnswers = [];
         let startTime = Date.now();
         let timerInterval = null;
-        const quizId = window.location.pathname.split('/').pop();
-        const QUIZ_TIME_LIMIT = 30 * 60; // 30 minutes in seconds
+        const quizId = window.location.pathname.split('/').pop(); // Extract quiz ID from URL
+        const QUIZ_TIME_LIMIT = 3 * 60; // 30 minutes in seconds
 
         // Enhanced Class context data from server
         const classContext = {
