@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{#if quiz.className}}{{quiz.className}} - {{/if}}{{quiz.lectureTitle}} - QuizAI</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <style>
         * {
             margin: 0;
@@ -670,7 +671,7 @@
         const quizId = window.location.pathname.split('/').pop();
         const QUIZ_TIME_LIMIT = 30 * 60; // 30 minutes in seconds
 
-        // Class context data from server
+        // Enhanced Class context data from server
         const classContext = {
             hasClass: {{#if quiz.className}}true{{else}}false{{/if}},
             className: '{{quiz.className}}' || null,
@@ -678,7 +679,11 @@
             classId: '{{quiz.classId}}' || null
         };
 
-        console.log('🏫 Class context:', classContext);
+        // Enhanced navigation context from server
+        const navigationContext = {{{json navigationContext}}};
+
+        console.log('🏫 Enhanced class context:', classContext);
+        console.log('🧭 Enhanced navigation context:', navigationContext);
 
         // Utility function to format time
         function formatTime(seconds) {
@@ -689,7 +694,7 @@
 
         // Initialize quiz when page loads
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🎯 Initializing class-aware quiz with ID:', quizId);
+            console.log('🎯 Initializing enhanced class-aware quiz with ID:', quizId);
             loadQuizData();
         });
 
@@ -742,7 +747,7 @@
             // Create question indicators
             createQuestionIndicators();
             
-            console.log('🚀 Class-aware quiz initialized successfully');
+            console.log('🚀 Enhanced class-aware quiz initialized successfully');
         }
 
         // Display a specific question
@@ -916,13 +921,14 @@
             }
         }
 
-        // Enhanced submit quiz function with class context
+        // 🆕 ENHANCED: Submit quiz function with comprehensive class context
         async function submitQuiz() {
-            console.log('🔍 Quiz submission check:', {
+            console.log('🔍 Enhanced quiz submission check:', {
                 quizData: quizData,
                 studentAnswers: studentAnswers,
                 quizId: quizId,
-                classContext: classContext
+                classContext: classContext,
+                navigationContext: navigationContext
             });
 
             if (!quizData || !quizData.questions) {
@@ -936,7 +942,7 @@
             
             if (unansweredCount > 0) {
                 const confirmMessage = classContext.hasClass 
-                    ? `You have ${unansweredCount} unanswered questions. This quiz is part of ${classContext.className} class and your results will be recorded. Are you sure you want to submit?`
+                    ? `You have ${unansweredCount} unanswered questions.\n\nThis quiz is part of ${classContext.className} class and your results will be recorded for class analytics.\n\nAre you sure you want to submit?`
                     : `You have ${unansweredCount} unanswered questions. Are you sure you want to submit?`;
                     
                 if (!confirm(confirmMessage)) {
@@ -952,7 +958,7 @@
             // Calculate time taken
             const timeTakenSeconds = Math.floor((Date.now() - startTime) / 1000);
             
-            // Prepare submission data with class context
+            // 🆕 ENHANCED: Prepare comprehensive submission data
             const submissionData = {
                 studentAnswers: studentAnswers.map((answer, index) => ({
                     questionIndex: index,
@@ -960,10 +966,15 @@
                     selectedOption: answer
                 })).filter(item => item.selectedOption !== null),
                 timeTakenSeconds: timeTakenSeconds,
-                classContext: classContext // Include class context
+                classContext: classContext, // Enhanced class context
+                // 🆕 Additional navigation hints for backend
+                navigationHints: {
+                    fromClassView: !!classContext.classId,
+                    preferredReturnUrl: classContext.classId ? `/student/class/${classContext.classId}` : '/homeStudent'
+                }
             };
             
-            console.log('📤 Submitting class-aware quiz:', submissionData);
+            console.log('📤 Submitting enhanced quiz with navigation context:', submissionData);
             
             // Show loading state
             showSubmissionLoading();
@@ -980,13 +991,24 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    console.log('✅ Quiz submitted successfully:', result);
+                    console.log('✅ Quiz submitted successfully with enhanced navigation:', result);
                     
-                    // Enhanced result object with class context
+                    // 🆕 ENHANCED: Store comprehensive result data with navigation context
                     const enhancedResult = {
                         ...result,
                         lectureId: quizData.lectureId || null,
-                        classContext: classContext
+                        classContext: classContext,
+                        // 🆕 Enhanced navigation context from backend response
+                        navigationContext: result.navigationContext || {
+                            hasClass: classContext.hasClass,
+                            classId: classContext.classId,
+                            className: classContext.className,
+                            returnToClass: !!classContext.classId
+                        },
+                        suggestedRedirect: result.suggestedRedirect || {
+                            backUrl: classContext.classId ? `/student/class/${classContext.classId}` : '/homeStudent',
+                            backLabel: classContext.className ? `Back to ${classContext.className}` : 'Back to Dashboard'
+                        }
                     };
                     
                     showResults(enhancedResult);
@@ -1016,7 +1038,7 @@
             `;
         }
 
-        // Enhanced showResults function with class context
+        // 🆕 ENHANCED: showResults function with comprehensive navigation context
         function showResults(result) {
             document.getElementById('loadingContainer').style.display = 'none';
             document.getElementById('resultsContainer').style.display = 'block';
@@ -1041,7 +1063,7 @@
             
             document.getElementById('resultDetails').innerHTML = resultDetailsHTML;
 
-            // Enhanced results data with class context
+            // 🆕 ENHANCED: Store comprehensive results data with navigation context
             const detailedResults = {
                 quizId: quizId,
                 lectureId: result.lectureId || quizData.lectureId,
@@ -1052,12 +1074,26 @@
                 timeTakenSeconds: result.timeTakenSeconds,
                 submissionDate: new Date().toISOString(),
                 questionDetails: result.questionDetails || prepareQuestionDetails(),
-                classContext: classContext
+                classContext: classContext,
+                // 🆕 Enhanced navigation context for results page
+                navigationContext: result.navigationContext,
+                suggestedRedirect: result.suggestedRedirect,
+                // 🆕 Breadcrumb data for results page
+                breadcrumbData: {
+                    steps: classContext.hasClass ? [
+                        { label: 'Dashboard', url: '/homeStudent' },
+                        { label: classContext.className, url: `/student/class/${classContext.classId}` },
+                        { label: 'Quiz Results', url: null }
+                    ] : [
+                        { label: 'Dashboard', url: '/homeStudent' },
+                        { label: 'Quiz Results', url: null }
+                    ]
+                }
             };
 
-            // Store results in localStorage for the results page
+            // Store comprehensive results in localStorage for the results page
             localStorage.setItem('quizResults', JSON.stringify(detailedResults));
-            console.log('📊 Enhanced results data prepared:', detailedResults);
+            console.log('📊 Enhanced results data stored with navigation context:', detailedResults);
         }
 
         // Prepare detailed question data
@@ -1082,12 +1118,25 @@
             }).filter(item => item !== null);
         }
 
-        // Enhanced goToDashboard function with class context
+        // 🆕 ENHANCED: goToDashboard function with smart navigation
         function goToDashboard() {
             const storedResults = localStorage.getItem('quizResults');
             if (storedResults) {
                 // Redirect to detailed results page
-                window.location.href = '/quiz-results';
+                const resultsData = JSON.parse(storedResults);
+                
+                // 🆕 Enhanced: Add navigation hints to results page URL
+                let resultsUrl = '/quiz-results';
+                if (resultsData.classContext && resultsData.classContext.hasClass) {
+                    const params = new URLSearchParams({
+                        classId: resultsData.classContext.classId,
+                        className: resultsData.classContext.className,
+                        returnTo: 'class'
+                    });
+                    resultsUrl += '?' + params.toString();
+                }
+                
+                window.location.href = resultsUrl;
             } else if (classContext.hasClass) {
                 // Redirect to class dashboard if in class context
                 window.location.href = `/student/class/${classContext.classId}`;
@@ -1097,6 +1146,7 @@
             }
         }
 
+        // 🆕 ENHANCED: Error handling with class-aware navigation
         function showError(message) {
             const backButtonText = classContext.hasClass 
                 ? `Back to ${classContext.className}`
@@ -1115,17 +1165,43 @@
             `;
         }
 
-        // Prevent page reload/back button during quiz with class warning
+        // 🆕 ENHANCED: Page unload warning with class context
         window.addEventListener('beforeunload', function(e) {
             if (quizData && timerInterval) {
                 const warningMessage = classContext.hasClass 
-                    ? `Are you sure you want to leave? This is a ${classContext.className} class quiz and your progress will be lost.`
+                    ? `Are you sure you want to leave?\n\nThis is a ${classContext.className} class quiz and your progress will be lost.`
                     : 'Are you sure you want to leave? Your quiz progress will be lost.';
                     
                 e.preventDefault();
                 e.returnValue = warningMessage;
                 return e.returnValue;
             }
+        });
+
+        // 🆕 NEW: Enhanced navigation helper functions
+        function getNavigationContext() {
+            return {
+                hasClass: classContext.hasClass,
+                classId: classContext.classId,
+                className: classContext.className,
+                dashboardUrl: '/homeStudent',
+                classUrl: classContext.hasClass ? `/student/class/${classContext.classId}` : null
+            };
+        }
+
+        function getSmartReturnUrl() {
+            if (classContext.hasClass) {
+                return `/student/class/${classContext.classId}`;
+            }
+            return '/homeStudent';
+        }
+
+        // Console log for debugging
+        console.log('🎯 Enhanced takeQuiz.hbs loaded with navigation context:', {
+            classContext: classContext,
+            navigationContext: navigationContext,
+            quizId: quizId,
+            enhancedNavigation: true
         });
     </script>
 </body>

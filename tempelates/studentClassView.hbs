@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{classSubject}} - {{className}} | QuizAI</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+            line-height: 1.6;
+        }
+
+        /* Header Styles */
+        .header {
+            background: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.75rem;
+            font-weight: bold;
+            color: #3b82f6;
+        }
+
+        .profile-section {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .profile-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .profile-info h3 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .profile-info p {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        .logout-btn {
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            font-size: 0.85rem;
+            text-decoration: none;
+            margin-left: 1rem;
+        }
+
+        .logout-btn:hover {
+            background-color: #dc2626;
+            transform: translateY(-1px);
+        }
+
+        /* Main Content */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        /* Breadcrumb Navigation */
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+
+        .breadcrumb a {
+            color: #3b82f6;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .breadcrumb a:hover {
+            color: #2563eb;
+        }
+
+        .breadcrumb-separator {
+            color: #cbd5e1;
+        }
+
+        .breadcrumb-current {
+            font-weight: 500;
+            color: #1e293b;
+        }
+
+        /* Class Header */
+        .class-header {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .class-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .subject-emoji {
+            font-size: 2.5rem;
+        }
+
+        .class-subject {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #1e293b;
+        }
+
+        .class-name {
+            font-size: 1.25rem;
+            color: #3b82f6;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .class-meta {
+            display: flex;
+            gap: 2rem;
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+
+        .class-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Class Stats Section */
+        .class-stats-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-card.blue { border-left: 4px solid #3b82f6; }
+        .stat-card.green { border-left: 4px solid #10b981; }
+        .stat-card.purple { border-left: 4px solid #8b5cf6; }
+        .stat-card.orange { border-left: 4px solid #f59e0b; }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .stat-card.blue .stat-value { color: #3b82f6; }
+        .stat-card.green .stat-value { color: #10b981; }
+        .stat-card.purple .stat-value { color: #8b5cf6; }
+        .stat-card.orange .stat-value { color: #f59e0b; }
+
+        .stat-label {
+            color: #64748b;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .stat-comparison {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 0.25rem;
+        }
+
+        /* Tab Navigation */
+        .tab-navigation {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #e2e8f0;
+            background: white;
+            padding: 0 1rem;
+            border-radius: 12px 12px 0 0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-button {
+            background: none;
+            border: none;
+            padding: 1rem 1.5rem;
+            color: #64748b;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tab-button.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .tab-button:hover:not(.active) {
+            color: #3b82f6;
+            background: rgba(59, 130, 246, 0.03);
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            background: white;
+            border-radius: 0 0 12px 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            min-height: 500px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .tab-content-inner {
+            padding: 2rem;
+        }
+
+        /* Quiz Lists */
+        .quiz-section {
+            margin-bottom: 2rem;
+        }
+
+        .quiz-section-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .quiz-grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .quiz-item {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .quiz-item:hover {
+            border-color: #3b82f6;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .quiz-item.completed {
+            border-left: 4px solid #10b981;
+        }
+
+        .quiz-item.available {
+            border-left: 4px solid #3b82f6;
+        }
+
+        .quiz-header {
+            display: flex;
+            justify-content: between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .quiz-info {
+            flex: 1;
+        }
+
+        .quiz-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+
+        .quiz-meta {
+            font-size: 0.85rem;
+            color: #64748b;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .quiz-status {
+            margin-left: 1rem;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .status-badge.completed {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-badge.available {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .quiz-score {
+            margin-top: 0.5rem;
+            padding: 0.75rem;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .score-display {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #10b981;
+            margin-bottom: 0.25rem;
+        }
+
+        .quiz-actions {
+            margin-top: 1rem;
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            font-size: 0.85rem;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .btn-sm {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
+        }
+
+        /* Charts Section */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        /* Performance Stats Grid */
+        .performance-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .performance-stat {
+            background: #f8fafc;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .performance-stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #3b82f6;
+            margin-bottom: 0.25rem;
+        }
+
+        .performance-stat-label {
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        /* Rankings Section */
+        .rankings-list {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .ranking-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            transition: background-color 0.2s ease;
+        }
+
+        .ranking-item:last-child {
+            border-bottom: none;
+        }
+
+        .ranking-item:hover {
+            background: #f8fafc;
+        }
+
+        .ranking-item.current-student {
+            background: rgba(59, 130, 246, 0.05);
+            border-left: 4px solid #3b82f6;
+        }
+
+        .rank-badge {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 1rem;
+            color: white;
+        }
+
+        .rank-1 { background: #ffd700; color: #1e293b; }
+        .rank-2 { background: #c0c0c0; color: #1e293b; }
+        .rank-3 { background: #cd7f32; color: white; }
+        .rank-other { background: #64748b; }
+
+        .ranking-info {
+            flex: 1;
+        }
+
+        .student-name {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.25rem;
+        }
+
+        .student-stats {
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        .ranking-score {
+            text-align: right;
+        }
+
+        .total-points {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #10b981;
+        }
+
+        .score-breakdown {
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+
+        /* Loading States */
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #64748b;
+        }
+
+        .loading-spinner {
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Empty States */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #64748b;
+        }
+
+        .empty-state h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: #1e293b;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 1rem 0.5rem;
+            }
+
+            .class-header {
+                padding: 1.5rem;
+            }
+
+            .class-title {
+                flex-direction: column;
+                text-align: center;
+                gap: 0.5rem;
+            }
+
+            .class-subject {
+                font-size: 1.5rem;
+            }
+
+            .class-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .class-stats-section {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .tab-navigation {
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .quiz-header {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .quiz-status {
+                margin-left: 0;
+            }
+
+            .quiz-actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .chart-container {
+                height: 250px;
+            }
+
+            .tab-content-inner {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Section -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">QuizAI</div>
+            <div class="profile-section">
+                <div class="profile-avatar" id="profileAvatar"></div>
+                <div class="profile-info">
+                    <h3>{{userName}}</h3>
+                    <p>student</p>
+                </div>
+                <a href="/logout" class="logout-btn">Logout</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Breadcrumb Navigation -->
+        <nav class="breadcrumb">
+            <a href="/homeStudent">📚 My Classes</a>
+            <span class="breadcrumb-separator">›</span>
+            <span class="breadcrumb-current" id="breadcrumbCurrent">Loading...</span>
+        </nav>
+
+        <!-- Class Header -->
+        <section class="class-header">
+            <div class="class-title">
+                <span class="subject-emoji" id="subjectEmoji">📖</span>
+                <div>
+                    <h1 class="class-subject" id="classSubject">Loading...</h1>
+                    <p class="class-name" id="className">Loading...</p>
+                </div>
+            </div>
+            <div class="class-meta">
+                <div class="class-meta-item">
+                    <span>👨‍🏫</span>
+                    <span id="teacherName">Loading...</span>
+                </div>
+                <div class="class-meta-item">
+                    <span>👥</span>
+                    <span id="totalStudents">-</span> students
+                </div>
+                <div class="class-meta-item">
+                    <span>📅</span>
+                    <span id="enrolledDate">Loading...</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Class Stats -->
+        <section class="class-stats-section">
+            <div class="stat-card blue">
+                <div class="stat-value">
+                    <span id="completedQuizzes">-</span>
+                    <span style="font-size: 1rem; color: #64748b;">/ <span id="totalQuizzes">-</span></span>
+                </div>
+                <div class="stat-label">Quizzes Completed</div>
+                <div class="stat-comparison" id="completionRate">-% completion rate</div>
+            </div>
+            
+            <div class="stat-card green">
+                <div class="stat-value">
+                    <span id="classAverage">-%</span>
+                </div>
+                <div class="stat-label">Your Class Average</div>
+                <div class="stat-comparison" id="avgComparison">vs class avg: -%</div>
+            </div>
+            
+            <div class="stat-card purple">
+                <div class="stat-value" id="classRank">#-</div>
+                <div class="stat-label">Your Class Rank</div>
+                <div class="stat-comparison" id="rankComparison">out of - students</div>
+            </div>
+            
+            <div class="stat-card orange">
+                <div class="stat-value" id="availableQuizzes">-</div>
+                <div class="stat-label">Available Quizzes</div>
+                <div class="stat-comparison">Ready to take</div>
+            </div>
+        </section>
+
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button class="tab-button active" onclick="showTab('quizzes')">
+                📝 All Quizzes
+            </button>
+            <button class="tab-button" onclick="showTab('performance')">
+                📊 My Performance
+            </button>
+            <button class="tab-button" onclick="showTab('rankings')">
+                🏆 Class Rankings
+            </button>
+        </div>
+
+        <!-- Tab Content: All Quizzes -->
+        <div id="quizzesTab" class="tab-content active">
+            <div class="tab-content-inner">
+                <div id="quizzesContainer">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>📝 Loading all quizzes...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Content: My Performance -->
+        <div id="performanceTab" class="tab-content">
+            <div class="tab-content-inner">
+                <!-- Performance Stats -->
+                <div class="performance-stats-grid" id="performanceStatsGrid">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>📊 Loading performance data...</p>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <h3 class="chart-title">📈 Score Trends</h3>
+                        <div class="chart-container">
+                            <canvas id="scoreTrendChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <h3 class="chart-title">📊 Performance Breakdown</h3>
+                        <div class="chart-container">
+                            <canvas id="performanceBreakdownChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <h3 class="chart-title">⏱️ Time Analysis</h3>
+                        <div class="chart-container">
+                            <canvas id="timeAnalysisChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Content: Class Rankings -->
+        <div id="rankingsTab" class="tab-content">
+            <div class="tab-content-inner">
+                <div id="rankingsContainer">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>🏆 Loading class rankings...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Global variables
+        const classId = '{{classId}}';
+        const studentName = '{{userName}}';
+        let classData = {};
+        let charts = {};
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🏫 Class view initializing for:', classId);
+            initializePage();
+            loadClassOverview();
+            loadAllQuizzes();
+        });
+
+        // Initialize page elements
+        function initializePage() {
+            // Set avatar initials
+            const avatar = document.getElementById('profileAvatar');
+            const initials = studentName.split(' ').map(name => name.charAt(0)).join('').toUpperCase();
+            avatar.textContent = initials;
+        }
+
+        // Get subject emoji
+        function getSubjectEmoji(subject) {
+            const subjectLower = subject.toLowerCase();
+            
+            if (subjectLower.includes('math')) return '📐';
+            if (subjectLower.includes('physic')) return '⚛️';
+            if (subjectLower.includes('chemistry') || subjectLower.includes('chem')) return '🧪';
+            if (subjectLower.includes('biology') || subjectLower.includes('bio')) return '🧬';
+            if (subjectLower.includes('english') || subjectLower.includes('literature')) return '📚';
+            if (subjectLower.includes('history')) return '📜';
+            if (subjectLower.includes('geography')) return '🌍';
+            if (subjectLower.includes('computer') || subjectLower.includes('programming')) return '💻';
+            if (subjectLower.includes('art')) return '🎨';
+            if (subjectLower.includes('music')) return '🎵';
+            if (subjectLower.includes('economics')) return '💰';
+            if (subjectLower.includes('psychology')) return '🧠';
+            if (subjectLower.includes('philosophy')) return '💭';
+            
+            return '📖';
+        }
+
+        // Load class overview
+        async function loadClassOverview() {
+            try {
+                const response = await fetch(`/api/student/class/${classId}/overview`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    classData = data.data;
+                    updateClassHeader();
+                    updateClassStats();
+                    console.log('✅ Class overview loaded');
+                } else {
+                    console.error('❌ Failed to load class overview:', data.message);
+                    showError('Failed to load class information');
+                }
+            } catch (error) {
+                console.error('❌ Error loading class overview:', error);
+                showError('Error loading class information');
+            }
+        }
+
+        // Update class header
+        function updateClassHeader() {
+            const classInfo = classData.classInfo;
+            const emoji = getSubjectEmoji(classInfo.subject);
+            
+            document.getElementById('subjectEmoji').textContent = emoji;
+            document.getElementById('classSubject').textContent = classInfo.subject;
+            document.getElementById('className').textContent = classInfo.name;
+            document.getElementById('teacherName').textContent = classInfo.teacherName;
+            document.getElementById('totalStudents').textContent = classInfo.totalStudents;
+            document.getElementById('enrolledDate').textContent = new Date(classData.studentProgress.enrolledDate).toLocaleDateString();
+            document.getElementById('breadcrumbCurrent').textContent = classInfo.subject;
+            
+            // Update page title
+            document.title = `${classInfo.subject} - ${classInfo.name} | QuizAI`;
+        }
+
+        // Update class stats
+        function updateClassStats() {
+            const progress = classData.studentProgress;
+            
+            document.getElementById('completedQuizzes').textContent = progress.completedQuizzes;
+            document.getElementById('totalQuizzes').textContent = progress.totalQuizzes;
+            document.getElementById('completionRate').textContent = progress.completionRate + '% completion rate';
+            document.getElementById('classAverage').textContent = progress.averageScore + '%';
+            document.getElementById('availableQuizzes').textContent = progress.availableQuizzes;
+        }
+
+        // Load all quizzes
+        async function loadAllQuizzes() {
+            try {
+                const response = await fetch(`/api/student/class/${classId}/all-quizzes`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayAllQuizzes(data.data);
+                    console.log('✅ All quizzes loaded');
+                } else {
+                    console.error('❌ Failed to load quizzes:', data.message);
+                    showQuizzesError();
+                }
+            } catch (error) {
+                console.error('❌ Error loading quizzes:', error);
+                showQuizzesError();
+            }
+        }
+
+        // Display all quizzes
+        function displayAllQuizzes(quizData) {
+            const container = document.getElementById('quizzesContainer');
+            
+            if (quizData.allQuizzes.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>📝 No Quizzes Yet</h3>
+                        <p>Your teacher hasn't created any quizzes for this class yet.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+
+            // Available Quizzes Section
+            if (quizData.availableQuizzes.length > 0) {
+                html += `
+                    <div class="quiz-section">
+                        <h3 class="quiz-section-title">
+                            🎯 Available Quizzes (${quizData.availableQuizzes.length})
+                        </h3>
+                        <div class="quiz-grid">
+                            ${quizData.availableQuizzes.map(quiz => createQuizCard(quiz)).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Completed Quizzes Section
+            if (quizData.completedQuizzes.length > 0) {
+                html += `
+                    <div class="quiz-section">
+                        <h3 class="quiz-section-title">
+                            ✅ Completed Quizzes (${quizData.completedQuizzes.length})
+                        </h3>
+                        <div class="quiz-grid">
+                            ${quizData.completedQuizzes.map(quiz => createQuizCard(quiz)).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+
+        
+        // Create quiz card HTML (UPDATED - No Retake)
+        function createQuizCard(quiz) {
+            const isCompleted = quiz.status === 'completed';
+            
+            return `
+                <div class="quiz-item ${quiz.status}">
+                    <div class="quiz-header">
+                        <div class="quiz-info">
+                            <h4 class="quiz-title">${quiz.lectureTitle}</h4>
+                            <div class="quiz-meta">
+                                <span>📝 ${quiz.totalQuestions} questions</span>
+                                <span>📅 ${quiz.timeAgo}</span>
+                            </div>
+                        </div>
+                        <div class="quiz-status">
+                            <span class="status-badge ${quiz.status}">
+                                ${isCompleted ? '✅ Completed' : '🎯 Available'}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    ${isCompleted ? `
+                        <div class="quiz-score">
+                            <div class="score-display">${quiz.studentResult.percentage}% (${quiz.studentResult.score}/${quiz.totalQuestions})</div>
+                            <div class="quiz-meta">
+                                <span>⏱️ ${quiz.studentResult.timeTaken}</span>
+                                <span>📅 ${new Date(quiz.studentResult.submissionDate).toLocaleDateString()}</span>
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="quiz-actions">
+                        ${isCompleted ? 
+                            `<button class="btn btn-sm" onclick="viewDetailedResults('${quiz.studentResult.resultId}', '${quiz.lectureTitle}')">📊 View Results</button>` :
+                            `<button class="btn btn-sm" onclick="takeQuiz('${quiz._id}', '${quiz.lectureTitle}')">🎯 Take Quiz</button>`
+                        }
+                    </div>
+                </div>
+            `;
+        }
+
+        // 🆕 NEW: Function to view detailed results from class view
+        function viewDetailedResults(resultId, quizTitle) {
+            console.log(`📊 Viewing detailed results: ${resultId} - ${quizTitle}`);
+            window.location.href = `/quiz-result/${resultId}/detailed?classId=${classId}`;
+        }
+
+        // Tab navigation
+        function showTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(tabName + 'Tab').classList.add('active');
+
+            // Load tab-specific data
+            if (tabName === 'performance' && !charts.scoreTrendChart) {
+                loadPerformanceData();
+            } else if (tabName === 'rankings') {
+                loadRankingsData();
+            }
+        }
+
+        // Load performance data and create charts
+        async function loadPerformanceData() {
+            try {
+                const [performanceResponse, analyticsResponse] = await Promise.all([
+                    fetch(`/api/student/class/${classId}/performance`),
+                    fetch(`/api/student/class/${classId}/analytics`)
+                ]);
+
+                const performanceData = await performanceResponse.json();
+                const analyticsData = await analyticsResponse.json();
+
+                if (performanceData.success && analyticsData.success) {
+                    updatePerformanceStats(performanceData.data);
+                    createCharts(analyticsData.data);
+                    console.log('✅ Performance data loaded');
+                } else {
+                    console.error('❌ Failed to load performance data');
+                    showPerformanceError();
+                }
+            } catch (error) {
+                console.error('❌ Error loading performance data:', error);
+                showPerformanceError();
+            }
+        }
+
+        // Update performance stats
+        function updatePerformanceStats(data) {
+            const container = document.getElementById('performanceStatsGrid');
+            const metrics = data.performanceMetrics;
+            
+            container.innerHTML = `
+                <div class="performance-stat">
+                    <div class="performance-stat-value">${metrics.totalQuizzes}</div>
+                    <div class="performance-stat-label">Total Quizzes</div>
+                </div>
+                <div class="performance-stat">
+                    <div class="performance-stat-value">${metrics.studentAverage}%</div>
+                    <div class="performance-stat-label">Your Average</div>
+                </div>
+                <div class="performance-stat">
+                    <div class="performance-stat-value">${metrics.classAverage}%</div>
+                    <div class="performance-stat-label">Class Average</div>
+                </div>
+                <div class="performance-stat">
+                    <div class="performance-stat-value">${metrics.averageTime}s</div>
+                    <div class="performance-stat-label">Avg Time</div>
+                </div>
+            `;
+            
+            // Update rank info in stats cards
+            loadRankingForStats();
+        }
+
+        // Create charts
+        function createCharts(data) {
+            const chartData = data.chartData;
+            
+            // Score Trends Chart (matching screenshot)
+            const scoreTrendCtx = document.getElementById('scoreTrendChart');
+            if (scoreTrendCtx && !charts.scoreTrendChart) {
+                charts.scoreTrendChart = new Chart(scoreTrendCtx, {
+                    type: 'line',
+                    data: chartData.scoreTrends,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + '%';
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top'
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Performance Breakdown Pie Chart (matching screenshot)
+            const performanceCtx = document.getElementById('performanceBreakdownChart');
+            if (performanceCtx && !charts.performanceBreakdownChart) {
+                charts.performanceBreakdownChart = new Chart(performanceCtx, {
+                    type: 'pie',
+                    data: chartData.performanceBreakdown,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Time Analysis Bar Chart
+            const timeCtx = document.getElementById('timeAnalysisChart');
+            if (timeCtx && !charts.timeAnalysisChart) {
+                charts.timeAnalysisChart = new Chart(timeCtx, {
+                    type: 'bar',
+                    data: chartData.timeAnalysis,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + ' min';
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Load rankings data
+        async function loadRankingsData() {
+            try {
+                const response = await fetch(`/api/student/class/${classId}/rankings`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayRankings(data.data);
+                    console.log('✅ Rankings loaded');
+                } else {
+                    console.error('❌ Failed to load rankings:', data.message);
+                    showRankingsError();
+                }
+            } catch (error) {
+                console.error('❌ Error loading rankings:', error);
+                showRankingsError();
+            }
+        }
+
+        // Load ranking for stats update
+        async function loadRankingForStats() {
+            try {
+                const response = await fetch(`/api/student/class/${classId}/rankings`);
+                const data = await response.json();
+                
+                if (data.success && data.data.currentStudent) {
+                    const rank = data.data.currentStudent.rank;
+                    const total = data.data.totalStudents;
+                    
+                    document.getElementById('classRank').textContent = `#${rank}`;
+                    document.getElementById('rankComparison').textContent = `out of ${total} students`;
+                    document.getElementById('avgComparison').textContent = `vs class avg: ${data.data.currentStudent.averageScore}%`;
+                }
+            } catch (error) {
+                console.error('❌ Error loading ranking for stats:', error);
+            }
+        }
+
+        // Display rankings
+        function displayRankings(data) {
+            const container = document.getElementById('rankingsContainer');
+            
+            if (data.rankings.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>🏆 No Rankings Yet</h3>
+                        <p>Take some quizzes to see your class ranking!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const rankingsHTML = data.rankings.map(student => {
+                const isCurrentStudent = student.studentId === '{{userId}}';
+                const rankClass = student.rank <= 3 ? `rank-${student.rank}` : 'rank-other';
+                
+                return `
+                    <div class="ranking-item ${isCurrentStudent ? 'current-student' : ''}">
+                        <div class="rank-badge ${rankClass}">${student.rank}</div>
+                        <div class="ranking-info">
+                            <div class="student-name">
+                                ${student.studentName} ${isCurrentStudent ? '(You)' : ''}
+                            </div>
+                            <div class="student-stats">
+                                ${student.totalQuizzes} quizzes • Avg time: ${student.averageTime}
+                            </div>
+                        </div>
+                        <div class="ranking-score">
+                            <div class="total-points">${student.totalPoints} pts</div>
+                            <div class="score-breakdown">${student.averageScore}% avg</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = `
+                <div class="rankings-list">
+                    ${rankingsHTML}
+                </div>
+                <div style="margin-top: 1rem; padding: 1rem; background: #f8fafc; border-radius: 8px; font-size: 0.85rem; color: #64748b;">
+                    <strong>Points Formula:</strong> ${data.rankingSystem.formula}<br>
+                    ${data.rankingSystem.description}
+                </div>
+            `;
+        }
+
+        // Quiz actions
+        function takeQuiz(quizId, quizTitle) {
+            console.log(`🎯 Taking quiz: ${quizId} - ${quizTitle}`);
+            
+            if (confirm(`Ready to take "${quizTitle}"?\n\nThe timer will start immediately.`)) {
+                window.location.href = `/take_quiz/${quizId}?classId=${classId}`;
+            }
+        }
+
+        // Error states
+        function showError(message) {
+            console.error('Error:', message);
+        }
+
+        function showQuizzesError() {
+            document.getElementById('quizzesContainer').innerHTML = `
+                <div class="empty-state">
+                    <h3>❌ Error Loading Quizzes</h3>
+                    <p>Failed to load quizzes. Please refresh the page.</p>
+                </div>
+            `;
+        }
+
+        function showPerformanceError() {
+            document.getElementById('performanceStatsGrid').innerHTML = `
+                <div class="empty-state">
+                    <h3>❌ Error Loading Performance</h3>
+                    <p>Failed to load performance data. Please refresh the page.</p>
+                </div>
+            `;
+        }
+
+        function showRankingsError() {
+            document.getElementById('rankingsContainer').innerHTML = `
+                <div class="empty-state">
+                    <h3>❌ Error Loading Rankings</h3>
+                    <p>Failed to load rankings. Please refresh the page.</p>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
