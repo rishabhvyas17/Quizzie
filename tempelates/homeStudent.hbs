@@ -118,6 +118,7 @@
             max-width: 1200px;
             margin: 0 auto;
             padding: 2rem 1rem;
+            min-height: calc(100vh - 200px);
         }
 
         .dashboard-title {
@@ -431,6 +432,39 @@
             border: 1px solid #fcd34d;
         }
 
+        /* 🆕 NEW: Footer Styles - Adapted for Dashboard */
+        .footer {
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            padding: 1.5rem 0;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+
+        .footer-copyright {
+            font-weight: 400;
+        }
+
+        .footer-link {
+            color: #3b82f6;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .footer-link:hover {
+            color: #2563eb;
+        }
+
         /* Mobile Responsiveness */
         @media (max-width: 768px) {
             .header-content {
@@ -473,6 +507,13 @@
             .btn {
                 width: 100%;
                 flex: none;
+            }
+
+            /* 🆕 NEW: Mobile footer styles */
+            .footer-content {
+                flex-direction: column;
+                gap: 0.75rem;
+                text-align: center;
             }
         }
 
@@ -556,6 +597,18 @@
             </div>
         </section>
     </main>
+
+    <!-- 🆕 NEW: Footer Section -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-copyright">
+                © 2025 All rights reserved by www.Quizzie.in
+            </div>
+            <div class="footer-links">
+                <a href="/about-developers" class="footer-link">Meet Our Developers</a>
+            </div>
+        </div>
+    </footer>
 
     <script>
         // Global variables
