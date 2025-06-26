@@ -13,6 +13,8 @@ const pdfParse = require("pdf-parse")
 const mammoth = require("mammoth")
 const session = require('express-session');
 
+
+
 // Fix for pptx2json import/usage
 const { toJson } = require("pptx2json")
 
@@ -45,8 +47,12 @@ const templatePath = path.join(__dirname, '../tempelates')
 // Express configuration
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
+
+app.use(express.static(path.join(__dirname, '../public')))
+
 app.set("view engine", "hbs")
 app.set("views", templatePath)
+
 
 // Session configuration
 app.use(session({
@@ -273,6 +279,8 @@ function cleanupTempFiles() {
 
 // ==================== AUTHENTICATION ROUTES ====================
 
+
+
 app.get("/", (req, res) => {
     res.redirect("/login")
 })
@@ -351,24 +359,25 @@ app.get('/logout', (req, res) => {
 
 // ==================== DASHBOARD ROUTES ====================
 
-// 📝 OPTIONAL: Add this to your /homeStudent route in index.js to handle class context
-
+// 🔄 UPDATED: homeStudent route to support new class-focused design
 app.get("/homeStudent", isAuthenticated, async (req, res) => {
     try {
-        // Get class context from query params (when redirected from student class route)
+        // Get class context from query params (when redirected from class routes)
         const classContext = {
             classId: req.query.class || null,
             className: req.query.className || null,
             message: req.query.message || null
         };
 
-        console.log('🎓 Student dashboard loaded with context:', classContext);
+        console.log('🎓 Student dashboard loaded with class-focused design');
 
         res.render("homeStudent", {
             userType: req.session.userType || "student",
             userName: req.session.userName || "Student",
-            classContext: classContext, // Pass context to template
-            message: req.query.message
+            classContext: classContext,
+            message: req.query.message,
+            // 🆕 NEW: Pass dashboard mode
+            dashboardMode: 'class-focused'
         });
     } catch (error) {
         console.error('❌ Error loading student dashboard:', error);
@@ -985,24 +994,6 @@ app.get('/api/classes/:classId/students', isAuthenticated, async (req, res) => {
     }
 });
 
-// 🔍 DEBUG ROUTE - Add this temporarily to check sessions
-app.get('/api/debug/session-check', (req, res) => {
-    res.json({
-        sessionExists: !!req.session,
-        sessionData: {
-            userId: req.session?.userId,
-            userName: req.session?.userName,
-            userType: req.session?.userType,
-            sessionID: req.sessionID
-        },
-        headers: {
-            cookie: req.headers.cookie,
-            userAgent: req.headers['user-agent']
-        },
-        timestamp: new Date().toISOString()
-    });
-});
-
 // 🗑️ Remove student from class
 app.delete('/api/classes/:classId/students/:studentId', isAuthenticated, async (req, res) => {
     try {
@@ -1165,6 +1156,9 @@ app.get('/api/classes/:classId/overview', isAuthenticated, async (req, res) => {
     }
 });
 
+
+
+
 // 📈 Get detailed class analytics
 app.get('/api/classes/:classId/analytics', isAuthenticated, async (req, res) => {
     try {
@@ -1258,6 +1252,8 @@ app.get('/api/classes/:classId/analytics', isAuthenticated, async (req, res) => 
     }
 });
 
+
+
 // ==================== PAGE ROUTES ====================
 
 // 🏫 Render class management page
@@ -1296,6 +1292,7 @@ app.get('/class/manage/:classId', isAuthenticated, async (req, res) => {
         res.status(500).send('Failed to load class management page.');
     }
 });
+
 
 // ==================== LECTURE MANAGEMENT ROUTES ====================
 
@@ -1867,8 +1864,6 @@ app.get('/api/student/available-quizzes', isAuthenticated, async (req, res) => {
 });
 
 
-// 🔄 REPLACE your existing /take_quiz/:quizId route with this enhanced version:
-
 app.get('/take_quiz/:quizId', isAuthenticated, async (req, res) => {
     try {
         if (req.session.userType !== 'student') {
@@ -1876,7 +1871,13 @@ app.get('/take_quiz/:quizId', isAuthenticated, async (req, res) => {
         }
 
         const quizId = req.params.quizId;
-        const classId = req.query.classId; // Optional class context
+        const classId = req.query.classId; // 🆕 Enhanced: Get class context from query
+
+        console.log('🎯 Quiz access request:', {
+            quizId: quizId,
+            classId: classId,
+            student: req.session.userName
+        });
 
         // Get quiz details
         const quiz = await quizCollection.findById(quizId).select('lectureTitle totalQuestions classId').lean();
@@ -1885,9 +1886,12 @@ app.get('/take_quiz/:quizId', isAuthenticated, async (req, res) => {
             return res.status(404).send('Quiz not found.');
         }
 
-        // If student is coming from a class context, verify enrollment
-        if (classId || quiz.classId) {
-            const targetClassId = classId || quiz.classId;
+        // 🆕 ENHANCED: Determine the target class ID and verify enrollment
+        const targetClassId = classId || quiz.classId;
+        let classInfo = null;
+
+        if (targetClassId) {
+            // Verify student enrollment in the class
             const enrollment = await classStudentCollection.findOne({
                 studentId: req.session.userId,
                 classId: targetClassId,
@@ -1895,8 +1899,20 @@ app.get('/take_quiz/:quizId', isAuthenticated, async (req, res) => {
             });
 
             if (!enrollment) {
-                return res.status(403).send('You are not enrolled in this class.');
+                const errorMessage = classId ? 
+                    'You are not enrolled in this class.' : 
+                    'You are not enrolled in the class for this quiz.';
+                    
+                const redirectUrl = classId ? 
+                    `/student/class/${classId}?message=${encodeURIComponent(errorMessage)}` :
+                    `/homeStudent?message=${encodeURIComponent(errorMessage)}`;
+                    
+                return res.status(403).redirect(redirectUrl);
             }
+
+            // Get class information
+            classInfo = await classCollection.findById(targetClassId).select('name subject').lean();
+            console.log(`✅ Class enrollment verified for: ${classInfo?.name || 'Unknown Class'}`);
         }
 
         // Check if student has already taken this quiz
@@ -1906,27 +1922,41 @@ app.get('/take_quiz/:quizId', isAuthenticated, async (req, res) => {
         });
 
         if (existingResult) {
-            return res.redirect(`/quiz-results?alreadyTaken=true&quizTitle=${encodeURIComponent(quiz.lectureTitle)}`);
+            const redirectUrl = classId ? 
+                `/student/class/${classId}?message=${encodeURIComponent(`You have already completed: ${quiz.lectureTitle}`)}` :
+                `/quiz-results?alreadyTaken=true&quizTitle=${encodeURIComponent(quiz.lectureTitle)}`;
+                
+            return res.redirect(redirectUrl);
         }
 
-        // Get class information for context
-        let classInfo = null;
-        if (quiz.classId) {
-            classInfo = await classCollection.findById(quiz.classId).select('name subject').lean();
-        }
+        console.log(`🎯 Rendering take quiz page: ${quiz.lectureTitle} ${classInfo ? `(Class: ${classInfo.name})` : ''}`);
 
-        console.log(`🎯 Rendering take quiz page for: ${quiz.lectureTitle} (Class: ${classInfo?.name || 'N/A'})`);
-
-        // 🆕 ENHANCED: Pass complete class context to template
+        // 🆕 ENHANCED: Pass comprehensive class context to template
         res.render('takeQuiz', {
             quiz: {
                 ...quiz,
-                classId: quiz.classId, // 🔥 IMPORTANT: Pass classId to template
+                classId: targetClassId, // 🔥 IMPORTANT: Pass classId to template
                 className: classInfo?.name,
                 classSubject: classInfo?.subject
             },
             userName: req.session.userName,
-            classContext: !!classId
+            classContext: !!targetClassId, // Boolean for template logic
+            // 🆕 Enhanced navigation context
+            navigationContext: {
+                hasClass: !!targetClassId,
+                classId: targetClassId,
+                className: classInfo?.name,
+                classSubject: classInfo?.subject,
+                breadcrumbPath: targetClassId ? 
+                    [
+                        { label: 'Dashboard', url: '/homeStudent' },
+                        { label: classInfo?.name || 'Class', url: `/student/class/${targetClassId}` },
+                        { label: 'Quiz', url: null }
+                    ] : [
+                        { label: 'Dashboard', url: '/homeStudent' },
+                        { label: 'Quiz', url: null }
+                    ]
+            }
         });
 
     } catch (error) {
@@ -1970,7 +2000,7 @@ app.get('/api/quiz/:quizId', isAuthenticated, async (req, res) => {
     }
 });
 
-// 🔄 UPDATED: Enhanced quiz submission (class-aware)
+// Enhanced quiz submission (class-aware)
 app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
     try {
         if (req.session.userType !== 'student') {
@@ -1978,7 +2008,7 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
         }
 
         const quizId = req.params.quizId;
-        const { studentAnswers, timeTakenSeconds } = req.body;
+        const { studentAnswers, timeTakenSeconds, classContext } = req.body; // 🆕 Extract classContext
 
         const studentId = req.session.userId;
         const studentName = req.session.userName;
@@ -1989,11 +2019,13 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
             return res.status(404).json({ success: false, message: 'Quiz not found for scoring.' });
         }
 
-        // Verify class enrollment if quiz belongs to a class
-        if (quiz.classId) {
+        // 🆕 ENHANCED: Verify class enrollment if quiz belongs to a class OR if classContext provided
+        const targetClassId = quiz.classId || (classContext && classContext.classId);
+        
+        if (targetClassId) {
             const enrollment = await classStudentCollection.findOne({
                 studentId: studentId,
-                classId: quiz.classId,
+                classId: targetClassId,
                 isActive: true
             });
 
@@ -2053,11 +2085,11 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
 
         const percentage = (totalQuestions > 0) ? (score / totalQuestions) * 100 : 0;
 
-        // Save quiz result to database (with class information)
+        // 🆕 ENHANCED: Save quiz result with proper class information
         const newQuizResult = {
             quizId: quizId,
             lectureId: quiz.lectureId,
-            classId: quiz.classId || null, // Include class ID
+            classId: targetClassId || null, // Use determined class ID
             studentId: studentId,
             studentName: studentName,
             score: score,
@@ -2071,13 +2103,14 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
         const savedResult = await quizResultCollection.create(newQuizResult);
         console.log(`✅ Quiz result saved for student ${studentName} on quiz ${quiz.lectureTitle}: Score ${score}/${totalQuestions}`);
 
-        // Get class information for response
+        // 🆕 ENHANCED: Get class information for comprehensive response
         let classInfo = null;
-        if (quiz.classId) {
-            classInfo = await classCollection.findById(quiz.classId).select('name subject').lean();
+        if (targetClassId) {
+            classInfo = await classCollection.findById(targetClassId).select('name subject').lean();
         }
 
-        res.json({
+        // 🆕 ENHANCED: Prepare comprehensive response with navigation context
+        const enhancedResponse = {
             success: true,
             message: 'Quiz submitted and scored successfully!',
             score: score,
@@ -2085,18 +2118,648 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
             percentage: percentage,
             timeTakenSeconds: timeTakenSeconds,
             quizResultId: savedResult._id,
+            
             // Enhanced response with class context
             lectureId: quiz.lectureId,
-            classId: quiz.classId,
+            classId: targetClassId,
             className: classInfo?.name,
+            classSubject: classInfo?.subject,
             quizTitle: quiz.lectureTitle,
             questionDetails: enhancedQuestionDetails,
-            quizId: quizId
-        });
+            quizId: quizId,
+            
+            // 🆕 Navigation context for frontend
+            navigationContext: {
+                hasClass: !!targetClassId,
+                classId: targetClassId,
+                className: classInfo?.name,
+                classSubject: classInfo?.subject,
+                returnToClass: !!targetClassId,
+                dashboardUrl: '/homeStudent',
+                classUrl: targetClassId ? `/student/class/${targetClassId}` : null
+            },
+            
+            // 🆕 Suggested redirect based on context
+            suggestedRedirect: {
+                url: '/quiz-results',
+                context: 'results_page',
+                backUrl: targetClassId ? `/student/class/${targetClassId}` : '/homeStudent',
+                backLabel: targetClassId ? `Back to ${classInfo?.name || 'Class'}` : 'Back to Dashboard'
+            }
+        };
+
+        res.json(enhancedResponse);
 
     } catch (error) {
         console.error('❌ Error submitting or scoring quiz:', error);
         res.status(500).json({ success: false, message: 'Failed to submit quiz: ' + error.message });
+    }
+});
+
+
+
+
+// 🆕 NEW: Enhanced quiz results page route with better class context handling
+app.get('/quiz-results', isAuthenticated, (req, res) => {
+    try {
+        if (req.session.userType !== 'student') {
+            return res.status(403).redirect('/login?message=Access denied. Only students can view quiz results.');
+        }
+
+        // 🆕 Enhanced: Handle query parameters for better context
+        const queryContext = {
+            alreadyTaken: req.query.alreadyTaken === 'true',
+            quizTitle: req.query.quizTitle || null,
+            error: req.query.error || null,
+            message: req.query.message || null,
+            classId: req.query.classId || null,
+            className: req.query.className || null,
+            returnTo: req.query.returnTo || null
+        };
+
+        console.log('📊 Quiz results page accessed with enhanced context:', {
+            student: req.session.userName,
+            queryContext: queryContext
+        });
+
+        // 🎯 ENHANCED: Pass enhanced context for better navigation
+        res.render('quizResults', {
+            userName: req.session.userName || 'Student',
+            userType: req.session.userType || 'student',
+            queryContext: queryContext, // Enhanced query parameters
+            // Enhanced navigation hints
+            navigationHints: {
+                hasClassContext: !!queryContext.classId,
+                classId: queryContext.classId,
+                className: queryContext.className,
+                dashboardUrl: '/homeStudent',
+                classUrl: queryContext.classId ? `/student/class/${queryContext.classId}` : null
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error rendering quiz results page:', error);
+        res.status(500).send('Failed to load quiz results page.');
+    }
+});
+
+
+// 🆕 NEW: Get detailed quiz result with all questions and answers
+app.get('/api/quiz-result/:resultId/detailed', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'student') {
+            return res.status(403).json({ success: false, message: 'Access denied. Students only.' });
+        }
+
+        const resultId = req.params.resultId;
+        const studentId = req.session.userId;
+
+        console.log('📊 Loading detailed quiz result:', {
+            resultId: resultId,
+            studentId: studentId,
+            requestedBy: req.session.userName
+        });
+
+        // Get the quiz result
+        const quizResult = await quizResultCollection.findById(resultId).lean();
+        
+        if (!quizResult) {
+            return res.status(404).json({
+                success: false,
+                message: 'Quiz result not found.'
+            });
+        }
+
+        // Verify ownership
+        if (quizResult.studentId.toString() !== studentId.toString()) {
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied. You can only view your own quiz results.'
+            });
+        }
+
+        // Get the complete quiz data with questions and explanations
+        const quiz = await quizCollection.findById(quizResult.quizId).lean();
+        
+        if (!quiz) {
+            return res.status(404).json({
+                success: false,
+                message: 'Quiz not found.'
+            });
+        }
+
+        // Get class information if available
+        let classInfo = null;
+        if (quizResult.classId) {
+            classInfo = await classCollection.findById(quizResult.classId).select('name subject teacherId').lean();
+            if (classInfo) {
+                const teacher = await teacherCollection.findById(classInfo.teacherId).select('name').lean();
+                classInfo.teacherName = teacher ? teacher.name : 'Unknown Teacher';
+            }
+        }
+
+        // Prepare detailed question results with explanations availability
+        const detailedQuestions = quiz.questions.map((question, index) => {
+            const studentAnswer = quizResult.answers[index];
+            const hasDetailedExplanations = !!(question.explanations && 
+                Object.keys(question.explanations).some(key => 
+                    key !== question.correct_answer && 
+                    question.explanations[key] && 
+                    question.explanations[key].trim() !== ''
+                ));
+            
+            return {
+                questionIndex: index,
+                questionText: question.question,
+                options: question.options,
+                correctAnswer: question.correct_answer,
+                correctOption: question.options[question.correct_answer],
+                studentAnswer: studentAnswer ? studentAnswer.selectedOption : null,
+                studentOption: studentAnswer ? question.options[studentAnswer.selectedOption] : null,
+                isCorrect: studentAnswer ? studentAnswer.isCorrect : false,
+                hasExplanations: hasDetailedExplanations,
+                hasCorrectExplanation: !!(question.correctAnswerExplanation && question.correctAnswerExplanation.trim() !== '')
+            };
+        });
+
+        // Calculate additional statistics
+        const correctAnswers = detailedQuestions.filter(q => q.isCorrect).length;
+        const incorrectAnswers = detailedQuestions.length - correctAnswers;
+        const accuracyRate = ((correctAnswers / detailedQuestions.length) * 100).toFixed(1);
+        const averageTimePerQuestion = (quizResult.timeTakenSeconds / detailedQuestions.length).toFixed(1);
+
+        // Get class average for comparison
+        let classAverage = null;
+        if (quizResult.classId) {
+            const classResults = await quizResultCollection.find({
+                classId: quizResult.classId
+            }).lean();
+            
+            if (classResults.length > 1) { // More than just this student
+                const otherResults = classResults.filter(r => r.studentId.toString() !== studentId.toString());
+                if (otherResults.length > 0) {
+                    classAverage = (otherResults.reduce((sum, r) => sum + r.percentage, 0) / otherResults.length).toFixed(1);
+                }
+            }
+        }
+
+        console.log(`✅ Detailed quiz result loaded: ${quiz.lectureTitle} - ${quizResult.percentage}%`);
+
+        res.json({
+            success: true,
+            data: {
+                quizResult: {
+                    resultId: quizResult._id,
+                    quizId: quizResult.quizId,
+                    lectureTitle: quiz.lectureTitle,
+                    score: quizResult.score,
+                    totalQuestions: quizResult.totalQuestions,
+                    percentage: quizResult.percentage,
+                    timeTakenSeconds: quizResult.timeTakenSeconds,
+                    submissionDate: quizResult.submissionDate,
+                    studentName: quizResult.studentName
+                },
+                quizStats: {
+                    correctAnswers: correctAnswers,
+                    incorrectAnswers: incorrectAnswers,
+                    accuracyRate: parseFloat(accuracyRate),
+                    averageTimePerQuestion: parseFloat(averageTimePerQuestion),
+                    classAverage: classAverage ? parseFloat(classAverage) : null,
+                    performanceVsClass: classAverage ? 
+                        (quizResult.percentage > parseFloat(classAverage) ? 'above' : 
+                         quizResult.percentage < parseFloat(classAverage) ? 'below' : 'equal') : null
+                },
+                detailedQuestions: detailedQuestions,
+                classInfo: classInfo,
+                explanationsAvailable: detailedQuestions.some(q => q.hasExplanations)
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error loading detailed quiz result:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to load detailed quiz result: ' + error.message
+        });
+    }
+});
+
+// 🆕 NEW: Get top 3 rankings for a specific quiz
+app.get('/api/quiz/:quizId/rankings', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'student') {
+            return res.status(403).json({ success: false, message: 'Access denied. Students only.' });
+        }
+
+        const quizId = req.params.quizId;
+        const studentId = req.session.userId;
+
+        console.log('🏆 Loading quiz rankings:', {
+            quizId: quizId,
+            requestedBy: req.session.userName
+        });
+
+        // Get quiz info
+        const quiz = await quizCollection.findById(quizId).select('lectureTitle classId').lean();
+        
+        if (!quiz) {
+            return res.status(404).json({
+                success: false,
+                message: 'Quiz not found.'
+            });
+        }
+
+        // Get all results for this quiz
+        const allResults = await quizResultCollection.find({
+            quizId: quizId
+        })
+        .select('studentId studentName score percentage timeTakenSeconds submissionDate')
+        .lean();
+
+        if (allResults.length === 0) {
+            return res.json({
+                success: true,
+                data: {
+                    topRankers: [],
+                    currentStudentRank: null,
+                    totalParticipants: 0,
+                    quizTitle: quiz.lectureTitle
+                }
+            });
+        }
+
+        // Sort by percentage (desc), then by time taken (asc) for ties
+        const sortedResults = allResults.sort((a, b) => {
+            if (b.percentage !== a.percentage) {
+                return b.percentage - a.percentage;
+            }
+            return a.timeTakenSeconds - b.timeTakenSeconds;
+        });
+
+        // Get top 3 rankers
+        const topRankers = sortedResults.slice(0, 3).map((result, index) => ({
+            rank: index + 1,
+            studentName: result.studentName,
+            score: result.score,
+            percentage: result.percentage.toFixed(1),
+            timeTaken: formatTime(result.timeTakenSeconds),
+            submissionDate: result.submissionDate.toLocaleDateString(),
+            isCurrentStudent: result.studentId.toString() === studentId.toString()
+        }));
+
+        // Find current student's rank
+        const currentStudentIndex = sortedResults.findIndex(r => r.studentId.toString() === studentId.toString());
+        const currentStudentRank = currentStudentIndex >= 0 ? currentStudentIndex + 1 : null;
+
+        console.log(`🏆 Rankings loaded for quiz: ${quiz.lectureTitle} - Top 3 of ${allResults.length} participants`);
+
+        res.json({
+            success: true,
+            data: {
+                topRankers: topRankers,
+                currentStudentRank: currentStudentRank,
+                totalParticipants: allResults.length,
+                quizTitle: quiz.lectureTitle,
+                isInTop3: currentStudentRank && currentStudentRank <= 3
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error loading quiz rankings:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to load quiz rankings: ' + error.message
+        });
+    }
+});
+
+// 🆕 NEW: Get simple quiz statistics
+app.get('/api/quiz-result/:resultId/stats', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'student') {
+            return res.status(403).json({ success: false, message: 'Access denied. Students only.' });
+        }
+
+        const resultId = req.params.resultId;
+        const studentId = req.session.userId;
+
+        // Get the quiz result
+        const quizResult = await quizResultCollection.findById(resultId).lean();
+        
+        if (!quizResult) {
+            return res.status(404).json({
+                success: false,
+                message: 'Quiz result not found.'
+            });
+        }
+
+        // Verify ownership
+        if (quizResult.studentId.toString() !== studentId.toString()) {
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied. You can only view your own quiz statistics.'
+            });
+        }
+
+        // Get quiz info
+        const quiz = await quizCollection.findById(quizResult.quizId).select('lectureTitle totalQuestions classId').lean();
+
+        // Get all results for this quiz for comparison
+        const allQuizResults = await quizResultCollection.find({
+            quizId: quizResult.quizId
+        }).lean();
+
+        // Calculate quiz statistics
+        const quizStats = {
+            // Basic quiz info
+            quizTitle: quiz.lectureTitle,
+            totalQuestions: quiz.totalQuestions,
+            
+            // Student performance
+            studentScore: quizResult.score,
+            studentPercentage: quizResult.percentage,
+            timeTaken: formatTime(quizResult.timeTakenSeconds),
+            averageTimePerQuestion: (quizResult.timeTakenSeconds / quiz.totalQuestions).toFixed(1),
+            
+            // Comparison statistics
+            totalParticipants: allQuizResults.length,
+            averageScore: allQuizResults.length > 0 ? 
+                (allQuizResults.reduce((sum, r) => sum + r.percentage, 0) / allQuizResults.length).toFixed(1) : 0,
+            
+            // Rankings
+            betterThan: allQuizResults.filter(r => r.percentage < quizResult.percentage).length,
+            rankPosition: allQuizResults
+                .sort((a, b) => b.percentage - a.percentage || a.timeTakenSeconds - b.timeTakenSeconds)
+                .findIndex(r => r._id.toString() === resultId.toString()) + 1
+        };
+
+        console.log(`📊 Quiz statistics loaded for: ${quiz.lectureTitle}`);
+
+        res.json({
+            success: true,
+            data: quizStats
+        });
+
+    } catch (error) {
+        console.error('❌ Error loading quiz statistics:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to load quiz statistics: ' + error.message
+        });
+    }
+});
+
+// 🆕 NEW: Detailed quiz results page route
+app.get('/quiz-result/:resultId/detailed', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'student') {
+            return res.status(403).redirect('/login?message=Access denied. Students only.');
+        }
+
+        const resultId = req.params.resultId;
+        const classId = req.query.classId; // Optional class context
+        const studentId = req.session.userId;
+
+        console.log('📊 Rendering detailed quiz results page:', {
+            resultId: resultId,
+            classId: classId,
+            student: req.session.userName
+        });
+
+        // Basic verification - get quiz result to check ownership
+        const quizResult = await quizResultCollection.findById(resultId).select('studentId quizId classId').lean();
+        
+        if (!quizResult) {
+            return res.status(404).redirect('/homeStudent?message=Quiz result not found.');
+        }
+
+        // Verify ownership
+        if (quizResult.studentId.toString() !== studentId.toString()) {
+            return res.status(403).redirect('/homeStudent?message=Access denied. You can only view your own quiz results.');
+        }
+
+        // Get quiz info for breadcrumbs
+        const quiz = await quizCollection.findById(quizResult.quizId).select('lectureTitle').lean();
+        
+        // Get class info if available
+        let classInfo = null;
+        const targetClassId = classId || quizResult.classId;
+        
+        if (targetClassId) {
+            classInfo = await classCollection.findById(targetClassId).select('name subject').lean();
+        }
+
+        console.log(`📊 Rendering detailed results for: ${quiz ? quiz.lectureTitle : 'Unknown Quiz'}`);
+
+        // Render detailed results template
+        res.render('detailedQuizResults', {
+            resultId: resultId,
+            quizTitle: quiz ? quiz.lectureTitle : 'Quiz Results',
+            userName: req.session.userName,
+            userType: req.session.userType,
+            // Navigation context
+            classContext: {
+                hasClass: !!targetClassId,
+                classId: targetClassId,
+                className: classInfo ? classInfo.name : null,
+                classSubject: classInfo ? classInfo.subject : null
+            },
+            // Breadcrumb data
+            breadcrumbData: targetClassId && classInfo ? [
+                { label: 'Dashboard', url: '/homeStudent' },
+                { label: classInfo.name, url: `/student/class/${targetClassId}` },
+                { label: 'Quiz Results', url: null }
+            ] : [
+                { label: 'Dashboard', url: '/homeStudent' },
+                { label: 'Quiz Results', url: null }
+            ]
+        });
+
+    } catch (error) {
+        console.error('❌ Error rendering detailed quiz results page:', error);
+        res.status(500).redirect('/homeStudent?message=Failed to load detailed quiz results.');
+    }
+});
+
+// 🆕 NEW: Quick navigation endpoint for class context
+app.get('/api/student/navigation-context', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'student') {
+            return res.status(403).json({ success: false, message: 'Access denied. Students only.' });
+        }
+
+        const studentId = req.session.userId;
+        
+        // Get student's enrolled classes for navigation
+        const enrollments = await classStudentCollection.find({
+            studentId: studentId,
+            isActive: true
+        }).lean();
+
+        // Get class details
+        const classIds = enrollments.map(e => e.classId);
+        const classes = await classCollection.find({
+            _id: { $in: classIds },
+            isActive: true
+        }).select('name subject').lean();
+
+        const navigationClasses = classes.map(cls => ({
+            classId: cls._id,
+            className: cls.name,
+            classSubject: cls.subject,
+            url: `/student/class/${cls._id}`
+        }));
+
+        res.json({
+            success: true,
+            data: {
+                enrolledClasses: navigationClasses,
+                totalClasses: navigationClasses.length,
+                dashboardUrl: '/homeStudent',
+                studentName: req.session.userName
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error getting navigation context:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to get navigation context: ' + error.message
+        });
+    }
+});
+
+//  Get most recent quiz for a specific class
+app.get('/api/student/class/:classId/recent-quiz', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'student') {
+            return res.status(403).json({ success: false, message: 'Access denied. Students only.' });
+        }
+
+        const studentId = req.session.userId;
+        const classId = req.params.classId;
+
+        // Verify student is enrolled in this class
+        const enrollment = await classStudentCollection.findOne({
+            studentId: studentId,
+            classId: classId,
+            isActive: true
+        });
+
+        if (!enrollment) {
+            return res.status(403).json({
+                success: false,
+                message: 'You are not enrolled in this class.'
+            });
+        }
+
+        // Get the most recent quiz for this class
+        const recentQuiz = await quizCollection.findOne({
+            classId: classId,
+            isActive: true
+        })
+        .select('lectureTitle totalQuestions generatedDate')
+        .sort({ generatedDate: -1 }) // Most recent first
+        .lean();
+
+        if (!recentQuiz) {
+            return res.json({
+                success: true,
+                quiz: null,
+                message: 'No quizzes available for this class.'
+            });
+        }
+
+        // Check if student has already taken this quiz
+        const studentResult = await quizResultCollection.findOne({
+            studentId: studentId,
+            quizId: recentQuiz._id
+        });
+
+        // Calculate time ago
+        const timeAgo = getTimeAgo(recentQuiz.generatedDate);
+
+        console.log(`🎯 Found recent quiz for class ${classId}: ${recentQuiz.lectureTitle}`);
+
+        res.json({
+            success: true,
+            quiz: {
+                _id: recentQuiz._id,
+                lectureTitle: recentQuiz.lectureTitle,
+                totalQuestions: recentQuiz.totalQuestions,
+                generatedDate: recentQuiz.generatedDate,
+                timeAgo: timeAgo,
+                status: studentResult ? 'taken' : 'available',
+                score: studentResult ? studentResult.percentage : null,
+                // 🆕 NEW: Include resultId for "View Results" functionality
+                resultId: studentResult ? studentResult._id : null
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error fetching recent quiz:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch recent quiz: ' + error.message
+        });
+    }
+});
+
+
+//  Student class-specific page route (Step 3 - Full Implementation)
+app.get('/student/class/:classId', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'student') {
+            return res.status(403).redirect('/login?message=Access denied. Students only.');
+        }
+
+        const studentId = req.session.userId;
+        const classId = req.params.classId;
+
+        console.log(`🏫 Student class view access:`, {
+            studentId: studentId,
+            classId: classId,
+            studentName: req.session.userName
+        });
+
+        // Verify student enrollment
+        const enrollment = await classStudentCollection.findOne({
+            studentId: studentId,
+            classId: classId,
+            isActive: true
+        });
+
+        if (!enrollment) {
+            return res.status(403).redirect('/homeStudent?message=You are not enrolled in this class.');
+        }
+
+        // Get class information
+        const classInfo = await classCollection.findById(classId).lean();
+        if (!classInfo) {
+            return res.status(404).redirect('/homeStudent?message=Class not found.');
+        }
+
+        // Get teacher information
+        const teacher = await teacherCollection.findById(classInfo.teacherId).select('name').lean();
+
+        console.log(`✅ Rendering class view for: ${classInfo.subject} - ${classInfo.name}`);
+
+        // Render the new class-specific template
+        res.render('studentClassView', {
+            classId: classId,
+            className: classInfo.name,
+            classSubject: classInfo.subject,
+            classDescription: classInfo.description,
+            teacherName: teacher ? teacher.name : 'Unknown Teacher',
+            userName: req.session.userName,
+            userId: req.session.userId, // For identifying current student in rankings
+            userType: 'student',
+            enrolledDate: enrollment.enrolledAt
+        });
+
+    } catch (error) {
+        console.error('❌ Error accessing student class view:', error);
+        res.status(500).redirect('/homeStudent?message=Failed to access class information.');
     }
 });
 
@@ -2174,7 +2837,8 @@ app.get('/api/teacher/class/:classId/quizzes', isAuthenticated, async (req, res)
     }
 });
 
-// 🏫 Get student's enrolled classes
+
+// enrolled classes API with new stats
 app.get('/api/student/enrolled-classes', isAuthenticated, async (req, res) => {
     try {
         if (req.session.userType !== 'student') {
@@ -2238,7 +2902,10 @@ app.get('/api/student/enrolled-classes', isAuthenticated, async (req, res) => {
                     // Student's performance in this class
                     quizzesTaken: quizzesTaken,
                     averageScore: parseFloat(averageScore),
-                    availableQuizzes: availableQuizzes
+                    availableQuizzes: availableQuizzes,
+                    // 🆕 NEW: Additional stats for dashboard
+                    totalQuizScore: quizzesTaken > 0 ? studentResults.reduce((sum, result) => sum + result.percentage, 0) : 0,
+                    hasRecentActivity: availableQuizzes > 0 || quizzesTaken > 0
                 };
             })
         );
@@ -2251,7 +2918,16 @@ app.get('/api/student/enrolled-classes', isAuthenticated, async (req, res) => {
         res.json({
             success: true,
             classes: validClasses,
-            totalClasses: validClasses.length
+            totalClasses: validClasses.length,
+            // 🆕 NEW: Overall student stats across all classes
+            overallStats: {
+                totalClasses: validClasses.length,
+                totalQuizAttempts: validClasses.reduce((sum, cls) => sum + cls.quizzesTaken, 0),
+                overallAverage: validClasses.length > 0 ? 
+                    (validClasses.reduce((sum, cls) => sum + cls.totalQuizScore, 0) / 
+                     validClasses.reduce((sum, cls) => sum + cls.quizzesTaken, 0)).toFixed(1) : 0,
+                activeClasses: validClasses.filter(cls => cls.hasRecentActivity).length
+            }
         });
 
     } catch (error) {
@@ -2263,8 +2939,527 @@ app.get('/api/student/enrolled-classes', isAuthenticated, async (req, res) => {
     }
 });
 
+// 📊 Get class overview for student class view
+app.get('/api/student/class/:classId/overview', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'student') {
+            return res.status(403).json({ success: false, message: 'Access denied. Students only.' });
+        }
 
-// ==================== SIMPLE STUDENT CLASS REDIRECT (ADD THIS TO INDEX.JS) ====================
+        const studentId = req.session.userId;
+        const classId = req.params.classId;
+
+        // Verify student enrollment
+        const enrollment = await classStudentCollection.findOne({
+            studentId: studentId,
+            classId: classId,
+            isActive: true
+        });
+
+        if (!enrollment) {
+            return res.status(403).json({
+                success: false,
+                message: 'You are not enrolled in this class.'
+            });
+        }
+
+        // Get class information
+        const classInfo = await classCollection.findById(classId).lean();
+        if (!classInfo) {
+            return res.status(404).json({
+                success: false,
+                message: 'Class not found.'
+            });
+        }
+
+        // Get teacher information
+        const teacher = await teacherCollection.findById(classInfo.teacherId).select('name').lean();
+
+        // Get total students in class
+        const totalStudents = await classStudentCollection.countDocuments({
+            classId: classId,
+            isActive: true
+        });
+
+        // Calculate student's progress in this class
+        const availableQuizzes = await quizCollection.countDocuments({
+            classId: classId,
+            isActive: true
+        });
+
+        const completedQuizzes = await quizResultCollection.countDocuments({
+            studentId: studentId,
+            classId: classId
+        });
+
+        const studentResults = await quizResultCollection.find({
+            studentId: studentId,
+            classId: classId
+        }).lean();
+
+        const averageScore = studentResults.length > 0 
+            ? (studentResults.reduce((sum, result) => sum + result.percentage, 0) / studentResults.length).toFixed(1)
+            : 0;
+
+        const completionRate = availableQuizzes > 0 
+            ? ((completedQuizzes / availableQuizzes) * 100).toFixed(1)
+            : 0;
+
+        console.log(`📊 Class overview generated for student ${req.session.userName} in ${classInfo.name}`);
+
+        res.json({
+            success: true,
+            data: {
+                classInfo: {
+                    name: classInfo.name,
+                    subject: classInfo.subject,
+                    description: classInfo.description,
+                    teacherName: teacher ? teacher.name : 'Unknown Teacher',
+                    totalStudents: totalStudents
+                },
+                studentProgress: {
+                    enrolledDate: enrollment.enrolledAt,
+                    completedQuizzes: completedQuizzes,
+                    totalQuizzes: availableQuizzes,
+                    availableQuizzes: availableQuizzes - completedQuizzes,
+                    averageScore: parseFloat(averageScore),
+                    completionRate: parseFloat(completionRate)
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error generating class overview:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to generate class overview: ' + error.message
+        });
+    }
+});
+
+// 🎯 Get all quizzes for a class (available + completed) for student
+app.get('/api/student/class/:classId/all-quizzes', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'student') {
+            return res.status(403).json({ success: false, message: 'Access denied. Students only.' });
+        }
+
+        const studentId = req.session.userId;
+        const classId = req.params.classId;
+
+        // Verify student enrollment
+        const enrollment = await classStudentCollection.findOne({
+            studentId: studentId,
+            classId: classId,
+            isActive: true
+        });
+
+        if (!enrollment) {
+            return res.status(403).json({
+                success: false,
+                message: 'You are not enrolled in this class.'
+            });
+        }
+
+        // Get all quizzes for this class
+        const allQuizzes = await quizCollection.find({
+            classId: classId,
+            isActive: true
+        })
+        .sort({ generatedDate: -1 })
+        .lean();
+
+        // Get student's results for this class
+        const studentResults = await quizResultCollection.find({
+            studentId: studentId,
+            classId: classId
+        }).lean();
+
+        // Create a map of quiz results
+        const resultMap = {};
+        studentResults.forEach(result => {
+            resultMap[result.quizId.toString()] = result;
+        });
+
+        // Categorize quizzes
+        const availableQuizzes = [];
+        const completedQuizzes = [];
+
+        allQuizzes.forEach(quiz => {
+            const timeAgo = getTimeAgo(quiz.generatedDate);
+            const quizData = {
+                _id: quiz._id,
+                lectureTitle: quiz.lectureTitle,
+                totalQuestions: quiz.totalQuestions,
+                generatedDate: quiz.generatedDate,
+                timeAgo: timeAgo
+            };
+
+            if (resultMap[quiz._id.toString()]) {
+                // Quiz completed
+                const result = resultMap[quiz._id.toString()];
+                completedQuizzes.push({
+                    ...quizData,
+                    status: 'completed',
+                    studentResult: {
+                        resultId: result._id, // 🆕 NEW: Include resultId
+                        score: result.score,
+                        percentage: result.percentage.toFixed(1),
+                        timeTaken: formatTime(result.timeTakenSeconds),
+                        submissionDate: result.submissionDate
+                    }
+                });
+            } else {
+                // Quiz available
+                availableQuizzes.push({
+                    ...quizData,
+                    status: 'available'
+                });
+            }
+        });
+
+        console.log(`🎯 All quizzes loaded for class ${classId}: ${availableQuizzes.length} available, ${completedQuizzes.length} completed`);
+
+        res.json({
+            success: true,
+            data: {
+                allQuizzes: [...availableQuizzes, ...completedQuizzes],
+                availableQuizzes: availableQuizzes,
+                completedQuizzes: completedQuizzes,
+                totalAvailable: availableQuizzes.length,
+                totalCompleted: completedQuizzes.length
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error loading all quizzes:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to load quizzes: ' + error.message
+        });
+    }
+});
+
+// 📈 Get performance analytics for student in specific class
+app.get('/api/student/class/:classId/analytics', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'student') {
+            return res.status(403).json({ success: false, message: 'Access denied. Students only.' });
+        }
+
+        const studentId = req.session.userId;
+        const classId = req.params.classId;
+
+        // Verify student enrollment
+        const enrollment = await classStudentCollection.findOne({
+            studentId: studentId,
+            classId: classId,
+            isActive: true
+        });
+
+        if (!enrollment) {
+            return res.status(403).json({
+                success: false,
+                message: 'You are not enrolled in this class.'
+            });
+        }
+
+        // Get student's results for this class
+        const studentResults = await quizResultCollection.find({
+            studentId: studentId,
+            classId: classId
+        })
+        .sort({ submissionDate: 1 })
+        .lean();
+
+        // Get class average for comparison
+        const allClassResults = await quizResultCollection.find({
+            classId: classId
+        }).lean();
+
+        const classAverage = allClassResults.length > 0 
+            ? (allClassResults.reduce((sum, result) => sum + result.percentage, 0) / allClassResults.length).toFixed(1)
+            : 0;
+
+        // Prepare score trends data
+        const scoreTrends = {
+            labels: studentResults.map((result, index) => `Quiz ${index + 1}`),
+            datasets: [
+                {
+                    label: 'Your Scores',
+                    data: studentResults.map(result => result.percentage),
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.4
+                },
+                {
+                    label: 'Class Average',
+                    data: studentResults.map(() => parseFloat(classAverage)),
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderDash: [5, 5],
+                    tension: 0.4
+                }
+            ]
+        };
+
+        // Performance breakdown
+        const excellent = studentResults.filter(r => r.percentage >= 90).length;
+        const good = studentResults.filter(r => r.percentage >= 70 && r.percentage < 90).length;
+        const average = studentResults.filter(r => r.percentage >= 50 && r.percentage < 70).length;
+        const needsImprovement = studentResults.filter(r => r.percentage < 50).length;
+
+        const performanceBreakdown = {
+            labels: ['Excellent (90%+)', 'Good (70-89%)', 'Average (50-69%)', 'Needs Improvement (<50%)'],
+            datasets: [{
+                data: [excellent, good, average, needsImprovement],
+                backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'],
+                borderWidth: 0
+            }]
+        };
+
+        // Time analysis
+        const timeAnalysis = {
+            labels: studentResults.map((result, index) => `Quiz ${index + 1}`).slice(-10), // Last 10 quizzes
+            datasets: [{
+                label: 'Time Taken (minutes)',
+                data: studentResults.map(result => Math.round(result.timeTakenSeconds / 60)).slice(-10),
+                backgroundColor: '#8b5cf6',
+                borderColor: '#8b5cf6',
+                borderWidth: 1
+            }]
+        };
+
+        console.log(`📈 Analytics generated for student ${req.session.userName} in class ${classId}`);
+
+        res.json({
+            success: true,
+            data: {
+                chartData: {
+                    scoreTrends: scoreTrends,
+                    performanceBreakdown: performanceBreakdown,
+                    timeAnalysis: timeAnalysis
+                },
+                summary: {
+                    totalQuizzes: studentResults.length,
+                    classAverage: parseFloat(classAverage),
+                    studentAverage: studentResults.length > 0 ? 
+                        (studentResults.reduce((sum, r) => sum + r.percentage, 0) / studentResults.length).toFixed(1) : 0
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error generating analytics:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to generate analytics: ' + error.message
+        });
+    }
+});
+
+// 🏆 Get class rankings for student
+app.get('/api/student/class/:classId/rankings', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'student') {
+            return res.status(403).json({ success: false, message: 'Access denied. Students only.' });
+        }
+
+        const studentId = req.session.userId;
+        const classId = req.params.classId;
+
+        // Verify student enrollment
+        const enrollment = await classStudentCollection.findOne({
+            studentId: studentId,
+            classId: classId,
+            isActive: true
+        });
+
+        if (!enrollment) {
+            return res.status(403).json({
+                success: false,
+                message: 'You are not enrolled in this class.'
+            });
+        }
+
+        // Get all students enrolled in this class
+        const classStudents = await classStudentCollection.find({
+            classId: classId,
+            isActive: true
+        }).lean();
+
+        // Calculate rankings based on quiz performance
+        const studentRankings = await Promise.all(
+            classStudents.map(async (student) => {
+                const studentResults = await quizResultCollection.find({
+                    studentId: student.studentId,
+                    classId: classId
+                }).lean();
+
+                if (studentResults.length === 0) {
+                    return {
+                        studentId: student.studentId,
+                        studentName: student.studentName,
+                        totalQuizzes: 0,
+                        averageScore: 0,
+                        totalPoints: 0,
+                        averageTime: '0:00',
+                        rank: 999
+                    };
+                }
+
+                // Calculate performance metrics
+                const averageScore = studentResults.reduce((sum, r) => sum + r.percentage, 0) / studentResults.length;
+                const averageTime = studentResults.reduce((sum, r) => sum + r.timeTakenSeconds, 0) / studentResults.length;
+                
+                // Points formula: (Average Score × 0.7) + (Time Efficiency × 0.3)
+                const maxTime = Math.max(...studentResults.map(r => r.timeTakenSeconds), 1);
+                const timeEfficiency = ((maxTime - averageTime) / maxTime) * 100;
+                const totalPoints = Math.round((averageScore * 0.7) + (timeEfficiency * 0.3));
+
+                return {
+                    studentId: student.studentId,
+                    studentName: student.studentName,
+                    totalQuizzes: studentResults.length,
+                    averageScore: averageScore.toFixed(1),
+                    totalPoints: totalPoints,
+                    averageTime: formatTime(averageTime),
+                    rank: 0 // Will be calculated after sorting
+                };
+            })
+        );
+
+        // Sort by total points and assign ranks
+        const rankedStudents = studentRankings
+            .filter(student => student.totalQuizzes > 0) // Only include students who took quizzes
+            .sort((a, b) => b.totalPoints - a.totalPoints)
+            .map((student, index) => ({
+                ...student,
+                rank: index + 1
+            }));
+
+        // Find current student's data
+        const currentStudent = rankedStudents.find(s => s.studentId.toString() === studentId.toString());
+
+        console.log(`🏆 Rankings generated for class ${classId}: ${rankedStudents.length} students ranked`);
+
+        res.json({
+            success: true,
+            data: {
+                rankings: rankedStudents,
+                currentStudent: currentStudent,
+                totalStudents: rankedStudents.length,
+                rankingSystem: {
+                    formula: 'Points = (Average Score × 0.7) + (Time Efficiency × 0.3)',
+                    description: 'Rankings based on quiz performance and time efficiency. Only students who have taken quizzes are ranked.'
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error generating rankings:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to generate rankings: ' + error.message
+        });
+    }
+});
+
+// 📊 Get class performance data for student
+app.get('/api/student/class/:classId/performance', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'student') {
+            return res.status(403).json({ success: false, message: 'Access denied. Students only.' });
+        }
+
+        const studentId = req.session.userId;
+        const classId = req.params.classId;
+
+        // Verify student enrollment
+        const enrollment = await classStudentCollection.findOne({
+            studentId: studentId,
+            classId: classId,
+            isActive: true
+        });
+
+        if (!enrollment) {
+            return res.status(403).json({
+                success: false,
+                message: 'You are not enrolled in this class.'
+            });
+        }
+
+        // Get student's results for this class
+        const studentResults = await quizResultCollection.find({
+            studentId: studentId,
+            classId: classId
+        })
+        .sort({ submissionDate: -1 })
+        .lean();
+
+        // Get class average for comparison
+        const allClassResults = await quizResultCollection.find({
+            classId: classId
+        }).lean();
+
+        const classAverage = allClassResults.length > 0 
+            ? (allClassResults.reduce((sum, result) => sum + result.percentage, 0) / allClassResults.length).toFixed(1)
+            : 0;
+
+        // Calculate student metrics
+        const totalQuizzes = studentResults.length;
+        const studentAverage = totalQuizzes > 0 
+            ? (studentResults.reduce((sum, result) => sum + result.percentage, 0) / totalQuizzes).toFixed(1)
+            : 0;
+
+        const averageTime = totalQuizzes > 0 
+            ? Math.round(studentResults.reduce((sum, result) => sum + result.timeTakenSeconds, 0) / totalQuizzes)
+            : 0;
+
+        // Performance trend
+        let trendIndicator = '→';
+        if (totalQuizzes >= 3) {
+            const recent = studentResults.slice(0, 2).reduce((sum, r) => sum + r.percentage, 0) / 2;
+            const previous = studentResults.slice(2, 4).reduce((sum, r) => sum + r.percentage, 0) / 2;
+            
+            if (recent > previous + 5) trendIndicator = '↗️';
+            else if (recent < previous - 5) trendIndicator = '↘️';
+        }
+
+        console.log(`📊 Performance data generated for student ${req.session.userName} in class ${classId}`);
+
+        res.json({
+            success: true,
+            data: {
+                performanceMetrics: {
+                    totalQuizzes: totalQuizzes,
+                    studentAverage: parseFloat(studentAverage),
+                    classAverage: parseFloat(classAverage),
+                    averageTime: averageTime,
+                    trendIndicator: trendIndicator
+                },
+                recentResults: studentResults.slice(0, 10).map(result => ({
+                    lectureTitle: result.quizId ? 'Quiz' : 'Unknown Quiz', // You might want to populate this
+                    score: result.score,
+                    totalQuestions: result.totalQuestions,
+                    percentage: result.percentage,
+                    timeTaken: result.timeTakenSeconds,
+                    submissionDate: result.submissionDate
+                }))
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error generating performance data:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to generate performance data: ' + error.message
+        });
+    }
+});
+
+
+// ==================== SIMPLE STUDENT CLASS REDIRECT  ====================
 
 // 🎓 Simple redirect for student class view (breadcrumb navigation)
 app.get('/student/class/:classId', isAuthenticated, async (req, res) => {
@@ -2374,7 +3569,6 @@ app.get('/api/student/class/:classId/quizzes', isAuthenticated, async (req, res)
     }
 });
 
-// ==================== TEACHER RESULTS ROUTES ====================
 
 // ==================== UPDATED LECTURE RESULTS ROUTE ====================
 app.get('/lecture_results/:lectureId', isAuthenticated, async (req, res) => {
@@ -2451,7 +3645,6 @@ app.get('/lecture_results/:lectureId', isAuthenticated, async (req, res) => {
 // ==================== ANALYTICS ROUTES ====================
 
 // Student Performance Analytics
-// 🔄 FIXED: Student Performance Analytics Route 
 app.get('/api/student/performance-data', isAuthenticated, async (req, res) => {
     try {
         if (req.session.userType !== 'student') {
@@ -2928,8 +4121,6 @@ app.get('/api/teacher/class-analytics', requireAuth, async (req, res) => {
 });
 
 // Individual Student Analytics for Teachers
-// 🔄 REPLACE your existing /api/teacher/student-analytics/:studentId route with this enhanced version:
-
 app.get('/api/teacher/student-analytics/:studentId', isAuthenticated, async (req, res) => {
     try {
         if (req.session.userType !== 'teacher') {
@@ -2953,7 +4144,7 @@ app.get('/api/teacher/student-analytics/:studentId', isAuthenticated, async (req
             return res.status(404).json({ success: false, message: 'Student not found.' });
         }
 
-        // 🆕 NEW: Build query filter based on class context
+        // Build query filter based on class context
         let quizResultsFilter = {
             studentId: studentId,
             submissionDate: { $gte: fifteenDaysAgo }
@@ -2963,7 +4154,9 @@ app.get('/api/teacher/student-analytics/:studentId', isAuthenticated, async (req
             submissionDate: { $gte: fifteenDaysAgo }
         };
 
-        // 🏫 Apply class filtering if specified
+        let totalQuizzesFilter = {};
+
+        // Apply class filtering if specified
         if (classId) {
             // Verify teacher access to class
             const classDoc = await classCollection.findOne({
@@ -2996,10 +4189,11 @@ app.get('/api/teacher/student-analytics/:studentId', isAuthenticated, async (req
             // Filter by specific class
             quizResultsFilter.classId = classId;
             classAverageFilter.classId = classId;
+            totalQuizzesFilter.classId = classId;
 
             console.log(`🏫 Filtering analytics for class: ${classDoc.name}`);
         } else {
-            // 🔍 Verify teacher has access to student through any class
+            // Verify teacher has access to student through any class
             const teacherClasses = await classCollection.find({
                 teacherId: teacherId,
                 isActive: true
@@ -3023,22 +4217,29 @@ app.get('/api/teacher/student-analytics/:studentId', isAuthenticated, async (req
             // Filter by teacher's classes only
             classAverageFilter.classId = { $in: teacherClassIds };
             quizResultsFilter.classId = { $in: teacherClassIds };
+            totalQuizzesFilter.classId = { $in: teacherClassIds };
 
             console.log('📊 Loading analytics across all teacher\'s classes');
         }
 
-        // 📊 Get student's quiz results (filtered)
+        // Get student's quiz results (filtered)
         const studentResults = await quizResultCollection
             .find(quizResultsFilter)
             .sort({ submissionDate: -1 })
             .lean();
 
-        // 📈 Get class average for comparison (filtered)
+        // Get class average for comparison (filtered)
         const allClassResults = await quizResultCollection
             .find(classAverageFilter)
             .lean();
 
-        // 🔄 Enhanced: Get quiz details with class information
+        // 🆕 NEW: Get total available quizzes for participation calculation
+        const totalAvailableQuizzes = await quizCollection.countDocuments({
+            ...totalQuizzesFilter,
+            isActive: true
+        });
+
+        // Enhanced: Get quiz details with class information
         const enhancedStudentResults = await Promise.all(
             studentResults.map(async (result) => {
                 const quiz = await quizCollection.findById(result.quizId).select('lectureTitle classId').lean();
@@ -3079,14 +4280,23 @@ app.get('/api/teacher/student-analytics/:studentId', isAuthenticated, async (req
             ? Math.floor(studentResults.reduce((sum, result) => sum + result.timeTakenSeconds, 0) / totalQuizzes / 60)
             : 0;
 
-        // 📊 Prepare trend data for charts
+        // 🆕 NEW: Calculate participation data
+        const participationData = {
+            attempted: totalQuizzes,
+            totalAvailable: totalAvailableQuizzes,
+            participationRate: totalAvailableQuizzes > 0 
+                ? ((totalQuizzes / totalAvailableQuizzes) * 100).toFixed(1)
+                : 0
+        };
+
+        // Prepare trend data for charts
         const trendData = enhancedStudentResults.reverse().map(result => ({
             date: result.submissionDate.toLocaleDateString(),
             score: result.percentage,
-            classAvg: parseFloat(classAverage) // Use filtered class average
+            classAvg: parseFloat(classAverage)
         }));
 
-        // 📋 Format detailed results (limit to 10 most recent)
+        // Format detailed results (limit to 10 most recent)
         const detailedResults = enhancedStudentResults.slice(0, 10).map(result => ({
             quizTitle: result.quizTitle,
             score: result.score,
@@ -3098,13 +4308,13 @@ app.get('/api/teacher/student-analytics/:studentId', isAuthenticated, async (req
             answers: result.answers
         }));
 
-        // 📈 Prepare time analysis data
+        // Prepare time analysis data
         const timeAnalysisData = enhancedStudentResults.slice(0, 10).map(result => ({
             quiz: result.quizTitle,
             timeMinutes: Math.floor(result.timeTakenSeconds / 60)
         }));
 
-        // 🎯 ENHANCED: Return class-aware analytics data
+        // 🆕 ENHANCED: Return class-aware analytics data with participation
         const analyticsData = {
             studentInfo: {
                 name: student.name,
@@ -3118,12 +4328,14 @@ app.get('/api/teacher/student-analytics/:studentId', isAuthenticated, async (req
                 averageTime: averageTime + 'm',
                 trendIndicator
             },
+            // 🆕 NEW: Add participation data
+            participationData: participationData,
             detailedResults,
             chartData: {
                 scoresTrend: trendData,
                 timeAnalysis: timeAnalysisData
             },
-            // 🆕 NEW: Include class context in response
+            // Include class context in response
             classContext: {
                 hasClassFilter: !!classId,
                 classId: classId,
@@ -3134,6 +4346,7 @@ app.get('/api/teacher/student-analytics/:studentId', isAuthenticated, async (req
         console.log(`📊 Analytics data prepared for ${student.name}:`, {
             totalQuizzes: analyticsData.performanceMetrics.totalQuizzes,
             averageScore: analyticsData.performanceMetrics.averageScore,
+            participationRate: participationData.participationRate,
             classFiltered: !!classId
         });
 
@@ -3150,10 +4363,6 @@ app.get('/api/teacher/student-analytics/:studentId', isAuthenticated, async (req
         });
     }
 });
-
-
-
-// 🆕 NEW: Add this route to index.js for class-context student analytics access
 
 // Class-specific student analytics route
 app.get('/class/:classId/student-analytics/:studentId', isAuthenticated, async (req, res) => {
@@ -3205,8 +4414,6 @@ app.get('/class/:classId/student-analytics/:studentId', isAuthenticated, async (
 });
 
 // Student Analytics Page for Teachers
-// 🔄 REPLACE your existing /teacher/student-analytics/:studentId route with this enhanced version:
-
 app.get('/teacher/student-analytics/:studentId', isAuthenticated, async (req, res) => {
     try {
         if (req.session.userType !== 'teacher') {
@@ -3303,6 +4510,87 @@ app.get('/teacher/student-analytics/:studentId', isAuthenticated, async (req, re
     } catch (error) {
         console.error('❌ Error rendering student analytics page:', error);
         res.status(500).send('Failed to load student analytics page.');
+    }
+});
+
+// 🏆 Get class rankings for student
+app.get('/api/student/class/:classId/rankings', isAuthenticated, async (req, res) => {
+    try {
+        const classId = req.params.classId;
+
+        // Get all students enrolled in this class
+        const classStudents = await classStudentCollection.find({
+            classId: classId,
+            isActive: true
+        }).lean();
+
+        // Calculate rankings based on quiz performance
+        const studentRankings = await Promise.all(
+            classStudents.map(async (student) => {
+                const studentResults = await quizResultCollection.find({
+                    studentId: student.studentId,
+                    classId: classId
+                }).lean();
+
+                if (studentResults.length === 0) {
+                    return {
+                        studentId: student.studentId,
+                        studentName: student.studentName,
+                        totalQuizzes: 0,
+                        averageScore: 0,
+                        totalPoints: 0,
+                        averageTime: '0:00',
+                        participationRate: 0,
+                        rank: 999
+                    };
+                }
+
+                // Calculate performance metrics
+                const averageScore = studentResults.reduce((sum, r) => sum + r.percentage, 0) / studentResults.length;
+                const averageTime = studentResults.reduce((sum, r) => sum + r.timeTakenSeconds, 0) / studentResults.length;
+                const participationRate = (studentResults.length / (await quizCollection.countDocuments({ classId: classId }))) * 100;
+                
+                // Points formula: (Average Score × 0.7) + (Participation Rate × 0.3)
+                const totalPoints = Math.round((averageScore * 0.7) + (participationRate * 0.3));
+
+                return {
+                    studentId: student.studentId,
+                    studentName: student.studentName,
+                    totalQuizzes: studentResults.length,
+                    averageScore: averageScore.toFixed(1),
+                    totalPoints: totalPoints,
+                    averageTime: formatTime(averageTime),
+                    participationRate: participationRate.toFixed(1),
+                    rank: 0 // Will be calculated after sorting
+                };
+            })
+        );
+
+        // Sort by total points and assign ranks
+        const rankedStudents = studentRankings
+            .filter(student => student.totalQuizzes > 0) // Only include students who took quizzes
+            .sort((a, b) => b.totalPoints - a.totalPoints)
+            .map((student, index) => ({
+                ...student,
+                rank: index + 1
+            }));
+
+        console.log(`🏆 Rankings generated for class ${classId}: ${rankedStudents.length} students ranked`);
+
+        res.json({
+            success: true,
+            data: {
+                rankings: rankedStudents,
+                totalStudents: rankedStudents.length
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error generating rankings:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to generate rankings: ' + error.message
+        });
     }
 });
 
@@ -3553,9 +4841,6 @@ app.get('/debug/quiz/:quizId/question/:questionIndex', isAuthenticated, async (r
 });
 
 // ==================== QUIZ RESULTS PAGE ROUTE ====================
-
-// 🔄 OPTIONAL: Replace your existing /quiz-results route with this enhanced version:
-
 app.get('/quiz-results', isAuthenticated, (req, res) => {
     try {
         if (req.session.userType !== 'student') {
@@ -3665,7 +4950,39 @@ app.listen(PORT, () => {
 
 // Schedule cleanup functions to run periodically
 setInterval(cleanupOldQuizResults, 24 * 60 * 60 * 1000); // Every 24 hours
-setInterval(cleanupOldExplanations, 15 * 24 * 60 * 60 * 1000); // Every 15 days
+setInterval(cleanupOldExplanations, 16 * 24 * 60 * 60 * 1000); // Every 16 days
+
+
+// 🆕 Helper function for time formatting (if not already defined)
+function formatTime(seconds) {
+    if (typeof seconds !== 'number' || isNaN(seconds)) return '0:00';
+    const minutes = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+}
+
+
+
+// 🆕 NEW: Helper function to calculate time ago
+function getTimeAgo(date) {
+    const now = new Date();
+    const diffInMs = now - new Date(date);
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+
+    if (diffInDays > 7) {
+        return new Date(date).toLocaleDateString();
+    } else if (diffInDays > 0) {
+        return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+    } else if (diffInHours > 0) {
+        return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+    } else if (diffInMinutes > 0) {
+        return `${diffInMinutes} minute${diffInMinutes > 1 ? 's' : ''} ago`;
+    } else {
+        return 'Just now';
+    }
+}
 
 // 🛠️ HELPER FUNCTIONS (Add these at the bottom of your index.js file)
 

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Dashboard - QuizAI</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
         /* Reset and Base Styles */
@@ -126,7 +127,7 @@
             margin-bottom: 2rem;
         }
 
-        /* Stats Section */
+        /* Stats Section - UPDATED */
         .stats-section {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -196,39 +197,7 @@
             margin-bottom: 1.5rem;
         }
 
-        /* Tab Navigation */
-        .tab-navigation {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 2rem;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .tab-button {
-            background: none;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            color: #64748b;
-            font-weight: 500;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s ease;
-        }
-
-        .tab-button.active {
-            color: #3b82f6;
-            border-bottom-color: #3b82f6;
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        /* 🆕 CLASS CARDS */
+        /* UPDATED CLASS CARDS - New Design */
         .classes-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
@@ -253,18 +222,27 @@
             margin-bottom: 1rem;
         }
 
-        .class-name {
-            font-size: 1.25rem;
+        /* NEW: Subject name is now the main title */
+        .class-subject {
+            font-size: 1.4rem;
             font-weight: bold;
             color: #1e293b;
-            margin-bottom: 0.25rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
-        .class-subject {
-            font-size: 0.9rem;
+        .subject-emoji {
+            font-size: 1.6rem;
+        }
+
+        /* NEW: Class name is now smaller subtitle */
+        .class-name {
+            font-size: 1rem;
             color: #3b82f6;
             font-weight: 500;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.25rem;
         }
 
         .class-teacher {
@@ -272,7 +250,7 @@
             color: #64748b;
         }
 
-        /* 🆕 CLASS STATS */
+        /* Class stats remain the same */
         .class-stats {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -300,12 +278,16 @@
             margin-top: 0.25rem;
         }
 
-        /* 🆕 QUIZ SECTION IN CLASS CARD */
-        .class-quizzes {
+        /* UPDATED: Recent Quiz Section */
+        .class-recent-quiz {
             margin-top: 1rem;
+            padding: 1rem;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
         }
 
-        .class-quizzes-title {
+        .recent-quiz-title {
             font-size: 0.9rem;
             font-weight: 600;
             color: #1e293b;
@@ -315,26 +297,11 @@
             gap: 0.5rem;
         }
 
-        .quiz-list {
+        .recent-quiz-item {
             display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .quiz-item {
-            display: flex;
-            justify-content: between;
+            justify-content: space-between;
             align-items: center;
-            padding: 0.75rem;
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            transition: all 0.2s ease;
-        }
-
-        .quiz-item:hover {
-            border-color: #3b82f6;
-            background: #f8fafc;
+            margin-bottom: 0.75rem;
         }
 
         .quiz-info {
@@ -357,6 +324,13 @@
             margin-left: 1rem;
         }
 
+        /* NEW: Action Buttons Row */
+        .class-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
         .btn {
             background: #3b82f6;
             color: white;
@@ -370,6 +344,7 @@
             text-decoration: none;
             display: inline-block;
             text-align: center;
+            flex: 1;
         }
 
         .btn:hover {
@@ -377,121 +352,29 @@
             transform: translateY(-1px);
         }
 
+        .btn-secondary {
+            background: #6b7280;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
         .btn-sm {
             padding: 0.4rem 0.8rem;
             font-size: 0.75rem;
+            flex: none;
         }
 
-        /* Charts Container */
-        .charts-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 2rem;
-            margin-bottom: 2rem;
-        }
-
-        .chart-card {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        .chart-title {
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: #1e293b;
-            margin-bottom: 1rem;
-        }
-
-        .chart-container {
-            position: relative;
-            height: 300px;
-        }
-
-        /* Tables */
-        .data-table {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            overflow-x: auto;
-        }
-
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .table th,
-        .table td {
-            padding: 0.75rem;
-            text-align: left;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .table th {
-            background: #f8fafc;
-            font-weight: 600;
-            color: #1e293b;
-        }
-
-        .table tr:hover {
-            background: #f8fafc;
-        }
-
-        /* Top Performers */
-        .top-performers {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        .performer-item {
-            display: flex;
-            align-items: center;
-            padding: 1rem 0;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .performer-item:last-child {
-            border-bottom: none;
-        }
-
-        .rank-badge {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            margin-right: 1rem;
-        }
-
-        .rank-1 { background: #ffd700; color: #1e293b; }
-        .rank-2 { background: #c0c0c0; color: #1e293b; }
-        .rank-3 { background: #cd7f32; color: white; }
-
-        .performer-info {
-            flex: 1;
-        }
-
-        .performer-name {
-            font-weight: 600;
-            color: #1e293b;
-        }
-
-        .performer-stats {
-            font-size: 0.85rem;
+        /* No quiz available state */
+        .no-recent-quiz {
+            text-align: center;
+            padding: 1rem;
             color: #64748b;
-        }
-
-        .performer-score {
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: #10b981;
+            font-size: 0.85rem;
+            background: #f8fafc;
+            border-radius: 6px;
+            margin-top: 0.5rem;
         }
 
         /* Loading States */
@@ -529,16 +412,6 @@
             color: #1e293b;
         }
 
-        .no-quizzes {
-            text-align: center;
-            padding: 1rem;
-            color: #64748b;
-            font-size: 0.85rem;
-            background: #f8fafc;
-            border-radius: 6px;
-            margin-top: 0.5rem;
-        }
-
         /* Alerts */
         .alert {
             padding: 1rem;
@@ -565,10 +438,6 @@
                 gap: 1rem;
             }
 
-            .nav-links {
-                gap: 1rem;
-            }
-
             .dashboard-title {
                 font-size: 1.5rem;
             }
@@ -582,20 +451,11 @@
                 grid-template-columns: 1fr;
             }
 
-            .charts-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .tab-navigation {
-                overflow-x: auto;
-                white-space: nowrap;
-            }
-
             .class-stats {
                 grid-template-columns: 1fr;
             }
 
-            .quiz-item {
+            .recent-quiz-item {
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 0.5rem;
@@ -606,8 +466,13 @@
                 width: 100%;
             }
 
+            .class-actions {
+                flex-direction: column;
+            }
+
             .btn {
                 width: 100%;
+                flex: none;
             }
         }
 
@@ -617,13 +482,8 @@
             }
 
             .stat-card,
-            .class-card,
-            .chart-card {
+            .class-card {
                 padding: 1rem;
-            }
-
-            .chart-container {
-                height: 250px;
             }
         }
     </style>
@@ -635,9 +495,7 @@
             <div class="logo">QuizAI</div>
             <nav>
                 <ul class="nav-links">
-                    <li><a onclick="showTab('classes')" class="active">My Classes</a></li>
-                    <li><a onclick="showTab('performance')">Performance</a></li>
-                    <li><a onclick="showTab('rankings')">Rankings</a></li>
+                    <li><a class="active">My Classes</a></li>
                 </ul>
             </nav>
             <div class="profile-section">
@@ -655,7 +513,7 @@
     <main class="main-content">
         <h1 class="dashboard-title" id="dashboardTitle"></h1>
 
-        <!-- Stats Section -->
+        <!-- UPDATED Stats Section -->
         <section class="stats-section">
             <div class="stat-card blue">
                 <div class="stat-value">
@@ -664,109 +522,51 @@
                 <div class="stat-label">Enrolled Classes</div>
                 <div class="comparison" id="enrollmentInfo">Your courses</div>
             </div>
+            
             <div class="stat-card green">
                 <div class="stat-value">
-                    <span id="averageScore">-%</span>
+                    <span id="overallAverage">-%</span>
                     <span class="trend-indicator" id="trendIndicator">→</span>
                 </div>
                 <div class="stat-label">Overall Average</div>
-                <div class="comparison" id="scoreComparison">Last 15 days</div>
+                <div class="comparison" id="averageComparison">All classes combined</div>
             </div>
+            
             <div class="stat-card purple">
-                <div class="stat-value" id="currentRank">-</div>
-                <div class="stat-label">Your Rank</div>
-                <div class="comparison" id="rankComparison">Out of - students</div>
+                <div class="stat-value" id="totalQuizAttempts">-</div>
+                <div class="stat-label">Total Quiz Attempts</div>
+                <div class="comparison" id="attemptsComparison">Across all classes</div>
             </div>
+            
             <div class="stat-card orange">
-                <div class="stat-value" id="availableQuizzesCount">-</div>
-                <div class="stat-label">Available Quizzes</div>
-                <div class="comparison">Ready to take</div>
+                <div class="stat-value" id="activeClassesCount">-</div>
+                <div class="stat-label">Active Classes</div>
+                <div class="comparison">Classes with recent activity</div>
             </div>
         </section>
 
-        <!-- Tab Navigation -->
-        <div class="tab-navigation">
-            <button class="tab-button active" onclick="showTab('classes')">My Classes</button>
-            <button class="tab-button" onclick="showTab('performance')">My Performance</button>
-            <button class="tab-button" onclick="showTab('rankings')">Class Rankings</button>
-        </div>
-
-        <!-- 🆕 My Classes Tab -->
-        <div id="classesTab" class="tab-content active">
-            <section class="section">
-                <div id="classesContainer">
-                    <div class="loading">
-                        <div class="loading-spinner"></div>
-                        <p>🔄 Loading your enrolled classes...</p>
-                    </div>
+        <!-- My Classes Section -->
+        <section class="section">
+            <h2 class="section-title">📚 My Classes</h2>
+            <div id="classesContainer">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>🔄 Loading your enrolled classes...</p>
                 </div>
-            </section>
-        </div>
-
-        <!-- Performance Tab -->
-        <div id="performanceTab" class="tab-content">
-            <section class="section">
-                <!-- Charts Grid -->
-                <div class="charts-grid">
-                    <!-- Score Trend Chart -->
-                    <div class="chart-card">
-                        <h3 class="chart-title">📈 Score Trends</h3>
-                        <div class="chart-container">
-                            <canvas id="scoreTrendChart"></canvas>
-                        </div>
-                    </div>
-
-                    <!-- Performance Breakdown Pie Chart -->
-                    <div class="chart-card">
-                        <h3 class="chart-title">📊 Performance Breakdown</h3>
-                        <div class="chart-container">
-                            <canvas id="performanceBreakdownChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Recent Quiz Results Table -->
-                <div class="data-table">
-                    <h3 class="chart-title">📋 Recent Quiz Results</h3>
-                    <div id="recentResultsContainer">
-                        <div class="loading">
-                            <div class="loading-spinner"></div>
-                            <p>Loading recent results...</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </div>
-
-        <!-- Rankings Tab -->
-        <div id="rankingsTab" class="tab-content">
-            <section class="section">
-                <div class="top-performers">
-                    <h3 class="chart-title">🏆 Top Performers (Last 15 Days)</h3>
-                    <div id="topPerformersContainer">
-                        <div class="loading">
-                            <div class="loading-spinner"></div>
-                            <p>Loading rankings...</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </div>
+            </div>
+        </section>
     </main>
 
     <script>
         // Global variables
         const studentName = '{{{userName}}}';
-        let performanceData = null;
         let enrolledClasses = [];
-        let charts = {};
 
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Student dashboard initializing...');
             initializeDashboard();
             loadEnrolledClasses();
-            loadPerformanceData();
         });
 
         // Initialize dashboard UI
@@ -785,7 +585,28 @@
             avatar.textContent = initials;
         }
 
-        // 🆕 NEW: Load enrolled classes
+        // NEW: Get subject emoji based on subject name
+        function getSubjectEmoji(subject) {
+            const subjectLower = subject.toLowerCase();
+            
+            if (subjectLower.includes('math')) return '📐';
+            if (subjectLower.includes('physic')) return '⚛️';
+            if (subjectLower.includes('chemistry') || subjectLower.includes('chem')) return '🧪';
+            if (subjectLower.includes('biology') || subjectLower.includes('bio')) return '🧬';
+            if (subjectLower.includes('english') || subjectLower.includes('literature')) return '📚';
+            if (subjectLower.includes('history')) return '📜';
+            if (subjectLower.includes('geography')) return '🌍';
+            if (subjectLower.includes('computer') || subjectLower.includes('programming')) return '💻';
+            if (subjectLower.includes('art')) return '🎨';
+            if (subjectLower.includes('music')) return '🎵';
+            if (subjectLower.includes('economics')) return '💰';
+            if (subjectLower.includes('psychology')) return '🧠';
+            if (subjectLower.includes('philosophy')) return '💭';
+            
+            return '📖'; // Default emoji
+        }
+
+        // Load enrolled classes
         async function loadEnrolledClasses() {
             try {
                 console.log('🏫 Loading enrolled classes...');
@@ -795,7 +616,7 @@
                 if (data.success) {
                     enrolledClasses = data.classes;
                     displayEnrolledClasses(data.classes);
-                    updateClassStats(data.classes);
+                    updateDashboardStats(data.classes, data.overallStats);
                     console.log('✅ Enrolled classes loaded:', data.classes.length);
                 } else {
                     console.error('❌ Failed to load enrolled classes:', data.message);
@@ -807,7 +628,7 @@
             }
         }
 
-        // 🆕 NEW: Display enrolled classes
+        // UPDATED: Display enrolled classes with new design
         function displayEnrolledClasses(classes) {
             const container = document.getElementById('classesContainer');
             
@@ -819,8 +640,11 @@
             const classesHTML = classes.map(classItem => `
                 <div class="class-card">
                     <div class="class-header">
-                        <h3 class="class-name">${classItem.className}</h3>
-                        <p class="class-subject">📖 ${classItem.classSubject}</p>
+                        <h3 class="class-subject">
+                            <span class="subject-emoji">${getSubjectEmoji(classItem.classSubject)}</span>
+                            ${classItem.classSubject}
+                        </h3>
+                        <p class="class-name">${classItem.className}</p>
                         <p class="class-teacher">👨‍🏫 ${classItem.teacherName}</p>
                     </div>
                     
@@ -839,302 +663,137 @@
                         </div>
                     </div>
                     
-                    <div class="class-quizzes">
-                        <div class="class-quizzes-title">
-                            🎯 Available Quizzes
+                    <div class="class-recent-quiz">
+                        <div class="recent-quiz-title">
+                            🎯 Most Recent Quiz
                         </div>
-                        <div class="quiz-list" id="quizList-${classItem.classId}">
-                            <div class="loading" style="padding: 1rem;">Loading quizzes...</div>
+                        <div id="recentQuiz-${classItem.classId}">
+                            <div class="loading" style="padding: 0.5rem;">Loading...</div>
                         </div>
+                    </div>
+                    
+                    <div class="class-actions">
+                        <button class="btn" onclick="goToClass('${classItem.classId}', '${classItem.className}')">
+                            📚 Go to Class
+                        </button>
                     </div>
                 </div>
             `).join('');
 
             container.innerHTML = `<div class="classes-grid">${classesHTML}</div>`;
 
-            // Load quizzes for each class
+            // Load most recent quiz for each class
             classes.forEach(classItem => {
-                loadClassQuizzes(classItem.classId);
+                loadMostRecentQuiz(classItem.classId);
             });
         }
 
-        // 🆕 NEW: Load quizzes for a specific class
-        async function loadClassQuizzes(classId) {
+        // NEW: Load only the most recent quiz for a class
+        // NEW: Load only the most recent quiz for a class (UPDATED - No Retake)
+        async function loadMostRecentQuiz(classId) {
             try {
-                const response = await fetch(`/api/student/class/${classId}/quizzes`);
+                const response = await fetch(`/api/student/class/${classId}/recent-quiz`);
                 const data = await response.json();
                 
-                const container = document.getElementById(`quizList-${classId}`);
+                const container = document.getElementById(`recentQuiz-${classId}`);
                 
-                if (data.success && data.quizzes.length > 0) {
-                    const quizzesHTML = data.quizzes.map(quiz => `
-                        <div class="quiz-item">
+                if (data.success && data.quiz) {
+                    const quiz = data.quiz;
+                    container.innerHTML = `
+                        <div class="recent-quiz-item">
                             <div class="quiz-info">
                                 <div class="quiz-title">${quiz.lectureTitle}</div>
-                                <div class="quiz-meta">📝 ${quiz.totalQuestions} questions</div>
+                                <div class="quiz-meta">📝 ${quiz.totalQuestions} questions • ${quiz.timeAgo}</div>
                             </div>
                             <div class="quiz-action">
-                                <button class="btn btn-sm" onclick="takeQuiz('${quiz._id}', '${quiz.lectureTitle}', '${classId}')">
-                                    Take Quiz
-                                </button>
+                                ${quiz.status === 'taken' ? 
+                                    `<button class="btn btn-sm btn-secondary" onclick="viewQuizResults('${quiz.resultId}', '${quiz.lectureTitle}', '${classId}')">
+                                        📊 View Results
+                                    </button>` :
+                                    `<button class="btn btn-sm" onclick="takeQuiz('${quiz._id}', '${quiz.lectureTitle}', '${classId}')">
+                                        🎯 Take Quiz
+                                    </button>`
+                                }
                             </div>
                         </div>
-                    `).join('');
-                    
-                    container.innerHTML = quizzesHTML;
+                    `;
                 } else {
                     container.innerHTML = `
-                        <div class="no-quizzes">
+                        <div class="no-recent-quiz">
                             📚 No quizzes available yet
                         </div>
                     `;
                 }
             } catch (error) {
-                console.error('❌ Error loading class quizzes:', error);
-                const container = document.getElementById(`quizList-${classId}`);
+                console.error('❌ Error loading recent quiz:', error);
+                const container = document.getElementById(`recentQuiz-${classId}`);
                 container.innerHTML = `
-                    <div class="no-quizzes">
-                        ❌ Error loading quizzes
+                    <div class="no-recent-quiz">
+                        ❌ Error loading quiz
                     </div>
                 `;
             }
         }
-
-        // 🆕 NEW: Update class-related stats
-        function updateClassStats(classes) {
-            const totalClasses = classes.length;
-            const totalAvailableQuizzes = classes.reduce((sum, cls) => sum + (cls.availableQuizzes || 0), 0);
-            
-            document.getElementById('enrolledClassesCount').textContent = totalClasses;
-            document.getElementById('availableQuizzesCount').textContent = totalAvailableQuizzes;
-            document.getElementById('enrollmentInfo').textContent = totalClasses === 1 ? '1 course' : `${totalClasses} courses`;
+        // 🆕 NEW: Function to view detailed quiz results
+        function viewQuizResults(resultId, quizTitle, classId) {
+            console.log(`📊 Viewing detailed results: ${resultId} - ${quizTitle} from class ${classId}`);
+            window.location.href = `/quiz-result/${resultId}/detailed?classId=${classId}`;
         }
 
-        // Tab navigation
-        function showTab(tabName) {
-            // Update navigation
-            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.nav-links a').forEach(link => link.classList.remove('active'));
-            event.target.classList.add('active');
-
-            // Update content
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            document.getElementById(tabName + 'Tab').classList.add('active');
-
-            // Load data if needed
-            if (tabName === 'performance' && !charts.scoreTrendChart) {
-                setTimeout(createCharts, 100);
-            }
-        }
-
-        // Load performance data
-        async function loadPerformanceData() {
-            try {
-                console.log('📊 Loading performance data...');
-                const response = await fetch('/api/student/performance-data');
-                const data = await response.json();
+        // UPDATED: Calculate and display dashboard stats
+        function updateDashboardStats(classes, overallStats) {
+            // Use the overallStats from backend if available
+            if (overallStats) {
+                document.getElementById('enrolledClassesCount').textContent = overallStats.totalClasses;
+                document.getElementById('overallAverage').textContent = (overallStats.overallAverage || 0) + '%';
+                document.getElementById('totalQuizAttempts').textContent = overallStats.totalQuizAttempts;
+                document.getElementById('activeClassesCount').textContent = overallStats.activeClasses;
                 
-                if (data.success) {
-                    performanceData = data.data;
-                    updatePerformanceStats();
-                    updateRecentResults();
-                    updateTopPerformers();
-                    console.log('✅ Performance data loaded');
-                } else {
-                    console.error('❌ Failed to load performance data:', data.message);
-                    showErrorState('performance');
-                }
-            } catch (error) {
-                console.error('❌ Error loading performance data:', error);
-                showErrorState('performance');
-            }
-        }
-
-        // Update performance stats
-        function updatePerformanceStats() {
-            if (!performanceData) return;
-
-            const stats = performanceData.studentStats;
-            
-            document.getElementById('averageScore').textContent = stats.averageScore + '%';
-            document.getElementById('trendIndicator').textContent = stats.trendIndicator;
-            document.getElementById('scoreComparison').textContent = `Class avg: ${stats.classAverage}%`;
-            document.getElementById('currentRank').textContent = `#${stats.currentRank}`;
-            document.getElementById('rankComparison').textContent = `Out of ${stats.totalStudents} students`;
-        }
-
-        // Update recent results
-        function updateRecentResults() {
-            if (!performanceData?.recentResults) return;
-
-            const container = document.getElementById('recentResultsContainer');
-            const results = performanceData.recentResults;
-
-            if (results.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <h3>📝 No Quiz Results Yet</h3>
-                        <p>Take some quizzes to see your performance history!</p>
-                    </div>
-                `;
-                return;
-            }
-
-            const tableHTML = `
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Quiz</th>
-                            <th>Score</th>
-                            <th>Date</th>
-                            <th>Time Taken</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${results.map(result => `
-                            <tr>
-                                <td>${result.quizTitle}</td>
-                                <td><strong>${result.score}%</strong></td>
-                                <td>${result.submissionDate}</td>
-                                <td>${result.timeTaken}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
-
-            container.innerHTML = tableHTML;
-        }
-
-        // Update top performers
-        function updateTopPerformers() {
-            if (!performanceData?.top3Performers) return;
-
-            const container = document.getElementById('topPerformersContainer');
-            const performers = performanceData.top3Performers;
-
-            if (performers.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <h3>🏆 No Rankings Yet</h3>
-                        <p>Be the first to take quizzes and appear on the leaderboard!</p>
-                    </div>
-                `;
-                return;
-            }
-
-            const performersHTML = performers.map(performer => `
-                <div class="performer-item">
-                    <div class="rank-badge rank-${performer.rank}">${performer.rank}</div>
-                    <div class="performer-info">
-                        <div class="performer-name">${performer.name}</div>
-                        <div class="performer-stats">${performer.totalQuizzes} quizzes completed</div>
-                    </div>
-                    <div class="performer-score">${performer.averageScore}%</div>
-                </div>
-            `).join('');
-
-            container.innerHTML = performersHTML;
-        }
-
-        // Create charts
-        function createCharts() {
-            if (!performanceData) return;
-
-            createScoreTrendChart();
-            createPerformanceBreakdownChart();
-        }
-
-        // Create score trend chart
-        function createScoreTrendChart() {
-            const ctx = document.getElementById('scoreTrendChart');
-            if (!ctx || charts.scoreTrendChart) return;
-
-            const trendData = performanceData.trendData || [];
-            const classAverage = performanceData.studentStats.classAverage;
-
-            charts.scoreTrendChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: trendData.map(d => d.date),
-                    datasets: [{
-                        label: 'Your Scores',
-                        data: trendData.map(d => d.score),
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        tension: 0.4,
-                        fill: true
-                    }, {
-                        label: 'Class Average',
-                        data: trendData.map(() => classAverage),
-                        borderColor: '#64748b',
-                        backgroundColor: 'transparent',
-                        borderDash: [5, 5],
-                        tension: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100,
-                            ticks: {
-                                callback: function(value) {
-                                    return value + '%';
-                                }
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            position: 'top'
-                        }
+                // Update comparison texts
+                document.getElementById('enrollmentInfo').textContent = overallStats.totalClasses === 1 ? '1 course' : `${overallStats.totalClasses} courses`;
+                document.getElementById('averageComparison').textContent = overallStats.totalQuizAttempts > 0 ? `Based on ${overallStats.totalQuizAttempts} attempts` : 'No attempts yet';
+                document.getElementById('attemptsComparison').textContent = `Across ${overallStats.totalClasses} classes`;
+                
+                // Update trend indicator
+                const trendElement = document.getElementById('trendIndicator');
+                const avgScore = parseFloat(overallStats.overallAverage) || 0;
+                if (avgScore >= 80) trendElement.textContent = '📈';
+                else if (avgScore >= 60) trendElement.textContent = '→';
+                else trendElement.textContent = '📉';
+            } else {
+                // Fallback to local calculation
+                const totalClasses = classes.length;
+                let totalQuizzes = 0;
+                let totalScore = 0;
+                let activeClasses = 0;
+                
+                classes.forEach(cls => {
+                    totalQuizzes += cls.quizzesTaken || 0;
+                    if (cls.quizzesTaken > 0) {
+                        totalScore += (cls.averageScore || 0) * cls.quizzesTaken;
                     }
-                }
-            });
-        }
-
-        // Create performance breakdown chart
-        function createPerformanceBreakdownChart() {
-            const ctx = document.getElementById('performanceBreakdownChart');
-            if (!ctx || charts.performanceBreakdownChart) return;
-
-            const breakdown = performanceData.performanceBreakdown || {};
-
-            charts.performanceBreakdownChart = new Chart(ctx, {
-                type: 'pie',
-                data: {
-                    labels: ['Excellent (90%+)', 'Good (70-89%)', 'Average (50-69%)', 'Needs Improvement (<50%)'],
-                    datasets: [{
-                        data: [
-                            breakdown.excellent || 0,
-                            breakdown.good || 0,
-                            breakdown.average || 0,
-                            breakdown.needsImprovement || 0
-                        ],
-                        backgroundColor: [
-                            '#10b981',
-                            '#3b82f6',
-                            '#f59e0b',
-                            '#ef4444'
-                        ]
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom'
-                        }
+                    if (cls.availableQuizzes > 0) {
+                        activeClasses++;
                     }
-                }
-            });
+                });
+                
+                const overallAverage = totalQuizzes > 0 ? (totalScore / totalQuizzes).toFixed(1) : 0;
+                
+                document.getElementById('enrolledClassesCount').textContent = totalClasses;
+                document.getElementById('overallAverage').textContent = overallAverage + '%';
+                document.getElementById('totalQuizAttempts').textContent = totalQuizzes;
+                document.getElementById('activeClassesCount').textContent = activeClasses;
+            }
         }
 
-        // 🔄 UPDATED: Quiz function with class context
+        // NEW: Navigate to class-specific page
+        function goToClass(classId, className) {
+            console.log(`📚 Navigating to class: ${className} (${classId})`);
+            window.location.href = `/student/class/${classId}`;
+        }
+
+        
+        // 🔄 UPDATED: takeQuiz function (REPLACE EXISTING - REMOVE RETAKE FUNCTIONALITY)
         function takeQuiz(quizId, quizTitle, classId) {
             console.log(`🎯 Taking quiz: ${quizId} - ${quizTitle} from class ${classId}`);
             
@@ -1158,6 +817,12 @@
             `;
         }
 
+        
+        function viewQuizResults(resultId, quizTitle, classId) {
+            console.log(`📊 Viewing detailed results: ${resultId} - ${quizTitle} from class ${classId}`);
+            window.location.href = `/quiz-result/${resultId}/detailed?classId=${classId}`;
+        }
+
         function showErrorClasses() {
             const container = document.getElementById('classesContainer');
             container.innerHTML = `
@@ -1171,15 +836,10 @@
             `;
         }
 
-        function showErrorState(type) {
-            console.error(`❌ Error in ${type} section`);
-        }
-
         // Auto-refresh data every 30 seconds
         setInterval(() => {
             console.log('🔄 Auto-refreshing data...');
             loadEnrolledClasses();
-            loadPerformanceData();
         }, 30000);
     </script>
 </body>

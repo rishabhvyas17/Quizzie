@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{#if classContext.className}}{{classContext.className}} - {{/if}}{{quizTitle}} - Detailed Results | QuizAI</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+            line-height: 1.6;
+        }
+
+        /* Header Styles */
+        .header {
+            background: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.75rem;
+            font-weight: bold;
+            color: #3b82f6;
+        }
+
+        .profile-section {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .profile-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .profile-info h3 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .profile-info p {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        /* Main Content */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        /* Breadcrumb Navigation */
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+
+        .breadcrumb a {
+            color: #3b82f6;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .breadcrumb a:hover {
+            color: #2563eb;
+        }
+
+        .breadcrumb-separator {
+            color: #cbd5e1;
+        }
+
+        .breadcrumb-current {
+            font-weight: 500;
+            color: #1e293b;
+        }
+
+        /* Results Header */
+        .results-header {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .quiz-title {
+            font-size: 1.75rem;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+
+        .quiz-meta {
+            font-size: 0.9rem;
+            color: #64748b;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .class-badge {
+            background: #3b82f6;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        /* Stats Section */
+        .stats-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .stat-card.score { border-left: 4px solid #10b981; }
+        .stat-card.time { border-left: 4px solid #3b82f6; }
+        .stat-card.rank { border-left: 4px solid #8b5cf6; }
+        .stat-card.comparison { border-left: 4px solid #f59e0b; }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card.score .stat-value { color: #10b981; }
+        .stat-card.time .stat-value { color: #3b82f6; }
+        .stat-card.rank .stat-value { color: #8b5cf6; }
+        .stat-card.comparison .stat-value { color: #f59e0b; }
+
+        .stat-label {
+            color: #64748b;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .stat-comparison {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 0.25rem;
+        }
+
+        /* Section Styles */
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Rankings Section */
+        .rankings-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .ranking-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 8px;
+            border-left: 4px solid #e2e8f0;
+        }
+
+        .ranking-item.current-student {
+            background: rgba(59, 130, 246, 0.05);
+            border-left-color: #3b82f6;
+        }
+
+        .rank-badge {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 1rem;
+            color: white;
+        }
+
+        .rank-1 { background: #ffd700; color: #1e293b; }
+        .rank-2 { background: #c0c0c0; color: #1e293b; }
+        .rank-3 { background: #cd7f32; color: white; }
+
+        .ranking-info {
+            flex: 1;
+        }
+
+        .student-name {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.25rem;
+        }
+
+        .ranking-score {
+            text-align: right;
+        }
+
+        .score-percentage {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #10b981;
+        }
+
+        /* Questions Section */
+        .question-item {
+            border-bottom: 1px solid #e2e8f0;
+            padding: 1.5rem 0;
+        }
+
+        .question-item:last-child {
+            border-bottom: none;
+        }
+
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .question-number {
+            font-size: 0.9rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .question-result {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        .question-result.correct {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .question-result.incorrect {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .question-text {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 8px;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .answers-comparison {
+            display: grid;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .answer-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background: #f8fafc;
+            border-radius: 6px;
+            border-left: 4px solid #e2e8f0;
+        }
+
+        .answer-row.student-answer {
+            border-left-color: #3b82f6;
+            background: #eff6ff;
+        }
+
+        .answer-row.correct-answer {
+            border-left-color: #10b981;
+            background: #f0fdf4;
+        }
+
+        .answer-row.student-wrong {
+            border-left-color: #ef4444;
+            background: #fef2f2;
+        }
+
+        .answer-label {
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .answer-value {
+            flex: 1;
+            margin-left: 1rem;
+            color: #1e293b;
+        }
+
+        .answer-indicator {
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .answer-indicator.correct { background: #dcfce7; color: #16a34a; }
+        .answer-indicator.wrong { background: #fee2e2; color: #dc2626; }
+        .answer-indicator.student { background: #dbeafe; color: #1e40af; }
+
+        /* Explanation Section */
+        .explanation-section {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .explain-btn {
+            background: #8b5cf6;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+        }
+
+        .explain-btn:hover {
+            background: #7c3aed;
+            transform: translateY(-1px);
+        }
+
+        .explain-btn:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .explanation-content {
+            margin-top: 1rem;
+            padding: 1.5rem;
+            background: #f0f9ff;
+            border-left: 4px solid #3b82f6;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .explanation-content.show {
+            display: block;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .explanation-text {
+            color: #1e293b;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        /* Navigation */
+        .navigation-section {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0 0.5rem;
+        }
+
+        .btn:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #64748b;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        /* Loading States */
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #64748b;
+        }
+
+        .loading-spinner {
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 1rem 0.5rem;
+            }
+
+            .results-header,
+            .section {
+                padding: 1.5rem;
+            }
+
+            .quiz-title {
+                font-size: 1.5rem;
+            }
+
+            .stats-section {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .question-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+
+            .answer-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+
+            .ranking-item {
+                flex-direction: column;
+                text-align: center;
+                gap: 0.5rem;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+                margin: 0.25rem 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Section -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">QuizAI</div>
+            <div class="profile-section">
+                <div class="profile-avatar" id="profileAvatar"></div>
+                <div class="profile-info">
+                    <h3>{{userName}}</h3>
+                    <p>{{userType}}</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Breadcrumb Navigation -->
+        <nav class="breadcrumb">
+            {{#each breadcrumbData}}
+                {{#if this.url}}
+                    <a href="{{this.url}}">{{this.label}}</a>
+                    <span class="breadcrumb-separator">›</span>
+                {{else}}
+                    <span class="breadcrumb-current">{{this.label}}</span>
+                {{/if}}
+            {{/each}}
+        </nav>
+
+        <!-- Results Header -->
+        <section class="results-header">
+            <h1 class="quiz-title" id="quizTitle">{{quizTitle}}</h1>
+            <div class="quiz-meta">
+                {{#if classContext.className}}
+                    <span class="class-badge">📚 {{classContext.className}}</span>
+                {{/if}}
+                <span>👤 {{userName}}</span>
+                <span id="submissionDate">📅 Loading...</span>
+            </div>
+        </section>
+
+        <!-- Performance Stats -->
+        <section class="stats-section" id="statsSection">
+            <div class="stat-card score">
+                <div class="stat-value" id="scoreValue">-</div>
+                <div class="stat-label">Your Score</div>
+                <div class="stat-comparison" id="scoreComparison">Loading...</div>
+            </div>
+            
+            <div class="stat-card time">
+                <div class="stat-value" id="timeValue">-</div>
+                <div class="stat-label">Time Taken</div>
+                <div class="stat-comparison" id="timeComparison">Loading...</div>
+            </div>
+            
+            <div class="stat-card rank">
+                <div class="stat-value" id="rankValue">-</div>
+                <div class="stat-label">Your Rank</div>
+                <div class="stat-comparison" id="rankComparison">Loading...</div>
+            </div>
+            
+            <div class="stat-card comparison">
+                <div class="stat-value" id="classAvgValue">-</div>
+                <div class="stat-label">Class Average</div>
+                <div class="stat-comparison" id="avgComparison">Loading...</div>
+            </div>
+        </section>
+
+        <!-- Top Rankings -->
+        <section class="section">
+            <h2 class="section-title">🏆 Top Performers</h2>
+            <div id="rankingsContainer">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>Loading top rankings...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Detailed Questions -->
+        <section class="section">
+            <h2 class="section-title">📋 Question-by-Question Analysis</h2>
+            <div id="questionsContainer">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>Loading detailed question analysis...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Navigation -->
+        <section class="navigation-section">
+            <h3 style="margin-bottom: 1rem; color: #1e293b;">What would you like to do next?</h3>
+            {{#if classContext.hasClass}}
+                <a href="/student/class/{{classContext.classId}}" class="btn">
+                    📚 Back to {{classContext.className}}
+                </a>
+                <a href="/homeStudent" class="btn btn-secondary">
+                    🏠 Dashboard
+                </a>
+            {{else}}
+                <a href="/homeStudent" class="btn">
+                    🏠 Back to Dashboard
+                </a>
+            {{/if}}
+        </section>
+    </main>
+
+    <script>
+        // Global variables
+        const resultId = '{{resultId}}';
+        const userName = '{{userName}}';
+        const classContext = {
+            hasClass: {{#if classContext.hasClass}}true{{else}}false{{/if}},
+            classId: '{{classContext.classId}}',
+            className: '{{classContext.className}}'
+        };
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📊 Detailed quiz results page initializing:', {
+                resultId: resultId,
+                classContext: classContext
+            });
+            
+            initializePage();
+            loadDetailedResults();
+            loadRankings();
+        });
+
+        // Initialize page elements
+        function initializePage() {
+            // Set avatar initials
+            const avatar = document.getElementById('profileAvatar');
+            const initials = userName.split(' ').map(name => name.charAt(0)).join('').toUpperCase();
+            avatar.textContent = initials;
+        }
+
+        // Load detailed quiz results
+        async function loadDetailedResults() {
+            try {
+                console.log('📊 Loading detailed quiz results...');
+                const response = await fetch(`/api/quiz-result/${resultId}/detailed`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayQuizStats(data.data.quizResult, data.data.quizStats);
+                    displayDetailedQuestions(data.data.detailedQuestions);
+                    console.log('✅ Detailed results loaded');
+                } else {
+                    console.error('❌ Failed to load detailed results:', data.message);
+                    showError('Failed to load detailed quiz results');
+                }
+            } catch (error) {
+                console.error('❌ Error loading detailed results:', error);
+                showError('Error loading detailed quiz results');
+            }
+        }
+
+        // Display quiz statistics
+        function displayQuizStats(quizResult, quizStats) {
+            // Update title and meta
+            document.getElementById('quizTitle').textContent = quizResult.lectureTitle;
+            document.getElementById('submissionDate').textContent = 
+                '📅 ' + new Date(quizResult.submissionDate).toLocaleDateString();
+
+            // Update stats cards
+            document.getElementById('scoreValue').textContent = 
+                `${quizResult.score}/${quizResult.totalQuestions}`;
+            document.getElementById('scoreComparison').textContent = 
+                `${quizResult.percentage.toFixed(1)}% accuracy`;
+
+            document.getElementById('timeValue').textContent = formatTime(quizResult.timeTakenSeconds);
+            document.getElementById('timeComparison').textContent = 
+                `${quizStats.averageTimePerQuestion}s per question`;
+
+            document.getElementById('classAvgValue').textContent = 
+                quizStats.classAverage ? `${quizStats.classAverage}%` : 'N/A';
+            
+            if (quizStats.classAverage) {
+                const comparison = quizStats.performanceVsClass;
+                document.getElementById('avgComparison').textContent = 
+                    comparison === 'above' ? '📈 Above average' :
+                    comparison === 'below' ? '📉 Below average' : '➡️ At average';
+            } else {
+                document.getElementById('avgComparison').textContent = 'No comparison data';
+            }
+        }
+
+        // Load and display rankings
+        async function loadRankings() {
+            try {
+                const response = await fetch(`/api/quiz-result/${resultId}/stats`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const stats = data.data;
+                    
+                    // Update rank info
+                    document.getElementById('rankValue').textContent = `#${stats.rankPosition}`;
+                    document.getElementById('rankComparison').textContent = 
+                        `out of ${stats.totalParticipants} students`;
+
+                    // Load top 3 rankings
+                    loadTopRankings(stats);
+                } else {
+                    console.error('❌ Failed to load rankings:', data.message);
+                }
+            } catch (error) {
+                console.error('❌ Error loading rankings:', error);
+            }
+        }
+
+        // Load top 3 rankings
+        async function loadTopRankings(quizStats) {
+            try {
+                // We need to get the quizId from the result to load rankings
+                const detailResponse = await fetch(`/api/quiz-result/${resultId}/detailed`);
+                const detailData = await detailResponse.json();
+                
+                if (!detailData.success) return;
+                
+                const quizId = detailData.data.quizResult.quizId;
+                const response = await fetch(`/api/quiz/${quizId}/rankings`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayTopRankings(data.data.topRankers, data.data.currentStudentRank);
+                } else {
+                    showRankingsError();
+                }
+            } catch (error) {
+                console.error('❌ Error loading top rankings:', error);
+                showRankingsError();
+            }
+        }
+
+        // Display top rankings
+        function displayTopRankings(topRankers, currentStudentRank) {
+            const container = document.getElementById('rankingsContainer');
+            
+            if (topRankers.length === 0) {
+                container.innerHTML = `
+                    <p style="text-align: center; color: #64748b; padding: 2rem;">
+                        No rankings available yet.
+                    </p>
+                `;
+                return;
+            }
+
+            const rankingsHTML = topRankers.map(ranker => `
+                <div class="ranking-item ${ranker.isCurrentStudent ? 'current-student' : ''}">
+                    <div class="rank-badge rank-${ranker.rank}">${ranker.rank}</div>
+                    <div class="ranking-info">
+                        <div class="student-name">
+                            ${ranker.studentName} ${ranker.isCurrentStudent ? '(You)' : ''}
+                        </div>
+                        <div style="font-size: 0.85rem; color: #64748b;">
+                            ⏱️ ${ranker.timeTaken} • 📅 ${ranker.submissionDate}
+                        </div>
+                    </div>
+                    <div class="ranking-score">
+                        <div class="score-percentage">${ranker.percentage}%</div>
+                        <div style="font-size: 0.8rem; color: #64748b;">
+                            ${ranker.score} correct
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = `
+                <div class="rankings-list">
+                    ${rankingsHTML}
+                </div>
+                ${currentStudentRank > 3 ? `
+                    <div style="margin-top: 1rem; padding: 1rem; background: #f8fafc; border-radius: 8px; text-align: center;">
+                        <strong>Your Rank:</strong> #${currentStudentRank} out of ${topRankers.length} students
+                    </div>
+                ` : ''}
+            `;
+        }
+
+        // Display detailed questions
+        function displayDetailedQuestions(questions) {
+            const container = document.getElementById('questionsContainer');
+            
+            const questionsHTML = questions.map((question, index) => `
+                <div class="question-item">
+                    <div class="question-header">
+                        <div class="question-number">Question ${index + 1}</div>
+                        <div class="question-result ${question.isCorrect ? 'correct' : 'incorrect'}">
+                            ${question.isCorrect ? '✅ Correct' : '❌ Incorrect'}
+                        </div>
+                    </div>
+                    
+                    <div class="question-text">${question.questionText}</div>
+                    
+                    <div class="answers-comparison">
+                        ${!question.isCorrect ? `
+                            <div class="answer-row student-wrong">
+                                <span class="answer-label">Your Answer:</span>
+                                <span class="answer-value">
+                                    ${question.studentAnswer}) ${question.studentOption}
+                                </span>
+                                <span class="answer-indicator wrong">Wrong</span>
+                            </div>
+                        ` : `
+                            <div class="answer-row student-answer">
+                                <span class="answer-label">Your Answer:</span>
+                                <span class="answer-value">
+                                    ${question.studentAnswer}) ${question.studentOption}
+                                </span>
+                                <span class="answer-indicator correct">Correct</span>
+                            </div>
+                        `}
+                        
+                        ${!question.isCorrect ? `
+                            <div class="answer-row correct-answer">
+                                <span class="answer-label">Correct Answer:</span>
+                                <span class="answer-value">
+                                    ${question.correctAnswer}) ${question.correctOption}
+                                </span>
+                                <span class="answer-indicator correct">Correct</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                    
+                    ${!question.isCorrect && question.hasExplanations ? `
+                        <div class="explanation-section">
+                            <button class="explain-btn" onclick="requestExplanation(${index})" id="explainBtn${index}">
+                                💡 Get detailed explanation
+                            </button>
+                            <div class="explanation-content" id="explanation${index}">
+                                <!-- Explanation will be loaded here -->
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+
+            container.innerHTML = questionsHTML;
+        }
+
+        // Request explanation (reuse existing system)
+        async function requestExplanation(questionIndex) {
+            const button = document.getElementById(`explainBtn${questionIndex}`);
+            const explanationDiv = document.getElementById(`explanation${questionIndex}`);
+
+            try {
+                // Get quiz and question details first
+                const detailResponse = await fetch(`/api/quiz-result/${resultId}/detailed`);
+                const detailData = await detailResponse.json();
+                
+                if (!detailData.success) {
+                    throw new Error('Failed to get quiz details');
+                }
+
+                const question = detailData.data.detailedQuestions[questionIndex];
+                
+                button.disabled = true;
+                button.innerHTML = `
+                    <div class="loading-spinner" style="width: 18px; height: 18px; border-width: 2px;"></div>
+                    Getting explanation...
+                `;
+
+                const requestData = {
+                    quizId: detailData.data.quizResult.quizId,
+                    questionIndex: questionIndex,
+                    wrongAnswer: question.studentAnswer
+                };
+
+                const response = await fetch('/api/explanation/get', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    explanationDiv.innerHTML = `
+                        <div class="explanation-text">${data.explanation.replace(/\n/g, '<br>')}</div>
+                    `;
+                    explanationDiv.classList.add('show');
+                    button.innerHTML = '✅ Explanation loaded';
+                    button.style.background = '#10b981';
+                } else {
+                    throw new Error(data.message);
+                }
+
+            } catch (error) {
+                console.error('❌ Error getting explanation:', error);
+                button.innerHTML = '❌ Failed to load explanation';
+                button.style.background = '#ef4444';
+                button.disabled = false;
+            }
+        }
+
+        // Utility functions
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${minutes}m ${secs}s`;
+        }
+
+        function showError(message) {
+            console.error('Error:', message);
+            document.getElementById('questionsContainer').innerHTML = `
+                <p style="text-align: center; color: #ef4444; padding: 2rem;">
+                    ❌ ${message}
+                </p>
+            `;
+        }
+
+        function showRankingsError() {
+            document.getElementById('rankingsContainer').innerHTML = `
+                <p style="text-align: center; color: #ef4444; padding: 2rem;">
+                    ❌ Failed to load rankings
+                </p>
+            `;
+        }
+
+        console.log('📊 Detailed quiz results page loaded successfully');
+    </script>
+</body>
+</html>

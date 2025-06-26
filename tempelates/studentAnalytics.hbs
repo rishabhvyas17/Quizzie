@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{#if classContext.className}}{{classContext.className}} - {{/if}}{{student.name}} Analytics - QuizAI</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
         /* Reset and Base Styles */
@@ -268,6 +269,19 @@
             font-size: 1.5rem;
         }
 
+        .participation-fraction {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #f59e0b;
+        }
+
+        .participation-percentage {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #64748b;
+            margin-top: 0.25rem;
+        }
+
         /* Enhanced Charts Grid */
         .charts-grid {
             display: grid;
@@ -417,39 +431,6 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Class Filter Section */
-        .filter-section {
-            background: white;
-            border-radius: 12px;
-            padding: 1rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            margin-bottom: 2rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-
-        .filter-label {
-            font-weight: 600;
-            color: #1e293b;
-        }
-
-        .filter-select {
-            padding: 0.5rem 1rem;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            background: white;
-            color: #374151;
-            cursor: pointer;
-        }
-
-        .filter-select:focus {
-            outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-
         /* Performance Insights */
         .insights-section {
             background: white;
@@ -527,11 +508,6 @@
             }
 
             .answer-row {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .filter-section {
                 flex-direction: column;
                 align-items: flex-start;
             }
@@ -683,9 +659,13 @@
                     <div class="stat-comparison">Per quiz completion</div>
                 </div>
                 <div class="stat-card orange">
-                    <div class="stat-value" id="lastQuizScore">-%</div>
-                    <div class="stat-label">Latest Quiz Score</div>
-                    <div class="stat-comparison" id="lastQuizDate">-</div>
+                    <div class="stat-value">
+                        <div class="participation-fraction" id="participationRatio">-/-</div>
+                    </div>
+                    <div class="stat-label">Quiz Participation</div>
+                    <div class="stat-comparison">
+                        <div class="participation-percentage" id="participationPercentage">-% completion rate</div>
+                    </div>
                 </div>
                 <div class="stat-card red">
                     <div class="stat-value" id="classRank">-</div>
@@ -857,12 +837,21 @@
                 });
             }
 
-            // Quiz participation
-            if (metrics.totalQuizzes < 3) {
+            // Quiz participation analysis
+            const participationData = studentData.participationData || {};
+            const participationRate = participationData.participationRate || 0;
+            
+            if (participationRate >= 80) {
+                insights.push({
+                    type: 'positive',
+                    icon: '📚',
+                    text: `Great participation! ${studentName} has attempted ${participationRate}% of available quizzes.`
+                });
+            } else if (participationRate < 50) {
                 insights.push({
                     type: 'warning',
-                    icon: '📚',
-                    text: `Limited quiz attempts (${metrics.totalQuizzes}). Encourage more participation for better assessment.`
+                    icon: '⚠️',
+                    text: `Low participation rate (${participationRate}%). Encourage more quiz attempts for better assessment.`
                 });
             }
 
@@ -885,10 +874,10 @@
             container.innerHTML = insightsHTML;
         }
 
-        // Update stats cards with class context
+        // Update stats cards with class context and participation data
         function updateStatsCards() {
             const metrics = studentData.performanceMetrics;
-            const latestResult = studentData.detailedResults[0];
+            const participationData = studentData.participationData || {};
 
             document.getElementById('totalQuizzes').textContent = metrics.totalQuizzes;
             document.getElementById('trendIndicator').textContent = metrics.trendIndicator;
@@ -902,11 +891,13 @@
             
             document.getElementById('averageTime').textContent = metrics.averageTime;
 
-            if (latestResult) {
-                document.getElementById('lastQuizScore').textContent = latestResult.percentage + '%';
-                document.getElementById('lastQuizDate').textContent = 
-                    new Date(latestResult.submissionDate).toLocaleDateString();
-            }
+            // Update participation ratio
+            const attempted = participationData.attempted || metrics.totalQuizzes;
+            const totalAvailable = participationData.totalAvailable || metrics.totalQuizzes;
+            const participationRate = totalAvailable > 0 ? ((attempted / totalAvailable) * 100).toFixed(0) : 0;
+            
+            document.getElementById('participationRatio').textContent = `${attempted}/${totalAvailable}`;
+            document.getElementById('participationPercentage').textContent = `${participationRate}% completion rate`;
 
             // Add rank information (simulated for now)
             const rank = Math.floor(Math.random() * 20) + 1; // This should come from your backend
