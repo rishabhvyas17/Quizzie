@@ -537,19 +537,19 @@ quizResultSchema.post('save', async function() {
 // 🔄 UPDATED: All collections now in single QuizAI Database
 
 // User authentication collections
-const studentCollection = quizAIConnection.model("StudentCollection", studentSchema);
-const teacherCollection = quizAIConnection.model("TeacherCollection", teacherSchema);
+const studentCollection = mongoose.model("StudentCollection", studentSchema);
+const teacherCollection = mongoose.model("TeacherCollection", teacherSchema);
 
 // Lecture and quiz system collections
-const lectureCollection = quizAIConnection.model("LectureCollection", lectureSchema);
-const quizCollection = quizAIConnection.model("QuizCollection", quizSchema);
-const quizResultCollection = quizAIConnection.model("QuizResultCollection", quizResultSchema);
-const explanationCacheCollection = quizAIConnection.model("ExplanationCache", explanationCacheSchema);
+const lectureCollection = mongoose.model("LectureCollection", lectureSchema);
+const quizCollection = mongoose.model("QuizCollection", quizSchema);
+const quizResultCollection = mongoose.model("QuizResultCollection", quizResultSchema);
+const explanationCacheCollection = mongoose.model("ExplanationCache", explanationCacheSchema);
 
 
 // 🆕 NEW: Class management collections
-const classCollection = quizAIConnection.model("ClassCollection", classSchema);
-const classStudentCollection = quizAIConnection.model("ClassStudentCollection", classStudentSchema);
+const classCollection = mongoose.model("ClassCollection", classSchema);
+const classStudentCollection = mongoose.model("ClassStudentCollection", classStudentSchema);
 
 // ==================== EXPORT ALL COLLECTIONS ====================
 // 🎯 All collections now unified in single QuizAI Database!
