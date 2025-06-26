@@ -224,11 +224,11 @@
 </head>
 <body>
     <div class="container">
+        <h1 style="font-size: 36px; margin-bottom: 25px; font-weight: 700; color: #1da8d6;">Quizzie</h1>
         <h1>Create Account</h1>
         <p class="subtitle">Join us today</p>
         
         <form action="/signup" method="post">
-            <!-- Toggle for Student/Teacher -->
             <div class="toggle-container">
                 <div class="toggle-option active" onclick="selectUserType('student')">
                     Student
@@ -239,20 +239,16 @@
             </div>
             
 
-            <!-- //name -->
             <input type="hidden" name="userType" id="userType" value="student">
             <div class="form-group">
                 <label for="name">Name:</label>
                 <input type="text" name="name" id="name" required>
             </div>
-            <!-- //Enrollment No. (For Teacher - email)-->
             <div class="form-group" id="user-identifier-group">
-                <!-- Default for Student(Enrollment)-->
                 <label for="name">Enrollment No.:</label>
                 <input type="text" style='text-transform:uppercase' name="enrollment" id="enrollment" required>
             </div>
            
-            <!-- //password -->
             <div class="form-group">
                 <label for="password">Set Password:</label>
 
@@ -267,7 +263,6 @@
         </div>
     </div>
 
-    <!-- Footer -->
     <footer class="footer">
         <div class="footer-content">
             <div class="footer-copyright">

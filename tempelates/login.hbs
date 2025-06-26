@@ -224,11 +224,11 @@
 </head>
 <body>
     <div class="container">
+        <h1 style="font-size: 36px; margin-bottom: 25px; font-weight: 700; color: #007aff;">Quizzie</h1>
         <h1>Welcome Back</h1>
         <p class="subtitle">Sign in to your account</p>
         
         <form action="/login" method="post">
-            <!-- Toggle for Student/Teacher -->
             <div class="toggle-container">
                 <div class="toggle-option active" onclick="selectUserType('student')">
                     Student
@@ -242,7 +242,6 @@
             
 
             <div class="form-group" id="user-identifier-group">
-                <!-- Default to Enrollment No. for Student -->
                 <label for="enrollment">Enrollment No.:</label>
                 <input type="text" style="text-transform:uppercase" name="enrollment" id="enrollment" required>
 
@@ -261,7 +260,6 @@
         </div>
     </div>
 
-    <!-- Footer -->
     <footer class="footer">
         <div class="footer-content">
             <div class="footer-copyright">
