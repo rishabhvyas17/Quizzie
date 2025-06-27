@@ -582,6 +582,7 @@
                             <span class="subject-badge">🎯 {{quiz.classSubject}}</span>
                         {{/if}}
                         <span id="questionCount">- questions</span>
+                        <span id="durationInfo">- minutes</span>
                         <span>👤 {{userName}}</span>
                     </div>
                 </div>
@@ -669,7 +670,7 @@
         let startTime = Date.now();
         let timerInterval = null;
         const quizId = window.location.pathname.split('/').pop();
-        const QUIZ_TIME_LIMIT = 30 * 60; // 30 minutes in seconds
+        let QUIZ_TIME_LIMIT = 30 * 60; // Default 30 minutes, will be updated from API
 
         // Enhanced Class context data from server
         const classContext = {
@@ -698,10 +699,26 @@
             loadQuizData();
         });
 
-        // Load quiz data from backend
+        // 🆕 ENHANCED: Load quiz duration first, then quiz data
         async function loadQuizData() {
             try {
-                console.log('📡 Fetching quiz data...');
+                console.log('📡 Fetching quiz duration and data...');
+                
+                // First get the quiz duration
+                const durationResponse = await fetch(`/api/quiz/${quizId}/duration`);
+                const durationData = await durationResponse.json();
+                
+                if (durationData.success) {
+                    QUIZ_TIME_LIMIT = durationData.durationSeconds;
+                    console.log('⏱️ Quiz duration set to:', durationData.durationMinutes, 'minutes');
+                    
+                    // Update duration info in header
+                    document.getElementById('durationInfo').textContent = `${durationData.durationMinutes} minutes`;
+                } else {
+                    console.warn('⚠️ Could not fetch quiz duration, using default 30 minutes');
+                }
+                
+                // Then get the quiz questions
                 const response = await fetch(`/api/quiz/${quizId}`);
                 const data = await response.json();
                 
@@ -738,7 +755,7 @@
             document.getElementById('loadingContainer').style.display = 'none';
             document.getElementById('quizContainer').style.display = 'block';
             
-            // Start timer
+            // Start timer with dynamic duration
             startTimer();
             
             // Display first question
@@ -747,7 +764,7 @@
             // Create question indicators
             createQuestionIndicators();
             
-            console.log('🚀 Enhanced class-aware quiz initialized successfully');
+            console.log('🚀 Enhanced class-aware quiz initialized successfully with', QUIZ_TIME_LIMIT / 60, 'minutes duration');
         }
 
         // Display a specific question
@@ -885,7 +902,7 @@
             }
         }
 
-        // Timer functions
+        // 🆕 ENHANCED: Timer functions with dynamic duration
         function startTimer() {
             startTime = Date.now();
             
@@ -911,10 +928,14 @@
             const timerElement = document.getElementById('timer');
             timerElement.textContent = timeString;
             
+            // 🆕 ENHANCED: Dynamic warning thresholds based on quiz duration
+            const warningThreshold = Math.max(300, QUIZ_TIME_LIMIT * 0.25); // 25% of quiz time or 5 minutes, whichever is larger
+            const dangerThreshold = Math.max(120, QUIZ_TIME_LIMIT * 0.1); // 10% of quiz time or 2 minutes, whichever is larger
+            
             // Change color based on remaining time
-            if (seconds <= 300) { // 5 minutes
+            if (seconds <= dangerThreshold) {
                 timerElement.className = 'timer danger';
-            } else if (seconds <= 600) { // 10 minutes
+            } else if (seconds <= warningThreshold) {
                 timerElement.className = 'timer warning';
             } else {
                 timerElement.className = 'timer';
@@ -928,7 +949,8 @@
                 studentAnswers: studentAnswers,
                 quizId: quizId,
                 classContext: classContext,
-                navigationContext: navigationContext
+                navigationContext: navigationContext,
+                quizDuration: QUIZ_TIME_LIMIT / 60 // in minutes
             });
 
             if (!quizData || !quizData.questions) {
@@ -998,6 +1020,7 @@
                         ...result,
                         lectureId: quizData.lectureId || null,
                         classContext: classContext,
+                        quizDurationMinutes: QUIZ_TIME_LIMIT / 60, // Store actual quiz duration
                         // 🆕 Enhanced navigation context from backend response
                         navigationContext: result.navigationContext || {
                             hasClass: classContext.hasClass,
@@ -1045,12 +1068,13 @@
             
             const percentage = result.percentage.toFixed(1);
             const timeFormatted = formatTime(result.timeTakenSeconds);
+            const durationFormatted = formatTime(QUIZ_TIME_LIMIT);
             
             document.getElementById('resultScore').textContent = `${percentage}%`;
             
             let resultDetailsHTML = `
                 <p><strong>Score:</strong> ${result.score} out of ${result.totalQuestions} correct</p>
-                <p><strong>Time Taken:</strong> ${timeFormatted}</p>
+                <p><strong>Time Taken:</strong> ${timeFormatted} out of ${durationFormatted}</p>
                 <p><strong>Percentage:</strong> ${percentage}%</p>
             `;
             
@@ -1072,6 +1096,7 @@
                 totalQuestions: result.totalQuestions,
                 percentage: result.percentage,
                 timeTakenSeconds: result.timeTakenSeconds,
+                quizDurationSeconds: QUIZ_TIME_LIMIT, // Store actual duration used
                 submissionDate: new Date().toISOString(),
                 questionDetails: result.questionDetails || prepareQuestionDetails(),
                 classContext: classContext,
@@ -1197,11 +1222,12 @@
         }
 
         // Console log for debugging
-        console.log('🎯 Enhanced takeQuiz.hbs loaded with navigation context:', {
+        console.log('🎯 Enhanced takeQuiz.hbs loaded with dynamic duration support:', {
             classContext: classContext,
             navigationContext: navigationContext,
             quizId: quizId,
-            enhancedNavigation: true
+            enhancedNavigation: true,
+            dynamicDuration: true
         });
     </script>
 </body>

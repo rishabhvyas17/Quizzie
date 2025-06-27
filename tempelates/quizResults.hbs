@@ -69,6 +69,15 @@
             font-weight: 500;
         }
 
+        .duration-badge {
+            background: #8b5cf6;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
         /* Header Info */
         .header-info {
             display: flex;
@@ -255,6 +264,7 @@
         .stat-card.score { border-left-color: #10b981; }
         .stat-card.time { border-left-color: #3b82f6; }
         .stat-card.rank { border-left-color: #8b5cf6; }
+        .stat-card.efficiency { border-left-color: #f59e0b; }
 
         .stat-value {
             font-size: 1.5rem;
@@ -265,6 +275,7 @@
         .stat-card.score .stat-value { color: #10b981; }
         .stat-card.time .stat-value { color: #3b82f6; }
         .stat-card.rank .stat-value { color: #8b5cf6; }
+        .stat-card.efficiency .stat-value { color: #f59e0b; }
 
         .stat-label {
             font-size: 0.85rem;
@@ -663,6 +674,7 @@
                     <div class="quiz-meta">
                         <span>👤 Student: <span id="studentName"></span></span>
                         <!-- Class and subject badges will be added here dynamically -->
+                        <span id="durationDisplay" style="display: none;"></span>
                     </div>
                 </div>
             </div>
@@ -695,6 +707,10 @@
                 <div class="stat-card time">
                     <div class="stat-value" id="statTime">-</div>
                     <div class="stat-label">Time Taken</div>
+                </div>
+                <div class="stat-card efficiency">
+                    <div class="stat-value" id="statEfficiency">-</div>
+                    <div class="stat-label">Time Efficiency</div>
                 </div>
                 <div class="stat-card rank">
                     <div class="stat-value" id="statRank">-</div>
@@ -729,14 +745,18 @@
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Enhanced quiz results page initializing...');
+            console.log('🚀 Enhanced quiz results page initializing with dynamic duration support...');
             
             // Get results from localStorage (set by takeQuiz.hbs)
             const storedResults = localStorage.getItem('quizResults');
             if (storedResults) {
                 resultsData = JSON.parse(storedResults);
                 classContext = resultsData.classContext || null;
-                console.log('📊 Results loaded with class context:', classContext);
+                console.log('📊 Results loaded with dynamic duration:', {
+                    duration: resultsData.quizDurationSeconds ? `${resultsData.quizDurationSeconds / 60} minutes` : 'Unknown',
+                    questions: resultsData.totalQuestions,
+                    classContext: classContext
+                });
                 displayResults();
                 // Clear stored results after displaying
                 localStorage.removeItem('quizResults');
@@ -748,19 +768,19 @@
             document.getElementById('studentName').textContent = studentName;
         });
 
-        // Enhanced display results with class context
+        // Enhanced display results with class context and dynamic duration
         function displayResults() {
             if (!resultsData) return;
 
-            console.log('📊 Displaying enhanced results:', resultsData);
+            console.log('📊 Displaying enhanced results with dynamic duration:', resultsData);
 
             // Update class context UI
             updateClassContextUI();
 
-            // Update header
+            // Update header with duration info
             updateHeaderInfo();
 
-            // Update summary with enhanced features
+            // Update summary with enhanced features including duration
             updateResultsSummary();
 
             // Display question results
@@ -799,10 +819,18 @@
             }
         }
 
-        // Update header information
+        // Enhanced header information update with duration
         function updateHeaderInfo() {
             const title = resultsData.quizTitle || 'Quiz Completed!';
             document.getElementById('quizTitle').textContent = title;
+
+            // 🆕 ENHANCED: Add dynamic quiz duration display
+            if (resultsData.quizDurationSeconds) {
+                const durationMinutes = Math.round(resultsData.quizDurationSeconds / 60);
+                const durationDisplay = document.getElementById('durationDisplay');
+                durationDisplay.innerHTML = `<span class="duration-badge">⏱️ ${durationMinutes} min quiz</span>`;
+                durationDisplay.style.display = 'inline';
+            }
 
             // Add subject badge if available
             if (classContext && classContext.hasClass) {
@@ -811,7 +839,7 @@
             }
         }
 
-        // Enhanced results summary update
+        // Enhanced results summary update with dynamic duration
         function updateResultsSummary() {
             const percentage = resultsData.percentage;
             const scoreClass = getScoreClass(percentage);
@@ -821,27 +849,34 @@
             scoreDisplay.textContent = percentage.toFixed(1) + '%';
             scoreDisplay.className = `score-display ${scoreClass}`;
 
-            // Update score details
+            // 🆕 ENHANCED: Calculate time efficiency and duration details
+            const timeTaken = resultsData.timeTakenSeconds;
+            const quizDuration = resultsData.quizDurationSeconds || (30 * 60); // fallback to 30 min
+            const timeEfficiency = Math.max(0, 100 - ((timeTaken / quizDuration) * 100));
+
+            // Update score details with dynamic duration
             document.getElementById('scoreDetails').innerHTML = `
                 <p><strong>Score:</strong> ${resultsData.score} out of ${resultsData.totalQuestions} correct</p>
-                <p><strong>Time Taken:</strong> ${formatTime(resultsData.timeTakenSeconds)}</p>
+                <p><strong>Time Taken:</strong> ${formatTime(timeTaken)} out of ${formatTime(quizDuration)}</p>
                 <p><strong>Percentage:</strong> ${percentage.toFixed(1)}%</p>
+                <p><strong>Quiz Duration:</strong> ${Math.round(quizDuration / 60)} minutes</p>
                 ${classContext && classContext.hasClass ? 
                     `<p><strong>Class:</strong> ${classContext.className} performance recorded ✅</p>` : ''
                 }
             `;
 
-            // Show performance stats
-            updatePerformanceStats();
+            // Show performance stats with enhanced duration metrics
+            updatePerformanceStats(timeEfficiency);
 
             // Update navigation buttons
             updateNavigationButtons();
         }
 
-        // Update performance statistics cards
-        function updatePerformanceStats() {
+        // Enhanced performance statistics with time efficiency
+        function updatePerformanceStats(timeEfficiency) {
             document.getElementById('statScore').textContent = `${resultsData.score}/${resultsData.totalQuestions}`;
             document.getElementById('statTime').textContent = formatTime(resultsData.timeTakenSeconds);
+            document.getElementById('statEfficiency').textContent = `${Math.round(timeEfficiency)}%`;
             
             // Simulate rank (in a real implementation, this would come from the server)
             const estimatedRank = Math.floor(Math.random() * 20) + 1;
@@ -1156,6 +1191,15 @@
         if (typeof studentName !== 'undefined' && studentName !== 'Student') {
             localStorage.setItem('studentName', studentName);
         }
+
+        // 🆕 Enhanced console logging with dynamic duration support
+        console.log('🎯 Enhanced quizResults.hbs loaded with dynamic duration support:', {
+            hasDynamicDuration: !!resultsData?.quizDurationSeconds,
+            duration: resultsData?.quizDurationSeconds ? `${resultsData.quizDurationSeconds / 60} minutes` : 'Not available',
+            questions: resultsData?.totalQuestions || 'Unknown',
+            classContext: classContext,
+            enhancedFeatures: true
+        });
     </script>
 </body>
 </html>
