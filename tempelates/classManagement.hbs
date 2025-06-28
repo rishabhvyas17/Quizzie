@@ -243,6 +243,40 @@
             font-weight: 500;
         }
 
+        /* Create Quiz Button Styles */
+        .create-quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .create-quiz-btn {
+            background: linear-gradient(135deg, #10b981, #16a34a);
+            color: white;
+            border: none;
+            padding: 0.875rem 1.5rem;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .create-quiz-btn:hover {
+            background: linear-gradient(135deg, #059669, #15803d);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .create-quiz-btn:active {
+            transform: translateY(0);
+        }
+
         /* Forms */
         .form-group {
             margin-bottom: 1rem;
@@ -272,6 +306,111 @@
             outline: none;
             border-color: #3b82f6;
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        /* Compact Selector Styles */
+        .compact-selector {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+            padding: 0.75rem;
+            background: #f8fafc;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .compact-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 3px rgba(59, 130, 246, 0.2);
+        }
+
+        .compact-btn:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
+        }
+
+        .compact-btn:active {
+            transform: translateY(0);
+        }
+
+        .compact-btn:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .compact-display {
+            background: white;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: 2px solid #3b82f6;
+            text-align: center;
+            min-width: 90px;
+        }
+
+        .compact-value {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #3b82f6;
+            margin-right: 0.25rem;
+        }
+
+        .compact-unit {
+            font-size: 0.8rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .compact-presets {
+            display: flex;
+            gap: 0.375rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.5rem;
+        }
+
+        .compact-preset-btn {
+            background: #f1f5f9;
+            color: #64748b;
+            border: 1px solid #e2e8f0;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .compact-preset-btn:hover {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .compact-preset-btn.active {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+
+        .compact-help {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin: 0;
+            font-style: italic;
         }
 
         /* Buttons */
@@ -325,6 +464,14 @@
 
         .btn-secondary:hover {
             background: #475569;
+        }
+
+        .btn-info {
+            background: #8b5cf6;
+        }
+
+        .btn-info:hover {
+            background: #7c3aed;
         }
 
         .refresh-btn {
@@ -641,6 +788,221 @@
             border-bottom: none;
         }
 
+        /* Modal Overlay Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow: hidden;
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #10b981, #16a34a);
+            color: white;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: white;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        /* Quiz Viewer Modal Styles */
+        .quiz-question-item {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #e2e8f0;
+        }
+
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .question-number {
+            background: #3b82f6;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .explanation-toggle {
+            background: #8b5cf6;
+            color: white;
+            border: none;
+            padding: 0.375rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .explanation-toggle:hover {
+            background: #7c3aed;
+        }
+
+        .question-text {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 1rem;
+        }
+
+        .options-list {
+            display: grid;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .option-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s ease;
+        }
+
+        .option-item.correct {
+            border-color: #10b981;
+            background: #f0fdf4;
+        }
+
+        .option-letter {
+            background: #64748b;
+            color: white;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.875rem;
+            flex-shrink: 0;
+        }
+
+        .option-item.correct .option-letter {
+            background: #10b981;
+        }
+
+        .option-text {
+            flex: 1;
+            color: #334155;
+        }
+
+        .correct-indicator {
+            color: #10b981;
+            font-weight: bold;
+            font-size: 0.875rem;
+        }
+
+        .explanations-section {
+            background: white;
+            border-radius: 6px;
+            padding: 1rem;
+            border: 1px solid #e2e8f0;
+            display: none;
+        }
+
+        .explanations-section.active {
+            display: block;
+        }
+
+        .explanation-item {
+            margin-bottom: 0.75rem;
+            padding: 0.75rem;
+            background: #f8fafc;
+            border-radius: 4px;
+            border-left: 3px solid #e2e8f0;
+        }
+
+        .explanation-item.correct {
+            border-left-color: #10b981;
+            background: #f0fdf4;
+        }
+
+        .explanation-label {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.25rem;
+        }
+
+        .explanation-text {
+            color: #64748b;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
         /* Mobile Responsiveness */
         @media (max-width: 1024px) {
             .sidebar {
@@ -675,6 +1037,11 @@
             .grid-3,
             .grid-4 {
                 grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 1rem;
             }
         }
 
@@ -715,6 +1082,40 @@
 
             .chart-wrapper {
                 height: 250px;
+            }
+
+            /* Compact selector responsive design */
+            .compact-selector {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .compact-presets {
+                justify-content: center;
+            }
+            
+            .compact-preset-btn {
+                flex: 1;
+                min-width: 40px;
+            }
+
+            .modal-body {
+                padding: 1rem;
+            }
+
+            .quiz-question-item {
+                padding: 1rem;
+            }
+
+            .create-quiz-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 1rem;
+            }
+
+            .create-quiz-btn {
+                text-align: center;
+                justify-content: center;
             }
         }
     </style>
@@ -871,20 +1272,11 @@
                         </div>
                     </div>
 
-                    <!-- Create Quiz Form -->
-                    <div class="card">
-                        <h3 class="card-title">➕ Create New Quiz</h3>
-                        <form id="createQuizForm">
-                            <div class="form-group">
-                                <label class="form-label">Upload Lecture File</label>
-                                <input type="file" id="lectureFile" class="form-input" accept=".pdf,.ppt,.pptx,.doc,.docx" required>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Lecture Title</label>
-                                <input type="text" id="lectureTitle" class="form-input" placeholder="e.g., Chapter 1: Introduction to Physics" required>
-                            </div>
-                            <button type="submit" class="btn btn-success">📤 Upload & Generate Quiz</button>
-                        </form>
+                    <!-- Create Quiz Button -->
+                    <div class="create-quiz-header">
+                        <button class="create-quiz-btn" onclick="openCreateQuizModal()">
+                            ➕ Create Quiz
+                        </button>
                     </div>
 
                     <!-- Existing Quizzes -->
@@ -966,6 +1358,96 @@
         </main>
     </div>
 
+    <!-- Create Quiz Modal -->
+    <div id="createQuizModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">🎯 Create New Quiz</h3>
+                <button class="modal-close" onclick="closeCreateQuizModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="createQuizForm">
+                    <div class="form-group">
+                        <label class="form-label">Upload Lecture File</label>
+                        <input type="file" id="lectureFile" class="form-input" accept=".pdf,.ppt,.pptx,.doc,.docx" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Lecture Title</label>
+                        <input type="text" id="lectureTitle" class="form-input" placeholder="e.g., Chapter 1: Introduction to Physics" required>
+                    </div>
+                    
+                    <!-- Quiz Duration Selector -->
+                    <div class="form-group">
+                        <label class="form-label">Quiz Duration</label>
+                        <div class="compact-selector">
+                            <button type="button" class="compact-btn" onclick="adjustDuration(-1)" title="Decrease by 1 minute">
+                                <span>−</span>
+                            </button>
+                            <div class="compact-display">
+                                <span class="compact-value" id="durationValue">15</span>
+                                <span class="compact-unit">min</span>
+                            </div>
+                            <button type="button" class="compact-btn" onclick="adjustDuration(1)" title="Increase by 1 minute">
+                                <span>+</span>
+                            </button>
+                        </div>
+                        <div class="compact-presets">
+                            <button type="button" class="compact-preset-btn" onclick="setDuration(5)">5m</button>
+                            <button type="button" class="compact-preset-btn" onclick="setDuration(10)">10m</button>
+                            <button type="button" class="compact-preset-btn active" onclick="setDuration(15)">15m</button>
+                            <button type="button" class="compact-preset-btn" onclick="setDuration(20)">20m</button>
+                            <button type="button" class="compact-preset-btn" onclick="setDuration(30)">30m</button>
+                            <button type="button" class="compact-preset-btn" onclick="setDuration(45)">45m</button>
+                            <button type="button" class="compact-preset-btn" onclick="setDuration(60)">1h</button>
+                        </div>
+                        <p class="compact-help">Set the time limit for students to complete this quiz (2-60 minutes)</p>
+                    </div>
+
+                    <!-- Number of Questions Selector -->
+                    <div class="form-group">
+                        <label class="form-label">Number of Questions</label>
+                        <div class="compact-selector">
+                            <button type="button" class="compact-btn" onclick="adjustQuestions(-1)" title="Decrease by 1 question">
+                                <span>−</span>
+                            </button>
+                            <div class="compact-display">
+                                <span class="compact-value" id="questionsValue">10</span>
+                                <span class="compact-unit">questions</span>
+                            </div>
+                            <button type="button" class="compact-btn" onclick="adjustQuestions(1)" title="Increase by 1 question">
+                                <span>+</span>
+                            </button>
+                        </div>
+                        <div class="compact-presets">
+                            <button type="button" class="compact-preset-btn" onclick="setQuestions(5)">5</button>
+                            <button type="button" class="compact-preset-btn active" onclick="setQuestions(10)">10</button>
+                            <button type="button" class="compact-preset-btn" onclick="setQuestions(15)">15</button>
+                            <button type="button" class="compact-preset-btn" onclick="setQuestions(20)">20</button>
+                            <button type="button" class="compact-preset-btn" onclick="setQuestions(25)">25</button>
+                            <button type="button" class="compact-preset-btn" onclick="setQuestions(30)">30</button>
+                        </div>
+                        <p class="compact-help">Set the number of questions to generate (5-30 questions)</p>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-success" style="width: 100%; margin-top: 1rem;">📤 Upload & Generate Quiz</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quiz Viewer Modal -->
+    <div id="quizViewerModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalQuizTitle">Quiz Questions</h3>
+                <button class="modal-close" onclick="closeQuizViewer()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalQuizContent">
+                <div class="loading">Loading quiz questions...</div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Global variables
         const classId = '{{classId}}';
@@ -976,13 +1458,439 @@
         let performanceChart = null;
         let distributionChart = null;
 
+        // Quiz configuration variables
+        let currentDuration = 15; // Default 15 minutes
+        let currentQuestions = 10; // Default 10 questions
+
         console.log('🚀 Class Management initializing for:', {
             classId: classId,
             className: className,
             classSubject: classSubject
         });
 
-        // 🔄 UPDATED: Add edit class form handler
+        // Modal Functions
+        function openCreateQuizModal() {
+            console.log('🎯 Opening create quiz modal');
+            document.getElementById('createQuizModal').classList.add('active');
+            
+            // Reset form and values when opening
+            document.getElementById('createQuizForm').reset();
+            setDuration(15);
+            setQuestions(10);
+        }
+
+        function closeCreateQuizModal() {
+            console.log('🎯 Closing create quiz modal');
+            document.getElementById('createQuizModal').classList.remove('active');
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('createQuizModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeCreateQuizModal();
+            }
+        });
+
+        // Duration adjustment functions
+        function adjustDuration(change) {
+            const newDuration = Math.max(2, Math.min(60, currentDuration + change));
+            setDuration(newDuration);
+        }
+
+        function setDuration(minutes) {
+            currentDuration = Math.max(2, Math.min(60, minutes));
+            
+            // Update display
+            document.getElementById('durationValue').textContent = currentDuration;
+            
+            // Update preset buttons
+            document.querySelectorAll('.compact-presets .compact-preset-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Highlight active preset if it matches
+            const matchingPreset = document.querySelector(`.compact-preset-btn[onclick="setDuration(${currentDuration})"]`);
+            if (matchingPreset) {
+                matchingPreset.classList.add('active');
+            }
+            
+            // Update button states
+            const decreaseBtn = document.querySelector('.compact-btn[onclick="adjustDuration(-1)"]');
+            const increaseBtn = document.querySelector('.compact-btn[onclick="adjustDuration(1)"]');
+            
+            if (decreaseBtn) decreaseBtn.disabled = currentDuration <= 2;
+            if (increaseBtn) increaseBtn.disabled = currentDuration >= 60;
+            
+            console.log('🕒 Duration set to:', currentDuration, 'minutes');
+        }
+
+        // Question adjustment functions
+        function adjustQuestions(change) {
+            const newQuestions = Math.max(5, Math.min(30, currentQuestions + change));
+            setQuestions(newQuestions);
+        }
+
+        function setQuestions(count) {
+            currentQuestions = Math.max(5, Math.min(30, count));
+            
+            // Update display
+            document.getElementById('questionsValue').textContent = currentQuestions;
+            
+            // Update preset buttons
+            document.querySelectorAll('.compact-presets .compact-preset-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Highlight active preset if it matches
+            const matchingPreset = document.querySelector(`.compact-preset-btn[onclick="setQuestions(${currentQuestions})"]`);
+            if (matchingPreset) {
+                matchingPreset.classList.add('active');
+            }
+            
+            // Update button states
+            const decreaseBtn = document.querySelector('.compact-btn[onclick="adjustQuestions(-1)"]');
+            const increaseBtn = document.querySelector('.compact-btn[onclick="adjustQuestions(1)"]');
+            
+            if (decreaseBtn) decreaseBtn.disabled = currentQuestions <= 5;
+            if (increaseBtn) increaseBtn.disabled = currentQuestions >= 30;
+            
+            console.log('📝 Questions set to:', currentQuestions);
+        }
+
+        // Quiz Viewer Functions
+        async function viewQuiz(quizId) {
+            console.log('👁️ Opening quiz viewer for:', quizId);
+            
+            // Show modal
+            document.getElementById('quizViewerModal').classList.add('active');
+            
+            // Load quiz data
+            try {
+                const response = await fetch(`/api/teacher/quiz/${quizId}/full`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayQuizInModal(data.quiz);
+                } else {
+                    document.getElementById('modalQuizContent').innerHTML = `
+                        <div class="alert alert-error">
+                            <strong>Error:</strong> ${data.message}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('❌ Error loading quiz:', error);
+                document.getElementById('modalQuizContent').innerHTML = `
+                    <div class="alert alert-error">
+                        <strong>Error:</strong> Failed to load quiz questions.
+                    </div>
+                `;
+            }
+        }
+
+        function displayQuizInModal(quiz) {
+            document.getElementById('modalQuizTitle').textContent = quiz.lectureTitle;
+            
+            const questionsHTML = quiz.questions.map((question, index) => {
+                const hasExplanations = question.explanations && Object.keys(question.explanations).some(key => 
+                    key !== question.correct_answer && question.explanations[key] && question.explanations[key].trim() !== ''
+                );
+
+                const optionsHTML = ['A', 'B', 'C', 'D'].map(letter => `
+                    <div class="option-item ${letter === question.correct_answer ? 'correct' : ''}">
+                        <div class="option-letter">${letter}</div>
+                        <div class="option-text">${question.options[letter]}</div>
+                        ${letter === question.correct_answer ? '<div class="correct-indicator">✓ Correct</div>' : ''}
+                    </div>
+                `).join('');
+
+                let explanationsHTML = '';
+                if (hasExplanations || question.correctAnswerExplanation) {
+                    explanationsHTML = `
+                        <div class="explanations-section" id="explanations-${index}">
+                            ${question.correctAnswerExplanation ? `
+                                <div class="explanation-item correct">
+                                    <div class="explanation-label">✓ Correct Answer (${question.correct_answer})</div>
+                                    <div class="explanation-text">${question.correctAnswerExplanation}</div>
+                                </div>
+                            ` : ''}
+                            ${['A', 'B', 'C', 'D'].map(letter => {
+                                if (letter !== question.correct_answer && question.explanations && question.explanations[letter] && question.explanations[letter].trim() !== '') {
+                                    return `
+                                        <div class="explanation-item">
+                                            <div class="explanation-label">Why ${letter} is incorrect:</div>
+                                            <div class="explanation-text">${question.explanations[letter]}</div>
+                                        </div>
+                                    `;
+                                }
+                                return '';
+                            }).join('')}
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="quiz-question-item">
+                        <div class="question-header">
+                            <div class="question-number">Question ${index + 1}</div>
+                            ${hasExplanations || question.correctAnswerExplanation ? `
+                                <button class="explanation-toggle" onclick="toggleExplanations(${index})">
+                                    Show Explanations
+                                </button>
+                            ` : ''}
+                        </div>
+                        <div class="question-text">${question.question}</div>
+                        <div class="options-list">
+                            ${optionsHTML}
+                        </div>
+                        ${explanationsHTML}
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('modalQuizContent').innerHTML = `
+                <div style="margin-bottom: 1rem;">
+                    <strong>Quiz Details:</strong> ${quiz.totalQuestions} questions • ${quiz.durationMinutes || 15} minutes duration
+                </div>
+                ${questionsHTML}
+            `;
+        }
+
+        function toggleExplanations(questionIndex) {
+            const explanationsSection = document.getElementById(`explanations-${questionIndex}`);
+            const toggleButton = explanationsSection.parentElement.querySelector('.explanation-toggle');
+            
+            if (explanationsSection.classList.contains('active')) {
+                explanationsSection.classList.remove('active');
+                toggleButton.textContent = 'Show Explanations';
+            } else {
+                explanationsSection.classList.add('active');
+                toggleButton.textContent = 'Hide Explanations';
+            }
+        }
+
+        function closeQuizViewer() {
+            document.getElementById('quizViewerModal').classList.remove('active');
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('quizViewerModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeQuizViewer();
+            }
+        });
+
+        // Updated form submission handler
+        document.getElementById('createQuizForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // ✅ CAPTURE VALUES IMMEDIATELY when form is submitted
+            const capturedDuration = currentDuration;
+            const capturedQuestions = currentQuestions;
+            
+            console.log('📝 FORM SUBMIT - Captured values:', {
+                duration: capturedDuration,
+                questions: capturedQuestions
+            });
+            
+            const formData = new FormData();
+            formData.append('lectureFile', document.getElementById('lectureFile').files[0]);
+            formData.append('title', document.getElementById('lectureTitle').value);
+            formData.append('classId', classId);
+            
+            // ✅ ALSO send duration and questions with the upload (for context)
+            formData.append('durationMinutes', capturedDuration.toString());
+            formData.append('questionCount', capturedQuestions.toString());
+
+            const submitButton = this.querySelector('button[type="submit"]');
+            const originalText = submitButton.textContent;
+            
+            try {
+                submitButton.textContent = '📤 Uploading...';
+                submitButton.disabled = true;
+
+                console.log('📤 Uploading lecture with settings:', {
+                    classId: classId,
+                    duration: capturedDuration,
+                    questions: capturedQuestions,
+                    title: document.getElementById('lectureTitle').value
+                });
+                
+                const response = await fetch('/upload_lecture', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showSuccess(`Lecture uploaded successfully! Generating ${capturedQuestions} questions with ${capturedDuration}-minute duration...`);
+                    document.getElementById('createQuizForm').reset();
+                    setDuration(15); // Reset to defaults
+                    setQuestions(10);
+                    
+                    submitButton.textContent = '🤖 Generating Quiz...';
+                    
+                    // ✅ DIRECTLY call quiz generation with captured values
+                    await generateQuizFromLecture(result.lectureId, capturedDuration, capturedQuestions);
+                    
+                    // Close modal after successful creation
+                    closeCreateQuizModal();
+                    
+                } else {
+                    throw new Error(result.message || 'Upload failed');
+                }
+            } catch (error) {
+                console.error('❌ Upload error:', error);
+                showError('Failed to upload lecture: ' + error.message);
+                
+                submitButton.textContent = originalText;
+                submitButton.disabled = false;
+            }
+        });
+
+        // Updated quiz generation function with duration and questions parameters
+        async function generateQuizFromLecture(lectureId, durationMinutes, questionCount) {
+            const submitButton = document.querySelector('#createQuizForm button[type="submit"]');
+            
+            try {
+                console.log('🤖 QUIZ GENERATION - Starting with exact settings:', {
+                    lectureId: lectureId,
+                    durationMinutes: durationMinutes,
+                    questionCount: questionCount,
+                    typeofDuration: typeof durationMinutes,
+                    typeofQuestions: typeof questionCount
+                });
+                
+                // ✅ ENSURE values are numbers
+                const safeDuration = parseInt(durationMinutes) || 15;
+                const safeQuestions = parseInt(questionCount) || 10;
+                
+                console.log('🔧 QUIZ GENERATION - Sanitized values:', {
+                    safeDuration: safeDuration,
+                    safeQuestions: safeQuestions
+                });
+                
+                const requestBody = {
+                    durationMinutes: safeDuration,
+                    questionCount: safeQuestions
+                };
+                
+                console.log('📡 QUIZ GENERATION - Request body:', requestBody);
+                
+                const response = await fetch(`/generate_quiz/${lectureId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                const result = await response.json();
+                
+                console.log('📡 QUIZ GENERATION - Server response:', result);
+
+                if (result.success) {
+                    console.log('✅ Quiz generated successfully with settings:', {
+                        returnedDuration: result.durationMinutes,
+                        returnedQuestions: result.totalQuestions,
+                        requestedDuration: safeDuration,
+                        requestedQuestions: safeQuestions
+                    });
+                    
+                    const durationText = result.durationMinutes ? ` (${result.durationMinutes} minutes)` : '';
+                    showSuccess(`🎉 Quiz generated successfully${durationText}! ${result.totalQuestions} questions created with detailed explanations.`);
+                    
+                    loadQuizzes(); // Refresh quiz list
+                    loadAnalytics(); // Refresh analytics
+                    
+                } else {
+                    console.error('❌ Quiz generation failed:', result.message);
+                    showError('Quiz generation failed: ' + result.message);
+                }
+            } catch (error) {
+                console.error('❌ Quiz generation error:', error);
+                showError('Failed to generate quiz: ' + error.message);
+            } finally {
+                if (submitButton) {
+                    submitButton.textContent = '📤 Upload & Generate Quiz';
+                    submitButton.disabled = false;
+                }
+            }
+        }
+
+        // Display quizzes with View Quiz button
+        function displayQuizzes(quizzes) {
+            const container = document.getElementById('quizzesContainer');
+            
+            if (quizzes.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>📝 No Quizzes Yet</h3>
+                        <p>Click the "Create Quiz" button to upload a lecture and create your first quiz!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const quizzesHTML = quizzes.map(quiz => {
+                // ✅ CRITICAL: Check for actual duration from database
+                console.log('🎯 Displaying quiz with duration:', {
+                    quizId: quiz._id,
+                    durationMinutes: quiz.durationMinutes,
+                    totalQuestions: quiz.totalQuestions,
+                    title: quiz.lectureTitle
+                });
+
+                // ✅ CRITICAL: Use actual duration or fallback
+                const durationMinutes = quiz.durationMinutes || 15;
+                const durationText = `${durationMinutes}min`;
+                
+                // ✅ Add duration badge based on length
+                let durationBadge = '';
+                if (durationMinutes <= 10) {
+                    durationBadge = '⚡ Quick';
+                } else if (durationMinutes <= 30) {
+                    durationBadge = '⏱️ Standard';
+                } else {
+                    durationBadge = '🕐 Extended';
+                }
+
+                return `
+                    <div class="quiz-item">
+                        <div class="quiz-title">${quiz.lectureTitle}</div>
+                        <div class="quiz-meta">
+                            📝 ${quiz.totalQuestions} questions • 
+                            ⏱️ ${durationText} duration (${durationBadge}) •
+                            📅 Created ${new Date(quiz.generatedDate).toLocaleDateString()} •
+                            🆔 ${quiz._id.toString().slice(-6)}
+                        </div>
+                        <div class="quiz-stats">
+                            <span class="quiz-stat">📊 Avg: ${quiz.averageScore || 0}%</span>
+                            <span class="quiz-stat">🎯 High: ${quiz.highestScore || 0}%</span>
+                            <span class="quiz-stat">👥 ${quiz.totalAttempts || 0} attempts</span>
+                            <span class="quiz-stat">
+                                ${quiz.isActive ? '🟢 Active' : '🔴 Inactive'}
+                            </span>
+                        </div>
+                        <div class="quiz-actions">
+                            <a href="/lecture_results/${quiz.lectureId}" class="btn btn-secondary" 
+                            style="font-size: 0.8rem; padding: 0.5rem 1rem;">
+                                📊 View Results
+                            </a>
+                            <button class="btn btn-info" onclick="viewQuiz('${quiz._id}')" 
+                                    style="font-size: 0.8rem; padding: 0.5rem 1rem;">
+                                👁️ View Quiz
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = quizzesHTML;
+        }
+
+        // Edit class form handler
         document.getElementById('editClassForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -1040,7 +1948,7 @@
             }
         });
 
-        // 🆕 NEW: Load class settings
+        // Load class settings
         async function loadClassSettings() {
             try {
                 console.log('⚙️ Loading class settings...');
@@ -1080,17 +1988,73 @@
             const urlParams = new URLSearchParams(window.location.search);
             const targetTab = urlParams.get('tab');
             
-            if (targetTab && targetTab !== 'overview') { // Skip overview redirect
+            if (targetTab && targetTab !== 'overview') {
                 console.log('🎯 Redirecting to tab:', targetTab);
                 setTimeout(() => {
                     showSectionByName(targetTab);
                 }, 100);
             }
             
-            // Load initial data (Analytics is now default)
+            // Load initial data
             loadAnalytics();
             loadQuizzes();
             loadStudents();
+
+            // Initialize selectors
+            setDuration(15);
+            setQuestions(10);
+        });
+
+        // Add Student Form Handler
+        document.getElementById('addStudentForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const enrollmentNumber = document.getElementById('enrollmentNumber').value.trim();
+            const submitButton = this.querySelector('button[type="submit"]');
+            const originalText = submitButton.textContent;
+            
+            console.log('📝 Adding student:', {
+                enrollmentNumber,
+                classId
+            });
+            
+            try {
+                submitButton.textContent = '⏳ Adding...';
+                submitButton.disabled = true;
+
+                const response = await fetch(`/api/classes/${classId}/students`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ enrollmentNumber })
+                });
+
+                console.log('📡 Response status:', response.status);
+                
+                const result = await response.json();
+                console.log('📡 Response data:', result);
+
+                if (result.success) {
+                    showSuccess(`Student ${result.student.studentName} added successfully!`);
+                    document.getElementById('addStudentForm').reset();
+                    loadStudents();
+                    loadAnalytics();
+                } else {
+                    console.error('❌ Failed to add student:', result);
+                    showError('Failed to add student: ' + result.message);
+                    
+                    if (result.debug) {
+                        console.error('🔍 Debug info:', result.debug);
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Add student error:', error);
+                showError('Network error while adding student.');
+            } finally {
+                submitButton.textContent = originalText;
+                submitButton.disabled = false;
+            }
         });
 
         // Navigation functions
@@ -1505,48 +2469,6 @@
             }
         }
 
-        // Display quizzes
-        function displayQuizzes(quizzes) {
-            const container = document.getElementById('quizzesContainer');
-            
-            if (quizzes.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <h3>📝 No Quizzes Yet</h3>
-                        <p>Upload a lecture to create your first quiz!</p>
-                    </div>
-                `;
-                return;
-            }
-
-            const quizzesHTML = quizzes.map(quiz => `
-                <div class="quiz-item">
-                    <div class="quiz-title">${quiz.lectureTitle}</div>
-                    <div class="quiz-meta">
-                        📝 ${quiz.totalQuestions} questions • 
-                        📅 Created ${new Date(quiz.generatedDate).toLocaleDateString()} •
-                        🆔 Quiz ID: ${quiz._id.toString().slice(-6)}
-                    </div>
-                    <div class="quiz-stats">
-                        <span class="quiz-stat">📊 Avg: ${quiz.averageScore || 0}%</span>
-                        <span class="quiz-stat">🎯 High: ${quiz.highestScore || 0}%</span>
-                        <span class="quiz-stat">👥 ${quiz.totalAttempts || 0} attempts</span>
-                        <span class="quiz-stat">
-                            ${quiz.isActive ? '🟢 Active' : '🔴 Inactive'}
-                        </span>
-                    </div>
-                    <div class="quiz-actions">
-                        <a href="/lecture_results/${quiz.lectureId}" class="btn btn-secondary" 
-                           style="font-size: 0.8rem; padding: 0.5rem 1rem;">
-                            📊 View Results
-                        </a>
-                    </div>
-                </div>
-            `).join('');
-
-            container.innerHTML = quizzesHTML;
-        }
-
         // Load students function
         async function loadStudents() {
             console.log('👥 Loading students for class:', classId);
@@ -1612,141 +2534,6 @@
             `).join('');
 
             container.innerHTML = studentsHTML;
-        }
-
-        // Form handlers
-        document.getElementById('createQuizForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const formData = new FormData();
-            formData.append('lectureFile', document.getElementById('lectureFile').files[0]);
-            formData.append('title', document.getElementById('lectureTitle').value);
-            formData.append('classId', classId);
-
-            const submitButton = this.querySelector('button[type="submit"]');
-            const originalText = submitButton.textContent;
-            
-            try {
-                submitButton.textContent = '📤 Uploading...';
-                submitButton.disabled = true;
-
-                console.log('📤 Uploading lecture for class:', classId);
-                
-                const response = await fetch('/upload_lecture', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    showSuccess('Lecture uploaded successfully! Starting quiz generation...');
-                    document.getElementById('createQuizForm').reset();
-                    
-                    submitButton.textContent = '🤖 Generating Quiz...';
-                    
-                    setTimeout(async () => {
-                        await generateQuizFromLecture(result.lectureId);
-                    }, 1000);
-                    
-                } else {
-                    throw new Error(result.message || 'Upload failed');
-                }
-            } catch (error) {
-                console.error('❌ Upload error:', error);
-                showError('Failed to upload lecture: ' + error.message);
-                
-                submitButton.textContent = originalText;
-                submitButton.disabled = false;
-            }
-        });
-
-        document.getElementById('addStudentForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const enrollmentNumber = document.getElementById('enrollmentNumber').value.trim();
-            const submitButton = this.querySelector('button[type="submit"]');
-            const originalText = submitButton.textContent;
-            
-            console.log('📝 Adding student:', {
-                enrollmentNumber,
-                classId
-            });
-            
-            try {
-                submitButton.textContent = '⏳ Adding...';
-                submitButton.disabled = true;
-
-                const response = await fetch(`/api/classes/${classId}/students`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ enrollmentNumber })
-                });
-
-                console.log('📡 Response status:', response.status);
-                
-                const result = await response.json();
-                console.log('📡 Response data:', result);
-
-                if (result.success) {
-                    showSuccess(`Student ${result.student.studentName} added successfully!`);
-                    document.getElementById('addStudentForm').reset();
-                    loadStudents();
-                    loadAnalytics(); // Refresh analytics
-                } else {
-                    console.error('❌ Failed to add student:', result);
-                    showError('Failed to add student: ' + result.message);
-                    
-                    if (result.debug) {
-                        console.error('🔍 Debug info:', result.debug);
-                    }
-                }
-            } catch (error) {
-                console.error('❌ Add student error:', error);
-                showError('Network error while adding student.');
-            } finally {
-                submitButton.textContent = originalText;
-                submitButton.disabled = false;
-            }
-        });
-
-        // Generate quiz from lecture
-        async function generateQuizFromLecture(lectureId) {
-            const submitButton = document.querySelector('#createQuizForm button[type="submit"]');
-            
-            try {
-                console.log('🤖 Starting quiz generation for lecture:', lectureId);
-                
-                const response = await fetch(`/generate_quiz/${lectureId}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    console.log('✅ Quiz generated successfully:', result);
-                    
-                    showSuccess(`🎉 Quiz generated successfully! ${result.totalQuestions} questions created with detailed explanations.`);
-                    
-                    loadQuizzes();
-                    loadAnalytics(); // Refresh analytics
-                    
-                } else {
-                    console.error('❌ Quiz generation failed:', result.message);
-                    showError('Quiz generation failed: ' + result.message);
-                }
-            } catch (error) {
-                console.error('❌ Quiz generation error:', error);
-                showError('Failed to generate quiz: ' + error.message);
-            } finally {
-                submitButton.textContent = '📤 Upload & Generate Quiz';
-                submitButton.disabled = false;
-            }
         }
 
         // Remove student
@@ -1844,6 +2631,19 @@
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('open');
         }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Close modals with Escape key
+            if (e.key === 'Escape') {
+                if (document.getElementById('createQuizModal').classList.contains('active')) {
+                    closeCreateQuizModal();
+                }
+                if (document.getElementById('quizViewerModal').classList.contains('active')) {
+                    closeQuizViewer();
+                }
+            }
+        });
     </script>
 </body>
 </html>
