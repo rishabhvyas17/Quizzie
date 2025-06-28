@@ -1489,11 +1489,50 @@ app.get('/lectures/:id/text', isAuthenticated, async (req, res) => {
 
 // ==================== ENHANCED QUIZ GENERATION ROUTE ====================
 
-// 🔄 UPDATED: Enhanced quiz generation with class association
+// 3. UPDATED: Server-side route with enhanced debugging (add this to index.js)
 app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
     try {
         const lectureId = req.params.id
-        console.log(`🔄 Starting ENHANCED quiz generation for lecture ID: ${lectureId}`)
+        
+        // ✅ ENHANCED: Extract and validate parameters with detailed logging
+        const { durationMinutes, questionCount } = req.body;
+        
+        console.log('🎯 QUIZ GENERATION REQUEST:', {
+            lectureId: lectureId,
+            requestBody: req.body,
+            durationMinutes: durationMinutes,
+            questionCount: questionCount,
+            typeofDuration: typeof durationMinutes,
+            typeofQuestions: typeof questionCount,
+            requestedBy: req.session.userName
+        });
+        
+        // ✅ ENHANCED: Better parameter validation
+        let customDuration = 15; // Default
+        let questionsToGenerate = 10; // Default
+        
+        if (durationMinutes !== undefined && durationMinutes !== null) {
+            const parsedDuration = parseInt(durationMinutes);
+            if (!isNaN(parsedDuration) && parsedDuration >= 2 && parsedDuration <= 60) {
+                customDuration = parsedDuration;
+            } else {
+                console.warn('⚠️ Invalid duration value, using default:', durationMinutes);
+            }
+        }
+        
+        if (questionCount !== undefined && questionCount !== null) {
+            const parsedQuestions = parseInt(questionCount);
+            if (!isNaN(parsedQuestions) && parsedQuestions >= 5 && parsedQuestions <= 30) {
+                questionsToGenerate = parsedQuestions;
+            } else {
+                console.warn('⚠️ Invalid question count, using default:', questionCount);
+            }
+        }
+        
+        console.log('✅ FINAL QUIZ SETTINGS:', {
+            validDuration: customDuration,
+            questionsToGenerate: questionsToGenerate
+        });
         
         const lecture = await lectureCollection.findById(lectureId)
 
@@ -1524,7 +1563,11 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
             lastProcessed: new Date()
         })
 
-        console.log('🤖 ENHANCED AI Quiz Generation Started for:', lecture.title)
+        console.log('🤖 ENHANCED AI Quiz Generation Started:', {
+            lectureTitle: lecture.title,
+            duration: customDuration,
+            questions: questionsToGenerate
+        });
 
         const extractedText = lecture.extractedText
 
@@ -1540,20 +1583,21 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
             })
         }
 
-        // [SAME ENHANCED PROMPT AS BEFORE - keeping it for consistency]
+        // ✅ ENHANCED: AI prompt with explicit duration and question count
         const prompt = `
         You are an expert quiz generator and educational content creator. Create a comprehensive multiple-choice quiz with detailed explanations based on the following lecture content.
 
-        **STRICT REQUIREMENTS:**
-        1. Generate exactly 10 multiple-choice questions
-        2. Each question must have exactly 4 options (A, B, C, D)
-        3. Questions should test understanding, not just memorization
-        4. Mix difficulty levels: 3 easy, 4 medium, 3 hard questions
-        5. Ensure all questions are directly based on the lecture content
-        6. Make wrong options plausible but clearly incorrect
-        7. Provide detailed explanations for EACH wrong answer option
-        8. Provide a comprehensive explanation for the correct answer
-        9. Output must be valid JSON only, no extra text
+        **CRITICAL REQUIREMENTS - MUST FOLLOW EXACTLY:**
+        1. Generate EXACTLY ${questionsToGenerate} multiple-choice questions (NO MORE, NO LESS)
+        2. Quiz duration is EXACTLY ${customDuration} minutes
+        3. Each question must have exactly 4 options (A, B, C, D)
+        4. Questions should test understanding, not just memorization
+        5. Mix difficulty levels: 30% easy, 40% medium, 30% hard questions
+        6. Ensure all questions are directly based on the lecture content
+        7. Make wrong options plausible but clearly incorrect
+        8. Provide detailed explanations for EACH wrong answer option
+        9. Provide a comprehensive explanation for the correct answer
+        10. Output must be valid JSON only, no extra text
 
         **LECTURE CONTENT:**
         ${extractedText.substring(0, 4000)}
@@ -1579,17 +1623,7 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
           }
         ]
 
-        **EXPLANATION GUIDELINES:**
-        - Each wrong answer explanation should be 2-3 sentences
-        - Reference specific concepts from the lecture material provided
-        - Explain the common misconception or mistake
-        - Provide educational guidance on the correct concept
-        - Use encouraging and educational tone
-        - The correct answer should have empty string in explanations object
-        - Use correctAnswerExplanation field for detailed explanation of correct answer
-        - All explanations must be educational and helpful for learning
-
-        Generate exactly 10 questions following this format with comprehensive explanations for each wrong answer.`
+        CRITICAL: Generate EXACTLY ${questionsToGenerate} questions for a ${customDuration}-minute quiz.`;
 
         try {
             const generationConfig = {
@@ -1642,9 +1676,19 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
                 
                 generatedQuiz = JSON.parse(quizContent)
                 
-                // Enhanced validation
+                // ✅ ENHANCED: Strict validation
                 if (!Array.isArray(generatedQuiz)) {
                     throw new Error('Response is not an array')
+                }
+                
+                // ✅ VALIDATE: Check if we got the right number of questions
+                if (generatedQuiz.length !== questionsToGenerate) {
+                    console.warn(`⚠️ AI generated ${generatedQuiz.length} questions, expected ${questionsToGenerate}`);
+                    // Adjust the array to match requested count
+                    if (generatedQuiz.length > questionsToGenerate) {
+                        generatedQuiz = generatedQuiz.slice(0, questionsToGenerate);
+                        console.log(`✂️ Trimmed to ${questionsToGenerate} questions`);
+                    }
                 }
                 
                 if (generatedQuiz.length === 0) {
@@ -1664,19 +1708,20 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
                     ['A', 'B', 'C', 'D'].forEach(option => {
                         if (option !== q.correct_answer && (!q.explanations[option] || q.explanations[option].trim() === '')) {
                             console.warn(`⚠️ Question ${index + 1}: Missing explanation for wrong answer ${option}`);
-                            // Set fallback explanation
                             q.explanations[option] = `This option is incorrect. The correct answer is ${q.correct_answer}. Please review the lecture material for more details.`;
                         }
                     });
                     
-                    // Ensure correct answer has empty explanation in explanations object
                     q.explanations[q.correct_answer] = "";
                 })
                 
                 console.log('🎯 ENHANCED quiz validated:', {
                     totalQuestions: generatedQuiz.length,
+                    requestedQuestions: questionsToGenerate,
                     hasExplanations: !!generatedQuiz[0].explanations,
-                    hasCorrectExplanation: !!generatedQuiz[0].correctAnswerExplanation
+                    hasCorrectExplanation: !!generatedQuiz[0].correctAnswerExplanation,
+                    actualDuration: customDuration,
+                    questionsGenerated: generatedQuiz.length
                 });
                 
             } catch (parseError) {
@@ -1694,22 +1739,34 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
                 })
             }
 
-            // 🔄 UPDATED: Save the ENHANCED quiz with class association
+            // ✅ ENHANCED: Save quiz with VERIFIED duration and question count
             const newQuiz = {
                 lectureId: lectureId,
                 lectureTitle: lecture.title,
+                durationMinutes: customDuration, // ✅ VERIFIED: Use actual selected duration
                 questions: generatedQuiz,
-                totalQuestions: generatedQuiz.length,
+                totalQuestions: generatedQuiz.length, // ✅ VERIFIED: Use actual generated count
                 generatedDate: new Date(),
                 createdBy: req.session.userId,
-                // 🆕 NEW: Include class information
                 classId: lecture.classId || null,
-                className: lecture.className || null
+                className: lecture.className || null,
+                isActive: true
             }
+
+            console.log('💾 SAVING QUIZ WITH VERIFIED SETTINGS:', {
+                durationMinutes: newQuiz.durationMinutes,
+                totalQuestions: newQuiz.totalQuestions,
+                questionsArrayLength: newQuiz.questions.length
+            });
 
             try {
                 const savedQuiz = await quizCollection.create(newQuiz)
-                console.log('✅ ENHANCED quiz saved to database:', savedQuiz._id)
+                console.log('✅ ENHANCED quiz saved to database:', {
+                    quizId: savedQuiz._id,
+                    savedDuration: savedQuiz.durationMinutes,
+                    savedQuestions: savedQuiz.totalQuestions,
+                    title: lecture.title
+                });
                 
                 // Update lecture status
                 await lectureCollection.findByIdAndUpdate(lectureId, {
@@ -1721,15 +1778,24 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
 
                 console.log('✅ ENHANCED quiz generation completed successfully for:', lecture.title)
 
-                // 🆕 NEW: Return enhanced response with class info
+                // ✅ ENHANCED: Return comprehensive response with verified settings
                 res.json({
                     success: true,
-                    message: `Enhanced quiz generated successfully with ${generatedQuiz.length} questions and detailed explanations!`,
+                    message: `Enhanced quiz generated successfully with ${generatedQuiz.length} questions, ${customDuration} minutes duration, and detailed explanations!`,
                     quizId: savedQuiz._id,
-                    totalQuestions: generatedQuiz.length,
+                    totalQuestions: generatedQuiz.length, // ✅ Return actual count
+                    durationMinutes: customDuration, // ✅ Return actual duration
+                    durationSeconds: customDuration * 60,
                     title: lecture.title,
                     className: lecture.className,
-                    explanationsGenerated: true
+                    explanationsGenerated: true,
+                    // Debug info for verification
+                    debug: {
+                        requestedDuration: customDuration,
+                        requestedQuestions: questionsToGenerate,
+                        actualDuration: savedQuiz.durationMinutes,
+                        actualQuestions: savedQuiz.totalQuestions
+                    }
                 })
                 
             } catch (saveError) {
@@ -1784,6 +1850,116 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
             success: false, 
             message: 'Failed to generate enhanced quiz: ' + error.message 
         })
+    }
+});
+
+
+
+app.get('/api/quiz/:quizId', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'student') {
+            return res.status(403).json({ success: false, message: 'Access denied. Only students can access quiz questions.' });
+        }
+
+        const quizId = req.params.quizId;
+        console.log('📡 QUIZ API - Loading quiz with duration:', quizId);
+        
+        // ✅ CRITICAL: Select durationMinutes explicitly
+        const quiz = await quizCollection.findById(quizId).select('questions totalQuestions lectureTitle durationMinutes classId').lean();
+
+        if (!quiz) {
+            return res.status(404).json({ success: false, message: 'Quiz not found.' });
+        }
+
+        // ✅ CRITICAL: Get actual duration from database
+        const actualDurationMinutes = quiz.durationMinutes || 15;
+        
+        console.log('📡 QUIZ API - Retrieved quiz duration:', {
+            quizId: quizId,
+            databaseDuration: quiz.durationMinutes,
+            actualDuration: actualDurationMinutes,
+            lectureTitle: quiz.lectureTitle
+        });
+
+        // Only send question text and options to students (not correct answers)
+        const questionsForClient = quiz.questions.map(q => ({
+            question: q.question,
+            options: q.options,
+        }));
+
+        const responseData = {
+            success: true,
+            quiz: {
+                _id: quiz._id,
+                lectureTitle: quiz.lectureTitle,
+                totalQuestions: quiz.totalQuestions,
+                durationMinutes: actualDurationMinutes, // ✅ CRITICAL: Send actual duration
+                durationSeconds: actualDurationMinutes * 60,
+                classId: quiz.classId || null,
+                questions: questionsForClient
+            }
+        };
+
+        console.log('📡 QUIZ API - Sending response with duration:', {
+            durationMinutes: responseData.quiz.durationMinutes,
+            durationSeconds: responseData.quiz.durationSeconds,
+            totalQuestions: responseData.quiz.totalQuestions
+        });
+
+        res.json(responseData);
+
+    } catch (error) {
+        console.error('❌ Error fetching quiz for student:', error);
+        res.status(500).json({ success: false, message: 'Failed to load quiz questions.' });
+    }
+});
+// 🆕 ENHANCED: API endpoint to get quiz duration (UPDATED VERSION)
+app.get('/api/quiz/:quizId/duration', isAuthenticated, async (req, res) => {
+    try {
+        const quizId = req.params.quizId;
+        console.log('🕒 DURATION API - Request for quiz:', quizId);
+        
+        // ✅ CRITICAL: Get duration from database
+        const quiz = await quizCollection.findById(quizId).select('durationMinutes lectureTitle classId').lean();
+        
+        if (!quiz) {
+            console.error('❌ DURATION API - Quiz not found:', quizId);
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Quiz not found.' 
+            });
+        }
+
+        // ✅ CRITICAL: Use actual database duration
+        const actualDurationMinutes = quiz.durationMinutes || 15;
+        const actualDurationSeconds = actualDurationMinutes * 60;
+
+        console.log('🕒 DURATION API - Retrieved duration:', {
+            quizId: quizId,
+            databaseDuration: quiz.durationMinutes,
+            actualDurationMinutes: actualDurationMinutes,
+            actualDurationSeconds: actualDurationSeconds,
+            lectureTitle: quiz.lectureTitle
+        });
+
+        const responseData = {
+            success: true,
+            durationMinutes: actualDurationMinutes,
+            durationSeconds: actualDurationSeconds,
+            lectureTitle: quiz.lectureTitle,
+            classId: quiz.classId || null
+        };
+
+        console.log('🕒 DURATION API - Sending response:', responseData);
+
+        res.json(responseData);
+
+    } catch (error) {
+        console.error('❌ Error fetching quiz duration:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to fetch quiz duration: ' + error.message 
+        });
     }
 });
 
@@ -2005,6 +2181,7 @@ app.get('/take_quiz/:quizId', isAuthenticated, async (req, res) => {
     }
 });
 
+// 🔄 ENHANCED: Quiz questions API with duration info
 app.get('/api/quiz/:quizId', isAuthenticated, async (req, res) => {
     try {
         if (req.session.userType !== 'student') {
@@ -2012,7 +2189,9 @@ app.get('/api/quiz/:quizId', isAuthenticated, async (req, res) => {
         }
 
         const quizId = req.params.quizId;
-        const quiz = await quizCollection.findById(quizId).select('questions totalQuestions lectureTitle').lean();
+        console.log('📡 Loading quiz questions with duration info for:', quizId);
+        
+        const quiz = await quizCollection.findById(quizId).select('questions totalQuestions lectureTitle durationMinutes classId').lean();
 
         if (!quiz) {
             return res.status(404).json({ success: false, message: 'Quiz not found.' });
@@ -2024,12 +2203,20 @@ app.get('/api/quiz/:quizId', isAuthenticated, async (req, res) => {
             options: q.options,
         }));
 
+        // 🆕 ENHANCED: Include duration information in response
+        const durationMinutes = quiz.durationMinutes || 15;
+        
+        console.log(`📡 Quiz loaded: "${quiz.lectureTitle}" - ${quiz.totalQuestions} questions, ${durationMinutes} minutes duration`);
+
         res.json({
             success: true,
             quiz: {
                 _id: quiz._id,
                 lectureTitle: quiz.lectureTitle,
                 totalQuestions: quiz.totalQuestions,
+                durationMinutes: durationMinutes, // 🆕 NEW: Include duration
+                durationSeconds: durationMinutes * 60, // 🆕 NEW: Include duration in seconds
+                classId: quiz.classId || null,
                 questions: questionsForClient
             }
         });
@@ -2039,6 +2226,7 @@ app.get('/api/quiz/:quizId', isAuthenticated, async (req, res) => {
         res.status(500).json({ success: false, message: 'Failed to load quiz questions.' });
     }
 });
+
 
 // Enhanced quiz submission (class-aware)
 app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
@@ -2244,7 +2432,7 @@ app.get('/quiz-results', isAuthenticated, (req, res) => {
 });
 
 
-// 🆕 NEW: Get detailed quiz result with all questions and answers
+// 🆕 ENHANCED: Quiz results API with duration info (for detailed results page)
 app.get('/api/quiz-result/:resultId/detailed', isAuthenticated, async (req, res) => {
     try {
         if (req.session.userType !== 'student') {
@@ -2254,7 +2442,7 @@ app.get('/api/quiz-result/:resultId/detailed', isAuthenticated, async (req, res)
         const resultId = req.params.resultId;
         const studentId = req.session.userId;
 
-        console.log('📊 Loading detailed quiz result:', {
+        console.log('📊 Loading detailed quiz result with duration info:', {
             resultId: resultId,
             studentId: studentId,
             requestedBy: req.session.userName
@@ -2322,11 +2510,16 @@ app.get('/api/quiz-result/:resultId/detailed', isAuthenticated, async (req, res)
             };
         });
 
-        // Calculate additional statistics
+        // Calculate additional statistics with duration info
         const correctAnswers = detailedQuestions.filter(q => q.isCorrect).length;
         const incorrectAnswers = detailedQuestions.length - correctAnswers;
         const accuracyRate = ((correctAnswers / detailedQuestions.length) * 100).toFixed(1);
         const averageTimePerQuestion = (quizResult.timeTakenSeconds / detailedQuestions.length).toFixed(1);
+
+        // 🆕 ENHANCED: Get actual quiz duration (with fallback)
+        const quizDurationMinutes = quiz.durationMinutes || quizResult.quizDurationMinutes || 15;
+        const quizDurationSeconds = quizDurationMinutes * 60;
+        const timeEfficiency = quizResult.timeEfficiency || Math.max(0, 100 - ((quizResult.timeTakenSeconds / quizDurationSeconds) * 100));
 
         // Get class average for comparison
         let classAverage = null;
@@ -2335,7 +2528,7 @@ app.get('/api/quiz-result/:resultId/detailed', isAuthenticated, async (req, res)
                 classId: quizResult.classId
             }).lean();
             
-            if (classResults.length > 1) { // More than just this student
+            if (classResults.length > 1) {
                 const otherResults = classResults.filter(r => r.studentId.toString() !== studentId.toString());
                 if (otherResults.length > 0) {
                     classAverage = (otherResults.reduce((sum, r) => sum + r.percentage, 0) / otherResults.length).toFixed(1);
@@ -2343,7 +2536,7 @@ app.get('/api/quiz-result/:resultId/detailed', isAuthenticated, async (req, res)
             }
         }
 
-        console.log(`✅ Detailed quiz result loaded: ${quiz.lectureTitle} - ${quizResult.percentage}%`);
+        console.log(`✅ Detailed quiz result loaded: ${quiz.lectureTitle} - ${quizResult.percentage}% (${quizDurationMinutes}min quiz)`);
 
         res.json({
             success: true,
@@ -2357,7 +2550,11 @@ app.get('/api/quiz-result/:resultId/detailed', isAuthenticated, async (req, res)
                     percentage: quizResult.percentage,
                     timeTakenSeconds: quizResult.timeTakenSeconds,
                     submissionDate: quizResult.submissionDate,
-                    studentName: quizResult.studentName
+                    studentName: quizResult.studentName,
+                    // 🆕 ENHANCED: Duration information
+                    quizDurationMinutes: quizDurationMinutes,
+                    quizDurationSeconds: quizDurationSeconds,
+                    timeEfficiency: timeEfficiency
                 },
                 quizStats: {
                     correctAnswers: correctAnswers,
@@ -2367,7 +2564,10 @@ app.get('/api/quiz-result/:resultId/detailed', isAuthenticated, async (req, res)
                     classAverage: classAverage ? parseFloat(classAverage) : null,
                     performanceVsClass: classAverage ? 
                         (quizResult.percentage > parseFloat(classAverage) ? 'above' : 
-                         quizResult.percentage < parseFloat(classAverage) ? 'below' : 'equal') : null
+                         quizResult.percentage < parseFloat(classAverage) ? 'below' : 'equal') : null,
+                    // 🆕 ENHANCED: Duration-based stats
+                    timeEfficiencyPercentage: parseFloat(timeEfficiency.toFixed(1)),
+                    averageTimeVsAllocated: `${Math.round((quizResult.timeTakenSeconds / quizDurationSeconds) * 100)}%`
                 },
                 detailedQuestions: detailedQuestions,
                 classInfo: classInfo,
@@ -2826,13 +3026,18 @@ app.get('/api/teacher/class/:classId/quizzes', isAuthenticated, async (req, res)
             });
         }
 
-        // Get all quizzes for this class
+        // ✅ CRITICAL: Select durationMinutes explicitly
         const quizzes = await quizCollection.find({
             classId: classId,
             isActive: true
         })
+        .select('lectureTitle totalQuestions durationMinutes generatedDate isActive lectureId') // ✅ Include durationMinutes
         .sort({ generatedDate: -1 })
         .lean();
+
+        console.log('📝 TEACHER QUIZ API - Found quizzes with durations:', 
+            quizzes.map(q => ({ id: q._id, duration: q.durationMinutes, questions: q.totalQuestions }))
+        );
 
         // Enhance quiz data with performance stats
         const enhancedQuizzes = await Promise.all(
@@ -2846,6 +3051,7 @@ app.get('/api/teacher/class/:classId/quizzes', isAuthenticated, async (req, res)
                     lectureId: quiz.lectureId,
                     lectureTitle: quiz.lectureTitle,
                     totalQuestions: quiz.totalQuestions,
+                    durationMinutes: quiz.durationMinutes || 15, // ✅ CRITICAL: Include duration
                     generatedDate: quiz.generatedDate,
                     isActive: quiz.isActive,
                     totalAttempts: quizResults.length,
@@ -2859,7 +3065,9 @@ app.get('/api/teacher/class/:classId/quizzes', isAuthenticated, async (req, res)
             })
         );
 
-        console.log(`📝 Found ${enhancedQuizzes.length} quizzes for class ${classDoc.name}`);
+        console.log(`📝 Enhanced quizzes with durations:`, 
+            enhancedQuizzes.map(q => ({ title: q.lectureTitle, duration: q.durationMinutes }))
+        );
 
         res.json({
             success: true,
@@ -3176,6 +3384,57 @@ app.get('/api/student/class/:classId/all-quizzes', isAuthenticated, async (req, 
         res.status(500).json({
             success: false,
             message: 'Failed to load quizzes: ' + error.message
+        });
+    }
+});
+
+// 🆕 NEW: API endpoint for teachers to view full quiz content
+app.get('/api/teacher/quiz/:quizId/full', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'teacher') {
+            return res.status(403).json({ success: false, message: 'Access denied. Teachers only.' });
+        }
+
+        const quizId = req.params.quizId;
+        const teacherId = req.session.userId;
+
+        // Get quiz with full details including explanations
+        const quiz = await quizCollection.findById(quizId).lean();
+        
+        if (!quiz) {
+            return res.status(404).json({
+                success: false,
+                message: 'Quiz not found.'
+            });
+        }
+
+        // Verify teacher owns this quiz
+        if (!quiz.createdBy.equals(teacherId)) {
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied. You can only view your own quizzes.'
+            });
+        }
+
+        console.log(`👁️ Teacher viewing quiz: ${quiz.lectureTitle}`);
+
+        res.json({
+            success: true,
+            quiz: {
+                _id: quiz._id,
+                lectureTitle: quiz.lectureTitle,
+                totalQuestions: quiz.totalQuestions,
+                durationMinutes: quiz.durationMinutes || 15,
+                questions: quiz.questions, // Full questions with correct answers and explanations
+                generatedDate: quiz.generatedDate
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error fetching full quiz:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch quiz: ' + error.message
         });
     }
 });
@@ -4993,15 +5252,284 @@ setInterval(cleanupOldQuizResults, 24 * 60 * 60 * 1000); // Every 24 hours
 setInterval(cleanupOldExplanations, 16 * 24 * 60 * 60 * 1000); // Every 16 days
 
 
-// 🆕 Helper function for time formatting (if not already defined)
+// 🆕 ENHANCED: Helper function for formatting time with better accuracy
 function formatTime(seconds) {
-    if (typeof seconds !== 'number' || isNaN(seconds)) return '0:00';
-    const minutes = Math.floor(seconds / 60);
+    if (typeof seconds !== 'number' || isNaN(seconds) || seconds < 0) return '0:00';
+    
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
     const secs = Math.floor(seconds % 60);
-    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+    
+    if (hours > 0) {
+        return `${hours}h ${minutes}m ${secs}s`;
+    } else {
+        return `${minutes}m ${secs}s`;
+    }
+}
+
+// 🆕 NEW: Helper function to calculate time efficiency
+function calculateTimeEfficiency(timeTakenSeconds, quizDurationSeconds) {
+    if (!timeTakenSeconds || !quizDurationSeconds || quizDurationSeconds <= 0) return 0;
+    
+    // Calculate efficiency: faster completion = higher efficiency
+    // But don't penalize too much for using more time
+    const timeRatio = timeTakenSeconds / quizDurationSeconds;
+    
+    if (timeRatio <= 0.5) {
+        // Very fast completion - 100% efficiency
+        return 100;
+    } else if (timeRatio <= 1.0) {
+        // Normal completion - scale from 100% to 60%
+        return Math.round(100 - (timeRatio - 0.5) * 80);
+    } else {
+        // Overtime - scale down further but don't go below 10%
+        return Math.max(10, Math.round(60 - (timeRatio - 1.0) * 50));
+    }
+}
+
+// 🆕 NEW: Helper function to calculate quiz statistics with duration
+function calculateQuizStats(results, quizDurationMinutes = 15) {
+    if (!results || results.length === 0) {
+        return {
+            totalAttempts: 0,
+            averageScore: 0,
+            averageTime: 0,
+            averageEfficiency: 0,
+            fastestCompletion: 0,
+            slowestCompletion: 0
+        };
+    }
+    
+    const quizDurationSeconds = quizDurationMinutes * 60;
+    
+    const stats = {
+        totalAttempts: results.length,
+        averageScore: (results.reduce((sum, r) => sum + r.percentage, 0) / results.length).toFixed(1),
+        averageTime: Math.round(results.reduce((sum, r) => sum + r.timeTakenSeconds, 0) / results.length),
+        fastestCompletion: Math.min(...results.map(r => r.timeTakenSeconds)),
+        slowestCompletion: Math.max(...results.map(r => r.timeTakenSeconds))
+    };
+
+    
+    
+    // Calculate average efficiency
+    const efficiencies = results.map(r => 
+        calculateTimeEfficiency(r.timeTakenSeconds, quizDurationSeconds)
+    );
+    stats.averageEfficiency = (efficiencies.reduce((sum, eff) => sum + eff, 0) / efficiencies.length).toFixed(1);
+    
+    return stats;
+}
+
+// 🆕 NEW: Helper function to create duration badge text
+function createDurationBadge(durationMinutes) {
+    if (durationMinutes <= 10) {
+        return `⚡ ${durationMinutes}min Quick Quiz`;
+    } else if (durationMinutes <= 30) {
+        return `⏱️ ${durationMinutes}min Standard Quiz`;
+    } else {
+        return `🕐 ${durationMinutes}min Extended Quiz`;
+    }
+}
+
+// 🆕 NEW: Helper function to get quiz duration from database with fallback
+async function getQuizDuration(quizId) {
+    try {
+        const quiz = await quizCollection.findById(quizId).select('durationMinutes').lean();
+        return quiz ? (quiz.durationMinutes || 15) : 15;
+    } catch (error) {
+        console.error('❌ Error fetching quiz duration:', error);
+        return 15; // Fallback to 15 minutes
+    }
+}
+
+// 🆕 NEW: Enhanced quiz validation with duration check
+async function validateQuizAccess(quizId, studentId, req) {
+    try {
+        // Get quiz details including duration
+        const quiz = await quizCollection.findById(quizId).select('durationMinutes classId lectureTitle isActive').lean();
+        
+        if (!quiz) {
+            return { valid: false, message: 'Quiz not found.' };
+        }
+        
+        if (!quiz.isActive) {
+            return { valid: false, message: 'This quiz is no longer active.' };
+        }
+        
+        // Check if student already took this quiz
+        const existingResult = await quizResultCollection.findOne({
+            quizId: quizId,
+            studentId: studentId
+        });
+        
+        if (existingResult) {
+            return { 
+                valid: false, 
+                message: 'You have already completed this quiz.',
+                resultId: existingResult._id
+            };
+        }
+        
+        // Check class enrollment if quiz belongs to a class
+        if (quiz.classId) {
+            const enrollment = await classStudentCollection.findOne({
+                studentId: studentId,
+                classId: quiz.classId,
+                isActive: true
+            });
+            
+            if (!enrollment) {
+                return { 
+                    valid: false, 
+                    message: 'You are not enrolled in the class for this quiz.' 
+                };
+            }
+        }
+        
+        return {
+            valid: true,
+            quiz: {
+                ...quiz,
+                durationMinutes: quiz.durationMinutes || 15,
+                durationSeconds: (quiz.durationMinutes || 15) * 60
+            }
+        };
+        
+    } catch (error) {
+        console.error('❌ Error validating quiz access:', error);
+        return { valid: false, message: 'Error validating quiz access.' };
+    }
+}
+
+// 🆕 NEW: Helper function to validate question count
+function validateQuestionCount(questionCount) {
+    const count = parseInt(questionCount);
+    if (isNaN(count)) return 10; // Default fallback
+    
+    return Math.max(5, Math.min(30, count)); // Clamp between 5-30 questions
 }
 
 
+// 🆕 NEW: Helper function to validate quiz duration
+function validateQuizDuration(durationMinutes) {
+    const duration = parseInt(durationMinutes);
+    if (isNaN(duration)) return 15; // Default fallback
+    
+    return Math.max(2, Math.min(60, duration)); // Clamp between 2-60 minutes
+}
+
+// 🆕 NEW: Helper to update quiz metadata after completion
+async function updateQuizMetadata(quizId, newResult) {
+    try {
+        // Get all results for this quiz
+        const allResults = await quizResultCollection.find({ quizId: quizId }).lean();
+        
+        if (allResults.length === 0) return;
+        
+        // Calculate updated stats
+        const totalAttempts = allResults.length;
+        const averageScore = allResults.reduce((sum, r) => sum + r.percentage, 0) / totalAttempts;
+        const highestScore = Math.max(...allResults.map(r => r.percentage));
+        
+        // Update quiz with new stats
+        await quizCollection.findByIdAndUpdate(quizId, {
+            totalAttempts: totalAttempts,
+            averageScore: parseFloat(averageScore.toFixed(1)),
+            highestScore: parseFloat(highestScore.toFixed(1))
+        });
+        
+        console.log(`📊 Quiz metadata updated: ${totalAttempts} attempts, avg: ${averageScore.toFixed(1)}%`);
+        
+    } catch (error) {
+        console.error('❌ Error updating quiz metadata:', error);
+    }
+}
+
+// 🆕 NEW: Helper to get class context for quiz
+async function getQuizClassContext(quizId) {
+    try {
+        const quiz = await quizCollection.findById(quizId).select('classId className lectureTitle').lean();
+        
+        if (!quiz) return null;
+        
+        if (quiz.classId) {
+            const classInfo = await classCollection.findById(quiz.classId).select('name subject teacherId').lean();
+            
+            return {
+                hasClass: true,
+                classId: quiz.classId,
+                className: classInfo ? classInfo.name : quiz.className,
+                classSubject: classInfo ? classInfo.subject : null,
+                quizTitle: quiz.lectureTitle
+            };
+        }
+        
+        return {
+            hasClass: false,
+            quizTitle: quiz.lectureTitle
+        };
+        
+    } catch (error) {
+        console.error('❌ Error getting quiz class context:', error);
+        return null;
+    }
+}
+
+// 🆕 NEW: Enhanced error response helper with duration context
+function sendQuizError(res, message, statusCode = 400, context = {}) {
+    console.error('❌ Quiz Error:', message, context);
+    
+    return res.status(statusCode).json({
+        success: false,
+        message: message,
+        timestamp: new Date().toISOString(),
+        context: context
+    });
+}
+
+// 🆕 NEW: Helper to migrate old quiz results (if needed for backward compatibility)
+async function migrateOldQuizResults() {
+    try {
+        const resultsWithoutDuration = await quizResultCollection.find({
+            quizDurationMinutes: { $exists: false }
+        }).lean();
+        
+        if (resultsWithoutDuration.length === 0) {
+            console.log('✅ All quiz results already have duration information');
+            return;
+        }
+        
+        console.log(`🔄 Migrating ${resultsWithoutDuration.length} old quiz results...`);
+        
+        for (const result of resultsWithoutDuration) {
+            try {
+                // Get the quiz duration
+                const quiz = await quizCollection.findById(result.quizId).select('durationMinutes').lean();
+                const durationMinutes = quiz ? (quiz.durationMinutes || 15) : 15;
+                const durationSeconds = durationMinutes * 60;
+                
+                // Calculate time efficiency
+                const timeEfficiency = calculateTimeEfficiency(result.timeTakenSeconds, durationSeconds);
+                
+                // Update the result
+                await quizResultCollection.findByIdAndUpdate(result._id, {
+                    quizDurationMinutes: durationMinutes,
+                    quizDurationSeconds: durationSeconds,
+                    timeEfficiency: timeEfficiency
+                });
+                
+            } catch (error) {
+                console.error(`❌ Error migrating result ${result._id}:`, error);
+            }
+        }
+        
+        console.log('✅ Migration completed');
+        
+    } catch (error) {
+        console.error('❌ Error during migration:', error);
+    }
+}
 
 // 🆕 NEW: Helper function to calculate time ago
 function getTimeAgo(date) {
@@ -5079,6 +5607,22 @@ function getEmptyAnalyticsData() {
     }
   };
 }
+
+// Export helper functions (add to your existing exports if any)
+module.exports = {
+    formatTime,
+    calculateTimeEfficiency,
+    validateQuizDuration,
+    validateQuestionCount,
+    getQuizDuration,
+    createDurationBadge,
+    calculateQuizStats,
+    validateQuizAccess,
+    updateQuizMetadata,
+    getQuizClassContext,
+    sendQuizError,
+    migrateOldQuizResults
+};
 
 function formatTime(seconds) {
   const totalSeconds = safeNumber(seconds, 0);
