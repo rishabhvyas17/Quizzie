@@ -218,7 +218,7 @@ const lectureSchema = new mongoose.Schema({
 });
 
 
-// For Quizzes generated from lectures
+// 🔄 ENSURE: Quiz Schema has proper duration field (your existing schema should already have this)
 
 const quizSchema = new mongoose.Schema({
     lectureId: {
@@ -230,11 +230,19 @@ const quizSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    // 🆕 NEW: Class association
+    // 🆕 CRITICAL: Duration field (ensure this is exactly as shown)
+    durationMinutes: {
+        type: Number,
+        required: true,
+        default: 15,  // Default 15 minutes
+        min: 2,       // Minimum 2 minutes
+        max: 60       // Maximum 60 minutes
+    },
+    // Class association
     classId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'ClassCollection',
-        required: false // Optional for backward compatibility
+        required: false
     },
     className: {
         type: String,
@@ -286,7 +294,7 @@ const quizSchema = new mongoose.Schema({
         ref: 'TeacherCollection',
         required: true
     },
-    // 📊 Performance stats (computed)
+    // Performance stats (computed)
     totalAttempts: {
         type: Number,
         default: 0
@@ -301,7 +309,7 @@ const quizSchema = new mongoose.Schema({
     }
 });
 
-// 🔄 UPDATED: Quiz Results Schema - Now supports classes
+// 🔄 UPDATED: Quiz Results Schema - Now supports duration tracking
 const quizResultSchema = new mongoose.Schema({
     quizId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -313,7 +321,7 @@ const quizResultSchema = new mongoose.Schema({
         ref: 'LectureCollection',
         required: true
     },
-    // 🆕 NEW: Class association
+    // Class association
     classId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'ClassCollection',
@@ -351,6 +359,25 @@ const quizResultSchema = new mongoose.Schema({
     submissionDate: {
         type: Date,
         default: Date.now
+    },
+    // 🆕 NEW: Duration tracking fields
+    quizDurationMinutes: {
+        type: Number,
+        required: false, // Optional for backward compatibility
+        min: 2,
+        max: 120
+    },
+    quizDurationSeconds: {
+        type: Number,
+        required: false, // Optional for backward compatibility
+        min: 120, // 2 minutes minimum
+        max: 7200 // 2 hours maximum
+    },
+    timeEfficiency: {
+        type: Number,
+        required: false, // Optional for backward compatibility
+        min: 0,
+        max: 100
     },
     answers: [{
         questionIndex: {
@@ -569,4 +596,3 @@ module.exports = {
     classCollection,
     classStudentCollection
 }
-
