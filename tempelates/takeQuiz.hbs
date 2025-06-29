@@ -35,6 +35,33 @@
             padding: 0 1rem;
         }
 
+        /* Security Monitor Badge */
+        .security-monitor {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+            animation: securityPulse 2s infinite;
+        }
+
+        @keyframes securityPulse {
+            0%, 100% { box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2); }
+            50% { box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4); }
+        }
+
+        .violation-counter {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-weight: bold;
+        }
+
         /* Breadcrumb Navigation */
         .breadcrumb {
             display: flex;
@@ -135,6 +162,48 @@
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.7; }
+        }
+
+        /* Security Alert Banner */
+        .security-alert {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            animation: slideDown 0.5s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .security-alert-icon {
+            background: #f59e0b;
+            color: white;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            flex-shrink: 0;
+        }
+
+        .security-alert-text {
+            color: #92400e;
+            font-weight: 500;
         }
 
         /* Main Content */
@@ -383,6 +452,152 @@
             background: #e2e8f0;
         }
 
+        /* Warning Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .warning-modal {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            animation: modalSlideUp 0.3s ease-out;
+            position: relative;
+        }
+
+        @keyframes modalSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-icon {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            border-radius: 50%;
+            width: 64px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin: 0 auto 1rem;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-subtitle {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .modal-content {
+            margin-bottom: 2rem;
+        }
+
+        .warning-text {
+            color: #374151;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        .violation-status {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .violation-icon {
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+        }
+
+        .violation-details {
+            flex: 1;
+        }
+
+        .violation-count-text {
+            font-weight: 600;
+            color: #dc2626;
+            margin-bottom: 0.25rem;
+        }
+
+        .violation-warning {
+            font-size: 0.85rem;
+            color: #7f1d1d;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .modal-btn {
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            font-size: 0.95rem;
+        }
+
+        .modal-btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .modal-btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+
         /* Loading and Result States */
         .loading-container {
             text-align: center;
@@ -477,7 +692,13 @@
 
             .timer-container {
                 width: 100%;
-                justify-content: center;
+                justify-content: space-between;
+                flex-direction: row-reverse;
+            }
+
+            .security-monitor {
+                font-size: 0.75rem;
+                padding: 0.4rem 0.8rem;
             }
 
             .main-content {
@@ -509,6 +730,19 @@
 
             .breadcrumb {
                 font-size: 0.8rem;
+            }
+
+            .warning-modal {
+                padding: 1.5rem;
+                margin: 1rem;
+            }
+
+            .modal-actions {
+                flex-direction: column;
+            }
+
+            .modal-btn {
+                width: 100%;
             }
         }
 
@@ -553,9 +787,21 @@
             color: #dc2626;
             border: 1px solid #fecaca;
         }
+
+        /* Security Features */
+        .quiz-secured {
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+
+        .no-context-menu {
+            pointer-events: none;
+        }
     </style>
 </head>
-<body>
+<body class="quiz-secured">
     <!-- Header -->
     <header class="quiz-header">
         <div class="header-content">
@@ -587,6 +833,11 @@
                     </div>
                 </div>
                 <div class="timer-container">
+                    <!-- Security Monitor Badge -->
+                    <div class="security-monitor" id="securityMonitor">
+                        🛡️ Monitoring Active
+                        <span class="violation-counter" id="violationCounter">0/2</span>
+                    </div>
                     <div class="timer" id="timer">--:--</div>
                 </div>
             </div>
@@ -595,6 +846,14 @@
 
     <!-- Main Content -->
     <main class="main-content">
+        <!-- Security Alert Banner -->
+        <div class="security-alert" id="securityAlert">
+            <div class="security-alert-icon">⚠️</div>
+            <div class="security-alert-text">
+                <strong>Enhanced Anti-Cheating System Active:</strong> Tab switching, window switching, and app switching are monitored. You get 1 warning, then auto-submit on 2nd violation.
+            </div>
+        </div>
+
         <!-- Class Context Alert -->
         {{#if quiz.className}}
         <div class="class-context">
@@ -662,7 +921,53 @@
         </div>
     </main>
 
+    <!-- Warning Modal -->
+    <div id="warningModal" class="modal-overlay" style="display: none;">
+        <div class="warning-modal">
+            <div class="modal-header">
+                <div class="modal-icon">⚠️</div>
+                <h2 class="modal-title">Suspicious Activity Detected!</h2>
+                <p class="modal-subtitle">Enhanced Anti-Cheating System Alert</p>
+            </div>
+            
+            <div class="modal-content">
+                <p class="warning-text">
+                    You switched tabs, windows, or applications. This behavior is monitored to prevent cheating.
+                </p>
+                
+                <div class="violation-status">
+                    <div class="violation-icon">🚨</div>
+                    <div class="violation-details">
+                        <div class="violation-count-text" id="modalViolationText">Violation 1 of 2</div>
+                        <div class="violation-warning" id="modalWarningText">Next violation will auto-submit your quiz!</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-primary" onclick="closeWarningModal()">
+                    I Understand - Continue Quiz
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // Enhanced Anti-Cheating System Variables
+        let violationCount = 0;
+        let isTabHidden = false;
+        let graceTimer = null;
+        let isQuizSubmitted = false;
+        const GRACE_PERIOD = 5000; // 5 seconds grace period
+        const MAX_VIOLATIONS = 2;
+        
+        // Enhanced detection variables
+        let lastViolationTime = 0;
+        let isDetectionActive = true;
+        let focusCheckInterval = null;
+        let mouseInsideWindow = true;
+        let isWindowFocused = true;
+
         // Quiz Data
         let quizData = null;
         let currentQuestionIndex = 0;
@@ -685,6 +990,299 @@
 
         console.log('🏫 Enhanced class context:', classContext);
         console.log('🧭 Enhanced navigation context:', navigationContext);
+        console.log('🛡️ Enhanced Anti-cheating system initialized');
+
+        // Enhanced initialization
+        function initializeAntiCheating() {
+            console.log('🛡️ Initializing ENHANCED anti-cheating system...');
+            
+            // Primary: Tab Visibility Detection
+            document.addEventListener('visibilitychange', handleVisibilityChange);
+            
+            // Enhanced: Window Focus Detection (for app switches)
+            window.addEventListener('blur', handleWindowBlur);
+            window.addEventListener('focus', handleWindowFocus);
+            
+            // Enhanced: Mouse Leave Detection (for window switches)
+            document.addEventListener('mouseleave', handleMouseLeave);
+            document.addEventListener('mouseenter', handleMouseEnter);
+            
+            // Enhanced: Keyboard Focus Detection
+            window.addEventListener('keydown', handleKeyboardActivity);
+            
+            // Enhanced: Page Focus Monitoring (backup detection)
+            startFocusMonitoring();
+            
+            // Disable common cheating methods
+            disableCheatingMethods();
+            
+            console.log('✅ ENHANCED anti-cheating system active - detecting tabs, windows, and apps');
+        }
+
+        // Handle tab visibility changes
+        function handleVisibilityChange() {
+            if (isQuizSubmitted || !isDetectionActive) return;
+            
+            if (document.hidden) {
+                console.log('🔍 TAB SWITCH: Tab became hidden');
+                triggerSuspiciousActivity('tab_switch');
+            } else {
+                console.log('👁️ TAB RETURN: Tab became visible');
+                handleActivityReturn();
+            }
+        }
+
+        // Handle window focus changes (for app switches)
+        function handleWindowBlur() {
+            if (isQuizSubmitted || !isDetectionActive) return;
+            
+            isWindowFocused = false;
+            
+            // Check if it's actually a window switch (not just a tab switch)
+            setTimeout(() => {
+                if (!isWindowFocused && !document.hidden) {
+                    console.log('🔍 WINDOW SWITCH: Browser window lost focus (app switch detected)');
+                    triggerSuspiciousActivity('window_blur');
+                }
+            }, 200); // Small delay to differentiate from tab switches
+        }
+
+        function handleWindowFocus() {
+            if (isQuizSubmitted || !isDetectionActive) return;
+            
+            isWindowFocused = true;
+            console.log('👁️ WINDOW RETURN: Browser window gained focus');
+            handleActivityReturn();
+        }
+
+        // Mouse leave detection (when mouse goes outside browser)
+        function handleMouseLeave() {
+            if (isQuizSubmitted || !isDetectionActive) return;
+            mouseInsideWindow = false;
+        }
+
+        function handleMouseEnter() {
+            mouseInsideWindow = true;
+        }
+
+        // Keyboard activity detection
+        function handleKeyboardActivity(e) {
+            if (isQuizSubmitted || !isDetectionActive) return;
+            
+            // Detect Alt+Tab (Windows) or Cmd+Tab (Mac) - task switcher
+            if ((e.altKey && e.keyCode === 9) || (e.metaKey && e.keyCode === 9)) {
+                e.preventDefault(); // Try to prevent it
+                console.log('🔍 TASK SWITCHER: Alt+Tab or Cmd+Tab detected');
+                triggerSuspiciousActivity('task_switcher');
+            }
+            
+            // Detect Windows key (opens Start menu)
+            if (e.keyCode === 91 || e.keyCode === 92) {
+                console.log('🔍 WINDOWS KEY: Start menu access detected');
+                triggerSuspiciousActivity('windows_key');
+            }
+        }
+
+        // Continuous focus monitoring (backup detection)
+        function startFocusMonitoring() {
+            focusCheckInterval = setInterval(() => {
+                if (isQuizSubmitted || !isDetectionActive) return;
+                
+                const hasDocumentFocus = document.hasFocus();
+                const hasWindowFocus = document.visibilityState === 'visible';
+                
+                // If page doesn't have focus and it's not a known tab switch
+                if (!hasDocumentFocus && hasWindowFocus && isWindowFocused) {
+                    console.log('🔍 FOCUS MONITOR: Document lost focus (possible app switch)');
+                    triggerSuspiciousActivity('focus_loss');
+                }
+            }, 2000); // Check every 2 seconds
+        }
+
+        // Unified suspicious activity trigger
+        function triggerSuspiciousActivity(activityType) {
+            const now = Date.now();
+            
+            // Prevent duplicate violations within 3 seconds
+            if (now - lastViolationTime < 3000) {
+                console.log(`⚠️ Duplicate ${activityType} violation prevented (too soon)`);
+                return;
+            }
+            
+            console.log(`🔍 SUSPICIOUS ACTIVITY: ${activityType} detected - starting grace timer`);
+            isTabHidden = true;
+            
+            // Start grace period timer
+            graceTimer = setTimeout(() => {
+                if (isTabHidden && !isQuizSubmitted) {
+                    lastViolationTime = Date.now();
+                    recordViolation(activityType);
+                }
+            }, GRACE_PERIOD);
+        }
+
+        // Handle return from suspicious activity
+        function handleActivityReturn() {
+            console.log('👁️ ACTIVITY RETURN: Student returned to quiz');
+            isTabHidden = false;
+            
+            // Clear grace timer if student returned quickly
+            if (graceTimer) {
+                clearTimeout(graceTimer);
+                graceTimer = null;
+                console.log('✅ Grace period - no violation recorded');
+            }
+        }
+
+        // Record violation with activity type
+        function recordViolation(activityType = 'unknown') {
+            violationCount++;
+            console.log(`🚨 VIOLATION DETECTED! Type: ${activityType}, Count: ${violationCount}/${MAX_VIOLATIONS}`);
+            
+            // Enhanced logging with activity type
+            console.log('🔍 Enhanced Debug - Violation details:', {
+                violationCount: violationCount,
+                maxViolations: MAX_VIOLATIONS,
+                activityType: activityType,
+                willShowWarning: violationCount === 1,
+                willAutoSubmit: violationCount >= MAX_VIOLATIONS,
+                isQuizSubmitted: isQuizSubmitted,
+                timestamp: new Date().toISOString()
+            });
+            
+            // Update UI
+            updateSecurityUI();
+            
+            if (violationCount === 1) {
+                console.log('⚠️ First violation - showing warning modal');
+                showWarningModal(activityType);
+            } else if (violationCount >= MAX_VIOLATIONS) {
+                console.log('🚨 Multiple violations - auto-submitting');
+                autoSubmitForViolation();
+            }
+        }
+
+        // Update security UI
+        function updateSecurityUI() {
+            const violationCounter = document.getElementById('violationCounter');
+            const securityMonitor = document.getElementById('securityMonitor');
+            
+            violationCounter.textContent = `${violationCount}/${MAX_VIOLATIONS}`;
+            
+            // Change color based on violation count
+            if (violationCount === 1) {
+                securityMonitor.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
+            } else if (violationCount >= MAX_VIOLATIONS) {
+                securityMonitor.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+            }
+        }
+
+        // Show warning modal with activity type
+        function showWarningModal(activityType = 'tab switching') {
+            const modal = document.getElementById('warningModal');
+            const violationText = document.getElementById('modalViolationText');
+            const warningText = document.getElementById('modalWarningText');
+            
+            // Enhanced warning message based on activity type
+            const activityMessages = {
+                'tab_switch': 'Tab switching detected',
+                'window_blur': 'Window/Application switching detected',
+                'task_switcher': 'Alt+Tab task switcher usage detected',
+                'windows_key': 'Windows key / Start menu access detected',
+                'focus_loss': 'Browser focus loss detected',
+                'unknown': 'Suspicious activity detected'
+            };
+            
+            const activityMessage = activityMessages[activityType] || activityMessages['unknown'];
+            
+            violationText.textContent = `${activityMessage} - Violation ${violationCount} of ${MAX_VIOLATIONS}`;
+            
+            if (violationCount === 1) {
+                warningText.textContent = 'Next violation will auto-submit your quiz!';
+            } else {
+                warningText.textContent = 'This is your final warning!';
+            }
+            
+            modal.style.display = 'flex';
+            console.log(`⚠️ Warning modal displayed for ${activityType} - NOT submitting quiz`);
+        }
+
+        function closeWarningModal() {
+            const modal = document.getElementById('warningModal');
+            modal.style.display = 'none';
+            console.log('✅ Warning modal closed - student can continue quiz');
+        }
+
+        function autoSubmitForViolation() {
+            console.log('🚨 AUTO-SUBMITTING due to multiple violations');
+            
+            // Disable further detection to prevent more violations
+            isDetectionActive = false;
+            
+            // Clean up monitoring
+            if (focusCheckInterval) {
+                clearInterval(focusCheckInterval);
+                focusCheckInterval = null;
+            }
+            
+            // Show alert
+            alert('🚨 Multiple suspicious activities detected!\n\nPossible activities: Tab switching, app switching, or task switching.\n\nYour quiz is being submitted automatically due to violation of anti-cheating policy.');
+            
+            // Force submit quiz
+            isQuizSubmitted = true;
+            submitQuiz();
+        }
+
+        // Enhanced cheating prevention
+        function disableCheatingMethods() {
+            // Disable right-click context menu
+            document.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                console.log('🚫 Right-click disabled');
+            });
+            
+            // Disable common keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                // Disable F12, Ctrl+Shift+I, Ctrl+U, Ctrl+Shift+C
+                if (e.keyCode === 123 || // F12
+                    (e.ctrlKey && e.shiftKey && e.keyCode === 73) || // Ctrl+Shift+I
+                    (e.ctrlKey && e.keyCode === 85) || // Ctrl+U
+                    (e.ctrlKey && e.shiftKey && e.keyCode === 67)) { // Ctrl+Shift+C
+                    e.preventDefault();
+                    console.log('🚫 Developer tools shortcut blocked');
+                }
+                
+                // Disable Ctrl+A (select all), Ctrl+C (copy), Ctrl+V (paste)
+                if (e.ctrlKey && (e.keyCode === 65 || e.keyCode === 67 || e.keyCode === 86)) {
+                    e.preventDefault();
+                    console.log('🚫 Copy/Paste blocked');
+                }
+            });
+            
+            // Disable text selection
+            document.addEventListener('selectstart', function(e) {
+                if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                    e.preventDefault();
+                }
+            });
+        }
+
+        // Debug function for testing
+        window.debugEnhancedAntiCheat = function() {
+            console.log('🔍 Enhanced Anti-cheat debug info:', {
+                violationCount: violationCount,
+                maxViolations: MAX_VIOLATIONS,
+                isQuizSubmitted: isQuizSubmitted,
+                isTabHidden: isTabHidden,
+                isWindowFocused: isWindowFocused,
+                mouseInsideWindow: mouseInsideWindow,
+                graceTimer: graceTimer ? 'Active' : 'Inactive',
+                focusMonitoring: focusCheckInterval ? 'Active' : 'Inactive',
+                detectionActive: isDetectionActive,
+                documentHasFocus: document.hasFocus(),
+                documentVisibility: document.visibilityState
+            });
+        };
 
         // Utility function to format time
         function formatTime(seconds) {
@@ -695,11 +1293,16 @@
 
         // Initialize quiz when page loads
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🎯 Initializing enhanced class-aware quiz with ID:', quizId);
+            console.log('🎯 Initializing enhanced anti-cheating quiz with ID:', quizId);
+            
+            // Initialize anti-cheating system first
+            initializeAntiCheating();
+            
+            // Then load quiz data
             loadQuizData();
         });
 
-        // 🆕 ENHANCED: Load quiz duration first, then quiz data
+        // Load quiz duration first, then quiz data
         async function loadQuizData() {
             try {
                 console.log('📡 Fetching quiz duration and data...');
@@ -764,7 +1367,7 @@
             // Create question indicators
             createQuestionIndicators();
             
-            console.log('🚀 Enhanced class-aware quiz initialized successfully with', QUIZ_TIME_LIMIT / 60, 'minutes duration');
+            console.log('🚀 Enhanced anti-cheating quiz initialized successfully with', QUIZ_TIME_LIMIT / 60, 'minutes duration');
         }
 
         // Display a specific question
@@ -902,7 +1505,7 @@
             }
         }
 
-        // 🆕 ENHANCED: Timer functions with dynamic duration
+        // Timer functions with dynamic duration
         function startTimer() {
             startTime = Date.now();
             
@@ -915,6 +1518,7 @@
                 if (remaining <= 0) {
                     clearInterval(timerInterval);
                     alert('⏰ Time is up! Your quiz will be submitted automatically.');
+                    isQuizSubmitted = true;
                     submitQuiz();
                 }
             }, 1000);
@@ -928,7 +1532,7 @@
             const timerElement = document.getElementById('timer');
             timerElement.textContent = timeString;
             
-            // 🆕 ENHANCED: Dynamic warning thresholds based on quiz duration
+            // Dynamic warning thresholds based on quiz duration
             const warningThreshold = Math.max(300, QUIZ_TIME_LIMIT * 0.25); // 25% of quiz time or 5 minutes, whichever is larger
             const dangerThreshold = Math.max(120, QUIZ_TIME_LIMIT * 0.1); // 10% of quiz time or 2 minutes, whichever is larger
             
@@ -942,15 +1546,15 @@
             }
         }
 
-        // 🆕 ENHANCED: Submit quiz function with comprehensive class context
+        // Submit quiz function with anti-cheating context
         async function submitQuiz() {
             console.log('🔍 Enhanced quiz submission check:', {
                 quizData: quizData,
                 studentAnswers: studentAnswers,
                 quizId: quizId,
                 classContext: classContext,
-                navigationContext: navigationContext,
-                quizDuration: QUIZ_TIME_LIMIT / 60 // in minutes
+                quizDuration: QUIZ_TIME_LIMIT / 60, // in minutes
+                violationCount: violationCount // Include violation count
             });
 
             if (!quizData || !quizData.questions) {
@@ -959,15 +1563,20 @@
                 return;
             }
 
+            // Mark as submitted to prevent further violations
+            isQuizSubmitted = true;
+
             // Check if all questions are answered
             const unansweredCount = studentAnswers.filter(answer => answer === null).length;
             
-            if (unansweredCount > 0) {
+            if (unansweredCount > 0 && violationCount === 0) {
+                // Only show confirmation if not auto-submitting due to violations
                 const confirmMessage = classContext.hasClass 
                     ? `You have ${unansweredCount} unanswered questions.\n\nThis quiz is part of ${classContext.className} class and your results will be recorded for class analytics.\n\nAre you sure you want to submit?`
                     : `You have ${unansweredCount} unanswered questions. Are you sure you want to submit?`;
                     
                 if (!confirm(confirmMessage)) {
+                    isQuizSubmitted = false; // Allow further interaction
                     return;
                 }
             }
@@ -980,7 +1589,7 @@
             // Calculate time taken
             const timeTakenSeconds = Math.floor((Date.now() - startTime) / 1000);
             
-            // 🆕 ENHANCED: Prepare comprehensive submission data
+            // Prepare comprehensive submission data with violation info
             const submissionData = {
                 studentAnswers: studentAnswers.map((answer, index) => ({
                     questionIndex: index,
@@ -989,14 +1598,20 @@
                 })).filter(item => item.selectedOption !== null),
                 timeTakenSeconds: timeTakenSeconds,
                 classContext: classContext, // Enhanced class context
-                // 🆕 Additional navigation hints for backend
+                // Anti-cheating data
+                antiCheatData: {
+                    violationCount: violationCount,
+                    wasAutoSubmitted: violationCount >= MAX_VIOLATIONS,
+                    gracePeriodsUsed: violationCount // Track how many times grace period was activated
+                },
+                // Additional navigation hints for backend
                 navigationHints: {
                     fromClassView: !!classContext.classId,
                     preferredReturnUrl: classContext.classId ? `/student/class/${classContext.classId}` : '/homeStudent'
                 }
             };
             
-            console.log('📤 Submitting enhanced quiz with navigation context:', submissionData);
+            console.log('📤 Submitting enhanced quiz with anti-cheating data:', submissionData);
             
             // Show loading state
             showSubmissionLoading();
@@ -1013,15 +1628,22 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    console.log('✅ Quiz submitted successfully with enhanced navigation:', result);
+                    console.log('✅ Quiz submitted successfully with anti-cheating data:', result);
                     
-                    // 🆕 ENHANCED: Store comprehensive result data with navigation context
+                    // Store comprehensive result data with violation info
                     const enhancedResult = {
                         ...result,
                         lectureId: quizData.lectureId || null,
                         classContext: classContext,
                         quizDurationMinutes: QUIZ_TIME_LIMIT / 60, // Store actual quiz duration
-                        // 🆕 Enhanced navigation context from backend response
+                        // Include anti-cheating summary
+                        antiCheatSummary: {
+                            violationCount: violationCount,
+                            wasAutoSubmitted: violationCount >= MAX_VIOLATIONS,
+                            securityStatus: violationCount === 0 ? 'Clean' : 
+                                          violationCount === 1 ? 'Warning Issued' : 'Auto-Submitted'
+                        },
+                        // Enhanced navigation context from backend response
                         navigationContext: result.navigationContext || {
                             hasClass: classContext.hasClass,
                             classId: classContext.classId,
@@ -1038,10 +1660,12 @@
                 } else {
                     console.error('❌ Quiz submission failed:', result.message);
                     alert('Failed to submit quiz: ' + result.message);
+                    isQuizSubmitted = false; // Allow retry
                 }
             } catch (error) {
                 console.error('❌ Error submitting quiz:', error);
                 alert('Network error while submitting quiz. Please try again.');
+                isQuizSubmitted = false; // Allow retry
             }
         }
 
@@ -1050,18 +1674,25 @@
             document.getElementById('quizContainer').style.display = 'none';
             document.getElementById('loadingContainer').style.display = 'block';
             
-            const loadingText = classContext.hasClass 
+            let loadingText = classContext.hasClass 
                 ? `Submitting Your ${classContext.className} Quiz...`
                 : 'Submitting Your Quiz...';
+                
+            // Add violation context to loading message
+            if (violationCount > 0) {
+                loadingText = violationCount >= MAX_VIOLATIONS 
+                    ? 'Auto-Submitting Quiz Due to Security Violations...'
+                    : loadingText + ' (Security Violations Detected)';
+            }
                 
             document.getElementById('loadingContainer').innerHTML = `
                 <div class="loading-spinner"></div>
                 <h3>${loadingText}</h3>
-                <p>Please wait while we process your answers and update your class performance.</p>
+                <p>Please wait while we process your answers and security data.</p>
             `;
         }
 
-        // 🆕 ENHANCED: showResults function with comprehensive navigation context
+        // showResults function with anti-cheating summary
         function showResults(result) {
             document.getElementById('loadingContainer').style.display = 'none';
             document.getElementById('resultsContainer').style.display = 'block';
@@ -1078,6 +1709,20 @@
                 <p><strong>Percentage:</strong> ${percentage}%</p>
             `;
             
+            // Add anti-cheating summary
+            if (result.antiCheatSummary) {
+                const summary = result.antiCheatSummary;
+                const statusColor = summary.securityStatus === 'Clean' ? '#10b981' : 
+                                  summary.securityStatus === 'Warning Issued' ? '#f59e0b' : '#ef4444';
+                
+                resultDetailsHTML += `
+                    <div style="margin-top: 1rem; padding: 1rem; background: #f8fafc; border-radius: 8px; border-left: 4px solid ${statusColor};">
+                        <p><strong>Security Status:</strong> <span style="color: ${statusColor};">${summary.securityStatus}</span></p>
+                        ${summary.violationCount > 0 ? `<p style="font-size: 0.85rem; color: #64748b;">Violations detected: ${summary.violationCount}</p>` : ''}
+                    </div>
+                `;
+            }
+            
             if (classContext.hasClass) {
                 resultDetailsHTML += `
                     <p><strong>Class:</strong> ${classContext.className}</p>
@@ -1087,7 +1732,7 @@
             
             document.getElementById('resultDetails').innerHTML = resultDetailsHTML;
 
-            // 🆕 ENHANCED: Store comprehensive results data with navigation context
+            // Store comprehensive results data with anti-cheating info
             const detailedResults = {
                 quizId: quizId,
                 lectureId: result.lectureId || quizData.lectureId,
@@ -1100,10 +1745,12 @@
                 submissionDate: new Date().toISOString(),
                 questionDetails: result.questionDetails || prepareQuestionDetails(),
                 classContext: classContext,
-                // 🆕 Enhanced navigation context for results page
+                // Anti-cheating data for results page
+                antiCheatSummary: result.antiCheatSummary,
+                // Enhanced navigation context for results page
                 navigationContext: result.navigationContext,
                 suggestedRedirect: result.suggestedRedirect,
-                // 🆕 Breadcrumb data for results page
+                // Breadcrumb data for results page
                 breadcrumbData: {
                     steps: classContext.hasClass ? [
                         { label: 'Dashboard', url: '/homeStudent' },
@@ -1118,7 +1765,7 @@
 
             // Store comprehensive results in localStorage for the results page
             localStorage.setItem('quizResults', JSON.stringify(detailedResults));
-            console.log('📊 Enhanced results data stored with navigation context:', detailedResults);
+            console.log('📊 Enhanced results data stored with anti-cheating summary:', detailedResults);
         }
 
         // Prepare detailed question data
@@ -1143,14 +1790,14 @@
             }).filter(item => item !== null);
         }
 
-        // 🆕 ENHANCED: goToDashboard function with smart navigation
+        // goToDashboard function with smart navigation
         function goToDashboard() {
             const storedResults = localStorage.getItem('quizResults');
             if (storedResults) {
                 // Redirect to detailed results page
                 const resultsData = JSON.parse(storedResults);
                 
-                // 🆕 Enhanced: Add navigation hints to results page URL
+                // Enhanced: Add navigation hints to results page URL
                 let resultsUrl = '/quiz-results';
                 if (resultsData.classContext && resultsData.classContext.hasClass) {
                     const params = new URLSearchParams({
@@ -1171,7 +1818,7 @@
             }
         }
 
-        // 🆕 ENHANCED: Error handling with class-aware navigation
+        // Error handling with class-aware navigation
         function showError(message) {
             const backButtonText = classContext.hasClass 
                 ? `Back to ${classContext.className}`
@@ -1190,44 +1837,31 @@
             `;
         }
 
-        // 🆕 ENHANCED: Page unload warning with class context
+        // Page unload warning with anti-cheating context
         window.addEventListener('beforeunload', function(e) {
-            if (quizData && timerInterval) {
-                const warningMessage = classContext.hasClass 
-                    ? `Are you sure you want to leave?\n\nThis is a ${classContext.className} class quiz and your progress will be lost.`
-                    : 'Are you sure you want to leave? Your quiz progress will be lost.';
-                    
+            if (quizData && timerInterval && !isQuizSubmitted) {
+                const warningMessage = violationCount > 0 
+                    ? `WARNING: You have ${violationCount} security violations!\n\nLeaving now may result in additional violations and auto-submission.`
+                    : classContext.hasClass 
+                        ? `Are you sure you want to leave?\n\nThis is a ${classContext.className} class quiz and your progress will be lost.`
+                        : 'Are you sure you want to leave? Your quiz progress will be lost.';
+                        
                 e.preventDefault();
                 e.returnValue = warningMessage;
                 return e.returnValue;
             }
         });
 
-        // 🆕 NEW: Enhanced navigation helper functions
-        function getNavigationContext() {
-            return {
-                hasClass: classContext.hasClass,
-                classId: classContext.classId,
-                className: classContext.className,
-                dashboardUrl: '/homeStudent',
-                classUrl: classContext.hasClass ? `/student/class/${classContext.classId}` : null
-            };
-        }
-
-        function getSmartReturnUrl() {
-            if (classContext.hasClass) {
-                return `/student/class/${classContext.classId}`;
-            }
-            return '/homeStudent';
-        }
-
         // Console log for debugging
-        console.log('🎯 Enhanced takeQuiz.hbs loaded with dynamic duration support:', {
+        console.log('🎯 Enhanced takeQuiz.hbs loaded with COMPLETE anti-cheating system:', {
             classContext: classContext,
-            navigationContext: navigationContext,
             quizId: quizId,
             enhancedNavigation: true,
-            dynamicDuration: true
+            dynamicDuration: true,
+            antiCheatingActive: true,
+            maxViolations: MAX_VIOLATIONS,
+            gracePeriod: GRACE_PERIOD / 1000 + ' seconds',
+            detectionMethods: ['tab_switch', 'window_blur', 'task_switcher', 'windows_key', 'focus_loss']
         });
     </script>
 </body>
