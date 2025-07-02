@@ -847,7 +847,7 @@
                             <span class="class-stat-label">Lectures</span>
                         </div>
                         <div class="class-stat">
-                            <span class="class-stat-value">${classItem.averageScore}%</span>
+                            <span class="class-stat-value">${(parseFloat(classItem.averageScore) || 0).toFixed(2)}%</span>
                             <span class="class-stat-label">Avg Score</span>
                         </div>
                     </div>

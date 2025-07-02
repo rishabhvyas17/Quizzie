@@ -1,6 +1,6 @@
 // QuizAI Server - Express.js Application
 // Dependencies to install:
-// npm i express hbs mongoose multer pdf-parse mammoth pptx2json @google/generative-ai dotenv nodemon express-session connect-mongo
+// npm i express hbs mongoose multer pdf-parse mammoth node-pptx-parser @google/generative-ai dotenv nodemon express-session connect-mongo
 // Run with: nodemon src/index.js
 
 /* 
@@ -27,8 +27,8 @@ const MongoStore = require('connect-mongo'); // ADD THIS LINE for persistent ses
 
 
 
-// Fix for pptx2json import/usage
-const { toJson } = require("pptx2json")
+// Add the new import for node-pptx-parser
+const PptxParser = require("node-pptx-parser").default; // Note the .default for CommonJS
 
 // Load environment variables from .env file
 require('dotenv').config()
@@ -76,7 +76,7 @@ app.use(session({
     }),
     cookie: {
         maxAge: 1000 * 60 * 60 * 24 * 14, // 14 days in milliseconds
-        secure: true, // IMPORTANT: Set to true in production (requires HTTPS, which Render/GCP provide)
+        secure: false, // IMPORTANT: Set to true in production (requires HTTPS, which Render/GCP provide)
         httpOnly: true, // Prevents client-side JavaScript from accessing the cookie
         sameSite: 'lax' // Recommended for security: 'strict', 'lax', or 'none'. 'lax' is often a good balance.
     },
@@ -190,53 +190,33 @@ const upload = multer({
 
 // ==================== TEXT EXTRACTION FUNCTIONS ====================
 
-async function extractTextFromPDF(filePath) {
-    try {
-        const dataBuffer = fs.readFileSync(filePath)
-        const data = await pdfParse(dataBuffer)
-        console.log(`✅ PDF text extracted - Length: ${data.text.length} characters`)
-        return data.text
-    } catch (error) {
-        console.error('❌ PDF extraction error:', error)
-        throw new Error('Failed to extract text from PDF')
-    }
-}
-
-async function extractTextFromWord(filePath) {
-    try {
-        const result = await mammoth.extractRawText({ path: filePath })
-        console.log(`✅ Word text extracted - Length: ${result.value.length} characters`)
-        return result.value
-    } catch (error) {
-        console.error('❌ Word extraction error:', error)
-        throw new Error('Failed to extract text from Word document')
-    }
-}
-
 async function extractTextFromPowerPoint(filePath) {
+    let extractedText = '';
     try {
-        const data = await toJson(filePath)
-        let extractedText = ''
+        console.log(`🔌 Initializing PptxParser for: ${filePath}`);
+        const parser = new PptxParser(filePath); // Create a new parser instance
 
-        if (data && data.slides) {
-            data.slides.forEach((slide, index) => {
-                extractedText += `\n--- Slide ${index + 1} ---\n`
-                if (slide.content) {
-                    slide.content.forEach(content => {
-                        if (content.text) {
-                            extractedText += content.text + '\n'
-                        }
-                    })
-                }
-            })
+        console.log('🔄 Extracting text using node-pptx-parser...');
+        // extractText() returns an array of SlideTextContent objects, each with a 'text' array
+        const textContent = await parser.extractText();
+
+        if (textContent && textContent.length > 0) {
+            // Join all text from all slides and then join lines within each slide's text
+            extractedText = textContent.map(slide => slide.text.join('\n')).join('\n\n').trim();
+            console.log('✅ PPTX text extracted successfully (first 500 chars):', extractedText.substring(0, 500));
+        } else {
+            console.warn('⚠️ node-pptx-parser extracted no text from the PPTX file.');
         }
 
-        console.log(`✅ PowerPoint text extracted - Length: ${extractedText.length} characters`)
-        return extractedText || "No text found in PowerPoint file"
-    } catch (error) {
-        console.error('❌ PowerPoint extraction error:', error)
-        return "PowerPoint file uploaded successfully. Text extraction failed, but content is available."
+        if (extractedText.length === 0) {
+            console.warn('⚠️ PPTX extraction yielded empty content after processing.');
+        }
+
+    } catch (pptxError) {
+        console.error('❌ Error extracting text from PowerPoint with node-pptx-parser:', pptxError);
+        extractedText = "Error extracting text from PowerPoint."; // Indicate extraction failure
     }
+    return extractedText;
 }
 
 async function extractTextFromFile(filePath, mimetype) {
@@ -5420,6 +5400,16 @@ function formatTime(seconds) {
     } else {
         return `${minutes}m ${secs}s`;
     }
+}
+// Utility function to format numbers to two decimal places
+function formatToTwoDecimals(num) {
+    if (typeof num !== 'number') {
+        num = parseFloat(num);
+    }
+    if (isNaN(num)) {
+        return '0.00'; // Default for non-numeric or invalid numbers
+    }
+    return num.toFixed(2);
 }
 
 // 🆕 NEW: Helper function to calculate time efficiency

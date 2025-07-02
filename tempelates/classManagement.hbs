@@ -1866,8 +1866,8 @@
                             🆔 ${quiz._id.toString().slice(-6)}
                         </div>
                         <div class="quiz-stats">
-                            <span class="quiz-stat">📊 Avg: ${quiz.averageScore || 0}%</span>
-                            <span class="quiz-stat">🎯 High: ${quiz.highestScore || 0}%</span>
+                            <span class="quiz-stat">📊 Avg: ${(parseFloat(quiz.averageScore) || 0).toFixed(2)}%</span>
+                            <span class="quiz-stat">🎯 High: ${(parseFloat(quiz.highestScore) || 0).toFixed(2)}%</span>
                             <span class="quiz-stat">👥 ${quiz.totalAttempts || 0} attempts</span>
                             <span class="quiz-stat">
                                 ${quiz.isActive ? '🟢 Active' : '🔴 Inactive'}
@@ -2201,7 +2201,7 @@
         function updateAnalyticsStats(data) {
             if (data && data.classData) {
                 document.getElementById('totalStudents').textContent = data.classData.studentCount || 0;
-                document.getElementById('classAverage').textContent = (data.classData.averageScore || 0) + '%';
+                document.getElementById('classAverage').textContent = (parseFloat(data.classData.averageScore) || 0).toFixed(2) + '%';
                 document.getElementById('totalQuizzes').textContent = data.classData.quizCount || 0;
                 
                 // Calculate total attempts from recent activity or analytics data
@@ -2237,7 +2237,7 @@
                             </div>
                         </div>
                         <div style="text-align: right;">
-                            <div style="font-weight: bold; color: #10b981;">${student.averageScore}%</div>
+                            <div style="font-weight: bold; color: #10b981;">${(parseFloat(student.averageScore) || 0).toFixed(2)}%</div>
                             <div style="font-size: 0.8rem; color: #64748b;">${student.averageTime} avg</div>
                         </div>
                     </div>
@@ -2267,7 +2267,7 @@
                         <span style="font-weight: 600;">${performer.studentName}</span>
                         <div style="font-size: 0.8rem; color: #64748b;">${performer.totalQuizzes} quizzes taken</div>
                     </div>
-                    <div style="font-weight: bold; color: #10b981;">${performer.averageScore}%</div>
+                    <div style="font-weight: bold; color: #10b981;">${(parseFloat(performer.averageScore) || 0).toFixed(2)}%</div>
                 </div>
             `).join('');
 
@@ -2289,8 +2289,7 @@
                         <span style="font-weight: 500;">${activity.studentName}</span>
                         <div style="font-size: 0.8rem; color: #64748b;">${activity.submissionDate} • ${activity.timeTaken}</div>
                     </div>
-                    <div style="font-weight: bold; color: #3b82f6;">${activity.score}%</div>
-                </div>
+                    <div style="font-weight: bold; color: #3b82f6;">${(parseFloat(activity.score) || 0).toFixed(2)}%</div>
             `).join('');
 
             container.innerHTML = activitiesHTML;
@@ -2409,7 +2408,7 @@
                         <div style="color: #64748b;">Participants</div>
                     </div>
                     <div style="text-align: center; padding: 1rem; background: #f8fafc; border-radius: 8px;">
-                        <div style="font-size: 1.5rem; font-weight: bold; color: #10b981;">${analytics.classAverage || 0}%</div>
+                        <div style="font-size: 1.5rem; font-weight: bold; color: #10b981;">${(parseFloat(analytics.classAverage) || 0).toFixed(2)}%</div>
                         <div style="color: #64748b;">Average Score</div>
                     </div>
                     <div style="text-align: center; padding: 1rem; background: #f8fafc; border-radius: 8px;">
@@ -2435,9 +2434,9 @@
                                 <tr>
                                     <td>${quiz.quizTitle}</td>
                                     <td>${quiz.totalAttempts}</td>
-                                    <td><strong>${quiz.averageScore}%</strong></td>
-                                    <td>${quiz.highestScore}%</td>
-                                    <td>${quiz.lowestScore}%</td>
+                                    <td><strong>${(parseFloat(quiz.averageScore) || 0).toFixed(2)}%</strong></td>
+                                    <td>${(parseFloat(quiz.highestScore) || 0).toFixed(2)}%</td>
+                                    <td>${(parseFloat(quiz.lowestScore) || 0).toFixed(2)}%</td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -2516,7 +2515,7 @@
                             <div class="student-stat-label">Quizzes</div>
                         </div>
                         <div class="student-stat">
-                            <div class="student-stat-value">${student.averageScore}%</div>
+                            <div class="student-stat-value">${(parseFloat(student.averageScore) || 0).toFixed(2)}%</div>
                             <div class="student-stat-label">Average</div>
                         </div>
                     </div>
