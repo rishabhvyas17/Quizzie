@@ -670,7 +670,7 @@
         let startTime = Date.now();
         let timerInterval = null;
         const quizId = window.location.pathname.split('/').pop();
-        const QUIZ_TIME_LIMIT = 15 * 60; // Default to 15 minutes in seconds
+        let QUIZ_TIME_LIMIT = 15 * 60; // Default to 15 minutes in seconds
 
         // Enhanced Class context data from server
         const classContext = {
