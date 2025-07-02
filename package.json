@@ -1,7 +1,7 @@
 {
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node src/index.js"  
+    "start": "node src/index.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -13,9 +13,9 @@
     "mammoth": "^1.9.1",
     "mongoose": "^8.16.0",
     "multer": "^2.0.1",
+    "node-pptx-parser": "^1.0.1",
     "nodemon": "^3.1.10",
     "officeparser": "^5.1.1",
-    "pdf-parse": "^1.1.1",
-    "pptx2json": "^0.0.10"
+    "pdf-parse": "^1.1.1"
   }
 }

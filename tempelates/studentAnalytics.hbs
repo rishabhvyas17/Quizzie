@@ -812,13 +812,13 @@
                 insights.push({
                     type: 'positive',
                     icon: '🌟',
-                    text: `Excellent performance! ${studentName} is performing above average with ${metrics.averageScore}% average score.`
+                    text: `Excellent performance! ${studentName} is performing above average with ${(parseFloat(metrics.averageScore) || 0).toFixed(2)}% average score.`
                 });
             } else if (metrics.averageScore < 60) {
                 insights.push({
                     type: 'negative',
                     icon: '🎯',
-                    text: `${studentName} may need additional support. Current average is ${metrics.averageScore}%.`
+                    text: `${studentName} may need additional support. Current average is ${(parseFloat(metrics.averageScore) || 0).toFixed(2)}%.`
                 });
             }
 
@@ -881,12 +881,12 @@
 
             document.getElementById('totalQuizzes').textContent = metrics.totalQuizzes;
             document.getElementById('trendIndicator').textContent = metrics.trendIndicator;
-            document.getElementById('averageScore').textContent = metrics.averageScore + '%';
+            document.getElementById('averageScore').textContent = (parseFloat(metrics.averageScore) || 0).toFixed(2) + '%';
             
             // Update comparison text based on context
             const comparisonText = classContext.hasClass 
                 ? `${classContext.className} avg: ${metrics.classAverage}%`
-                : `Class avg: ${metrics.classAverage}%`;
+                : `Class avg: ${(parseFloat(metrics.classAverage) || 0).toFixed(2)}%`;
             document.getElementById('scoreComparison').textContent = comparisonText;
             
             document.getElementById('averageTime').textContent = metrics.averageTime;
@@ -941,7 +941,7 @@
                                     <td>${result.score}/${result.totalQuestions}</td>
                                     <td>
                                         <span class="score-badge ${scoreClass}">
-                                            ${result.percentage}%
+                                            ${(parseFloat(result.percentage) || 0).toFixed(2)}%
                                         </span>
                                     </td>
                                     <td>${timeFormatted}</td>
