@@ -2324,10 +2324,37 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
         }
 
         const quizId = req.params.quizId;
-        const { studentAnswers, timeTakenSeconds, classContext } = req.body; // 🆕 Extract classContext
+        const { 
+            studentAnswers, 
+            timeTakenSeconds, 
+            classContext,
+            antiCheatData,  // 🆕 NEW: Anti-cheating data
+            navigationHints 
+        } = req.body;
 
         const studentId = req.session.userId;
         const studentName = req.session.userName;
+
+        // 🆕 NEW: Log anti-cheating data for monitoring (no database storage as requested)
+        if (antiCheatData && antiCheatData.violationCount > 0) {
+            console.log('🚨 SECURITY ALERT - Quiz submission with violations:', {
+                studentId: studentId,
+                studentName: studentName,
+                quizId: quizId,
+                violationCount: antiCheatData.violationCount,
+                wasAutoSubmitted: antiCheatData.wasAutoSubmitted,
+                gracePeriodsUsed: antiCheatData.gracePeriodsUsed,
+                timestamp: new Date().toISOString(),
+                classContext: classContext
+            });
+        } else {
+            console.log('✅ Clean quiz submission (no violations):', {
+                studentId: studentId,
+                studentName: studentName,
+                quizId: quizId,
+                timestamp: new Date().toISOString()
+            });
+        }
 
         // Get complete quiz data including class information
         const quiz = await quizCollection.findById(quizId).lean();
@@ -2401,11 +2428,11 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
 
         const percentage = (totalQuestions > 0) ? (score / totalQuestions) * 100 : 0;
 
-        // 🆕 ENHANCED: Save quiz result with proper class information
+        // 🆕 ENHANCED: Save quiz result with anti-cheating metadata
         const newQuizResult = {
             quizId: quizId,
             lectureId: quiz.lectureId,
-            classId: targetClassId || null, // Use determined class ID
+            classId: targetClassId || null,
             studentId: studentId,
             studentName: studentName,
             score: score,
@@ -2413,11 +2440,32 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
             percentage: percentage,
             timeTakenSeconds: timeTakenSeconds,
             submissionDate: new Date(),
-            answers: detailedAnswers
+            answers: detailedAnswers,
+            // 🆕 NEW: Store anti-cheating metadata (optional fields)
+            antiCheatMetadata: antiCheatData ? {
+                violationCount: antiCheatData.violationCount || 0,
+                wasAutoSubmitted: antiCheatData.wasAutoSubmitted || false,
+                gracePeriodsUsed: antiCheatData.gracePeriodsUsed || 0,
+                securityStatus: antiCheatData.violationCount === 0 ? 'Clean' : 
+                              antiCheatData.violationCount === 1 ? 'Warning' : 'Violation',
+                submissionSource: antiCheatData.wasAutoSubmitted ? 'Auto-Submit' : 'Manual'
+            } : {
+                violationCount: 0,
+                wasAutoSubmitted: false,
+                gracePeriodsUsed: 0,
+                securityStatus: 'Clean',
+                submissionSource: 'Manual'
+            }
         };
 
         const savedResult = await quizResultCollection.create(newQuizResult);
-        console.log(`✅ Quiz result saved for student ${studentName} on quiz ${quiz.lectureTitle}: Score ${score}/${totalQuestions}`);
+        
+        // 🆕 NEW: Enhanced logging with security status
+        const securityStatus = antiCheatData && antiCheatData.violationCount > 0 
+            ? `${antiCheatData.violationCount} violations` 
+            : 'clean submission';
+            
+        console.log(`✅ Quiz result saved for student ${studentName} on quiz ${quiz.lectureTitle}: Score ${score}/${totalQuestions} (${securityStatus})`);
 
         // 🆕 ENHANCED: Get class information for comprehensive response
         let classInfo = null;
@@ -2425,10 +2473,12 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
             classInfo = await classCollection.findById(targetClassId).select('name subject').lean();
         }
 
-        // 🆕 ENHANCED: Prepare comprehensive response with navigation context
+        // 🆕 ENHANCED: Prepare comprehensive response with anti-cheating summary
         const enhancedResponse = {
             success: true,
-            message: 'Quiz submitted and scored successfully!',
+            message: antiCheatData && antiCheatData.wasAutoSubmitted 
+                ? 'Quiz auto-submitted due to security violations and scored successfully!'
+                : 'Quiz submitted and scored successfully!',
             score: score,
             totalQuestions: totalQuestions,
             percentage: percentage,
@@ -2443,6 +2493,15 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
             quizTitle: quiz.lectureTitle,
             questionDetails: enhancedQuestionDetails,
             quizId: quizId,
+            
+            // 🆕 NEW: Anti-cheating summary for frontend
+            antiCheatSummary: {
+                violationCount: antiCheatData?.violationCount || 0,
+                wasAutoSubmitted: antiCheatData?.wasAutoSubmitted || false,
+                securityStatus: antiCheatData?.violationCount === 0 ? 'Clean' : 
+                              antiCheatData?.violationCount === 1 ? 'Warning Issued' : 'Auto-Submitted',
+                submissionType: antiCheatData?.wasAutoSubmitted ? 'Security Auto-Submit' : 'Manual Submit'
+            },
             
             // 🆕 Navigation context for frontend
             navigationContext: {
@@ -2471,8 +2530,6 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
         res.status(500).json({ success: false, message: 'Failed to submit quiz: ' + error.message });
     }
 });
-
-
 
 
 // 🆕 NEW: Enhanced quiz results page route with better class context handling
@@ -2520,7 +2577,7 @@ app.get('/quiz-results', isAuthenticated, (req, res) => {
 });
 
 
-// 🆕 ENHANCED: Quiz results API with duration info (for detailed results page)
+// 🆕 NEW: Enhanced quiz results API with anti-cheat info
 app.get('/api/quiz-result/:resultId/detailed', isAuthenticated, async (req, res) => {
     try {
         if (req.session.userType !== 'student') {
@@ -2530,7 +2587,7 @@ app.get('/api/quiz-result/:resultId/detailed', isAuthenticated, async (req, res)
         const resultId = req.params.resultId;
         const studentId = req.session.userId;
 
-        console.log('📊 Loading detailed quiz result with duration info:', {
+        console.log('📊 Loading detailed quiz result with anti-cheat info:', {
             resultId: resultId,
             studentId: studentId,
             requestedBy: req.session.userName
@@ -2626,6 +2683,14 @@ app.get('/api/quiz-result/:resultId/detailed', isAuthenticated, async (req, res)
 
         console.log(`✅ Detailed quiz result loaded: ${quiz.lectureTitle} - ${quizResult.percentage}% (${quizDurationMinutes}min quiz)`);
 
+        // 🆕 NEW: Include anti-cheat summary in detailed results
+        const antiCheatSummary = quizResult.antiCheatMetadata || {
+            violationCount: 0,
+            wasAutoSubmitted: false,
+            securityStatus: 'Clean',
+            submissionType: 'Manual Submit'
+        };
+
         res.json({
             success: true,
             data: {
@@ -2659,7 +2724,9 @@ app.get('/api/quiz-result/:resultId/detailed', isAuthenticated, async (req, res)
                 },
                 detailedQuestions: detailedQuestions,
                 classInfo: classInfo,
-                explanationsAvailable: detailedQuestions.some(q => q.hasExplanations)
+                explanationsAvailable: detailedQuestions.some(q => q.hasExplanations),
+                // 🆕 NEW: Anti-cheat summary for detailed results
+                antiCheatSummary: antiCheatSummary
             }
         });
 

@@ -309,7 +309,7 @@ const quizSchema = new mongoose.Schema({
     }
 });
 
-// 🔄 UPDATED: Quiz Results Schema - Now supports duration tracking
+// 🔄 UPDATED: Quiz Results Schema - Now supports anti-cheating metadata
 const quizResultSchema = new mongoose.Schema({
     quizId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -378,6 +378,59 @@ const quizResultSchema = new mongoose.Schema({
         required: false, // Optional for backward compatibility
         min: 0,
         max: 100
+    },
+    // 🆕 NEW: Anti-Cheat Metadata
+    antiCheatMetadata: {
+        violationCount: {
+            type: Number,
+            default: 0,
+            min: 0,
+            max: 10 // Reasonable limit
+        },
+        wasAutoSubmitted: {
+            type: Boolean,
+            default: false
+        },
+        gracePeriodsUsed: {
+            type: Number,
+            default: 0,
+            min: 0
+        },
+        securityStatus: {
+            type: String,
+            enum: ['Clean', 'Warning', 'Violation', 'Auto-Submit'],
+            default: 'Clean'
+        },
+        submissionSource: {
+            type: String,
+            enum: ['Manual', 'Auto-Submit', 'Timer-Submit'],
+            default: 'Manual'
+        },
+        // 🆕 Optional: Detailed violation log (for future enhancements)
+        violationDetails: [{
+            violationType: {
+                type: String,
+                enum: ['tab_switch', 'window_blur', 'focus_loss'],
+                required: false
+            },
+            timestamp: {
+                type: Date,
+                required: false
+            },
+            duration: {
+                type: Number, // Duration of violation in seconds
+                required: false
+            }
+        }],
+        // Monitoring metadata
+        monitoringStartTime: {
+            type: Date,
+            required: false
+        },
+        monitoringEndTime: {
+            type: Date,
+            required: false
+        }
     },
     answers: [{
         questionIndex: {
@@ -470,6 +523,23 @@ lectureSchema.index({ classId: 1, uploadDate: -1 }); // Class lectures
 quizSchema.index({ classId: 1, generatedDate: -1 }); // Class quizzes
 quizResultSchema.index({ classId: 1, submissionDate: -1 }); // Class results
 
+// 🆕 NEW: Anti-cheat indexes for performance
+quizResultSchema.index({ 
+    'antiCheatMetadata.violationCount': 1, 
+    submissionDate: -1 
+}); // Find violations by date
+
+quizResultSchema.index({ 
+    'antiCheatMetadata.wasAutoSubmitted': 1, 
+    submissionDate: -1 
+}); // Find auto-submitted quizzes
+
+quizResultSchema.index({ 
+    'antiCheatMetadata.securityStatus': 1, 
+    classId: 1, 
+    submissionDate: -1 
+}); // Security status queries by class
+
 // Create compound index for fast explanation lookups
 
 explanationCacheSchema.index({ 
@@ -484,81 +554,215 @@ explanationCacheSchema.index({
 
 // 🆕 Update class stats when students are added/removed
 classStudentSchema.post('save', async function() {
-    const ClassCollection = this.constructor.model('ClassCollection');
-    const classDoc = await ClassCollection.findById(this.classId);
-    if (classDoc) {
-        const activeStudents = await this.constructor.countDocuments({ 
-            classId: this.classId, 
-            isActive: true 
-        });
-        await ClassCollection.findByIdAndUpdate(this.classId, { 
-            studentCount: activeStudents,
-            updatedAt: new Date()
-        });
+    try {
+        const ClassCollection = this.constructor.model('ClassCollection');
+        const classDoc = await ClassCollection.findById(this.classId);
+        if (classDoc) {
+            const activeStudents = await this.constructor.countDocuments({ 
+                classId: this.classId, 
+                isActive: true 
+            });
+            await ClassCollection.findByIdAndUpdate(this.classId, { 
+                studentCount: activeStudents,
+                updatedAt: new Date()
+            });
+        }
+    } catch (error) {
+        console.error('❌ Error updating class student count:', error);
     }
 });
 
 // 🆕 Update class stats when lectures are added
 lectureSchema.post('save', async function() {
-    if (this.classId) {
-        const ClassCollection = this.constructor.db.model('ClassCollection');
-        const lectureCount = await this.constructor.countDocuments({ 
-            classId: this.classId 
-        });
-        await ClassCollection.findByIdAndUpdate(this.classId, { 
-            lectureCount: lectureCount,
-            updatedAt: new Date()
-        });
+    try {
+        if (this.classId) {
+            const ClassCollection = this.constructor.db.model('ClassCollection');
+            const lectureCount = await this.constructor.countDocuments({ 
+                classId: this.classId 
+            });
+            await ClassCollection.findByIdAndUpdate(this.classId, { 
+                lectureCount: lectureCount,
+                updatedAt: new Date()
+            });
+        }
+    } catch (error) {
+        console.error('❌ Error updating class lecture count:', error);
     }
 });
 
 // 🆕 Update class and quiz stats when quizzes are added
 quizSchema.post('save', async function() {
-    if (this.classId) {
-        const ClassCollection = this.constructor.db.model('ClassCollection');
-        const quizCount = await this.constructor.countDocuments({ 
-            classId: this.classId 
-        });
-        await ClassCollection.findByIdAndUpdate(this.classId, { 
-            quizCount: quizCount,
-            updatedAt: new Date()
-        });
+    try {
+        if (this.classId) {
+            const ClassCollection = this.constructor.db.model('ClassCollection');
+            const quizCount = await this.constructor.countDocuments({ 
+                classId: this.classId 
+            });
+            await ClassCollection.findByIdAndUpdate(this.classId, { 
+                quizCount: quizCount,
+                updatedAt: new Date()
+            });
+        }
+    } catch (error) {
+        console.error('❌ Error updating class quiz count:', error);
     }
 });
 
 // 🆕 Update quiz stats when results are submitted
 quizResultSchema.post('save', async function() {
-    const QuizCollection = this.constructor.db.model('QuizCollection');
-    const allResults = await this.constructor.find({ quizId: this.quizId });
-    
-    const totalAttempts = allResults.length;
-    const averageScore = totalAttempts > 0 
-        ? allResults.reduce((sum, result) => sum + result.percentage, 0) / totalAttempts 
-        : 0;
-    const highestScore = totalAttempts > 0 
-        ? Math.max(...allResults.map(result => result.percentage)) 
-        : 0;
-    
-    await QuizCollection.findByIdAndUpdate(this.quizId, {
-        totalAttempts,
-        averageScore,
-        highestScore
-    });
-    
-    // Update class average score
-    if (this.classId) {
-        const ClassCollection = this.constructor.db.model('ClassCollection');
-        const classResults = await this.constructor.find({ classId: this.classId });
+    try {
+        const QuizCollection = this.constructor.db.model('QuizCollection');
+        const allResults = await this.constructor.find({ quizId: this.quizId });
         
-        if (classResults.length > 0) {
-            const classAverageScore = classResults.reduce((sum, result) => sum + result.percentage, 0) / classResults.length;
-            await ClassCollection.findByIdAndUpdate(this.classId, { 
-                averageScore: classAverageScore,
-                updatedAt: new Date()
-            });
+        const totalAttempts = allResults.length;
+        const averageScore = totalAttempts > 0 
+            ? allResults.reduce((sum, result) => sum + result.percentage, 0) / totalAttempts 
+            : 0;
+        const highestScore = totalAttempts > 0 
+            ? Math.max(...allResults.map(result => result.percentage)) 
+            : 0;
+        
+        await QuizCollection.findByIdAndUpdate(this.quizId, {
+            totalAttempts,
+            averageScore,
+            highestScore
+        });
+        
+        // Update class average score
+        if (this.classId) {
+            const ClassCollection = this.constructor.db.model('ClassCollection');
+            const classResults = await this.constructor.find({ classId: this.classId });
+            
+            if (classResults.length > 0) {
+                const classAverageScore = classResults.reduce((sum, result) => sum + result.percentage, 0) / classResults.length;
+                await ClassCollection.findByIdAndUpdate(this.classId, { 
+                    averageScore: classAverageScore,
+                    updatedAt: new Date()
+                });
+            }
         }
+    } catch (error) {
+        console.error('❌ Error updating quiz and class stats:', error);
     }
 });
+
+// 🆕 NEW: Pre-save middleware to set default anti-cheat metadata
+quizResultSchema.pre('save', function(next) {
+    try {
+        // Ensure anti-cheat metadata exists with defaults
+        if (!this.antiCheatMetadata) {
+            this.antiCheatMetadata = {
+                violationCount: 0,
+                wasAutoSubmitted: false,
+                gracePeriodsUsed: 0,
+                securityStatus: 'Clean',
+                submissionSource: 'Manual',
+                violationDetails: [],
+                monitoringStartTime: new Date(),
+                monitoringEndTime: new Date()
+            };
+        }
+        
+        // Auto-set security status based on violation count
+        if (this.antiCheatMetadata.violationCount === 0) {
+            this.antiCheatMetadata.securityStatus = 'Clean';
+        } else if (this.antiCheatMetadata.violationCount === 1) {
+            this.antiCheatMetadata.securityStatus = 'Warning';
+        } else if (this.antiCheatMetadata.violationCount >= 2) {
+            this.antiCheatMetadata.securityStatus = this.antiCheatMetadata.wasAutoSubmitted ? 'Auto-Submit' : 'Violation';
+        }
+        
+        next();
+    } catch (error) {
+        console.error('❌ Error in quizResult pre-save middleware:', error);
+        next(error);
+    }
+});
+
+// 🆕 NEW: Virtual field for security summary
+quizResultSchema.virtual('securitySummary').get(function() {
+    const metadata = this.antiCheatMetadata || {};
+    return {
+        isClean: metadata.violationCount === 0,
+        hasViolations: metadata.violationCount > 0,
+        wasCompromised: metadata.violationCount >= 2,
+        submissionType: metadata.submissionSource || 'Manual',
+        riskLevel: metadata.violationCount === 0 ? 'Low' : 
+                  metadata.violationCount === 1 ? 'Medium' : 'High'
+    };
+});
+
+// 🆕 NEW: Schema methods for anti-cheat operations
+quizResultSchema.methods.getSecurityStatus = function() {
+    const metadata = this.antiCheatMetadata || {};
+    return {
+        violationCount: metadata.violationCount || 0,
+        wasAutoSubmitted: metadata.wasAutoSubmitted || false,
+        securityStatus: metadata.securityStatus || 'Clean',
+        riskAssessment: this.securitySummary.riskLevel
+    };
+};
+
+// 🆕 NEW: Static method to find suspicious submissions
+quizResultSchema.statics.findSuspiciousSubmissions = function(classId, days = 7) {
+    const sinceDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    
+    return this.find({
+        classId: classId,
+        submissionDate: { $gte: sinceDate },
+        'antiCheatMetadata.violationCount': { $gt: 0 }
+    })
+    .sort({ 'antiCheatMetadata.violationCount': -1, submissionDate: -1 })
+    .lean();
+};
+
+// 🆕 NEW: Static method to get security statistics
+quizResultSchema.statics.getSecurityStats = function(classId, days = 30) {
+    const sinceDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    
+    return this.aggregate([
+        {
+            $match: {
+                classId: mongoose.Types.ObjectId(classId),
+                submissionDate: { $gte: sinceDate }
+            }
+        },
+        {
+            $group: {
+                _id: null,
+                totalSubmissions: { $sum: 1 },
+                cleanSubmissions: {
+                    $sum: {
+                        $cond: [
+                            { $eq: ['$antiCheatMetadata.violationCount', 0] },
+                            1,
+                            0
+                        ]
+                    }
+                },
+                violationSubmissions: {
+                    $sum: {
+                        $cond: [
+                            { $gt: ['$antiCheatMetadata.violationCount', 0] },
+                            1,
+                            0
+                        ]
+                    }
+                },
+                autoSubmissions: {
+                    $sum: {
+                        $cond: [
+                            { $eq: ['$antiCheatMetadata.wasAutoSubmitted', true] },
+                            1,
+                            0
+                        ]
+                    }
+                },
+                averageViolations: { $avg: '$antiCheatMetadata.violationCount' }
+            }
+        }
+    ]);
+};
 
 // ==================== CREATE COLLECTIONS ====================
 // 🔄 UPDATED: All collections now in single QuizAI Database
@@ -579,7 +783,7 @@ const classCollection = mongoose.model("ClassCollection", classSchema);
 const classStudentCollection = mongoose.model("ClassStudentCollection", classStudentSchema);
 
 // ==================== EXPORT ALL COLLECTIONS ====================
-// 🎯 All collections now unified in single QuizAI Database!
+// 🎯 All collections now unified in single QuizAI Database with Anti-Cheat Support!
 
 module.exports = {
     // User authentication collections
