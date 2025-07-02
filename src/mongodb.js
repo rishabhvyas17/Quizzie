@@ -609,10 +609,10 @@ quizResultSchema.post('save', async function() {
         
         const totalAttempts = allResults.length;
         const averageScore = totalAttempts > 0 
-            ? allResults.reduce((sum, result) => sum + result.percentage, 0) / totalAttempts 
+            ? parseFloat((allResults.reduce((sum, result) => sum + result.percentage, 0) / totalAttempts).toFixed(1)) // 🔧 FIX
             : 0;
         const highestScore = totalAttempts > 0 
-            ? Math.max(...allResults.map(result => result.percentage)) 
+            ? parseFloat(Math.max(...allResults.map(result => result.percentage)).toFixed(1)) // 🔧 FIX
             : 0;
         
         await QuizCollection.findByIdAndUpdate(this.quizId, {
@@ -621,13 +621,13 @@ quizResultSchema.post('save', async function() {
             highestScore
         });
         
-        // Update class average score
+        // 🔧 FIX: Update class average score with proper formatting
         if (this.classId) {
             const ClassCollection = this.constructor.db.model('ClassCollection');
             const classResults = await this.constructor.find({ classId: this.classId });
             
             if (classResults.length > 0) {
-                const classAverageScore = classResults.reduce((sum, result) => sum + result.percentage, 0) / classResults.length;
+                const classAverageScore = parseFloat((classResults.reduce((sum, result) => sum + result.percentage, 0) / classResults.length).toFixed(1)); // 🔧 FIX
                 await ClassCollection.findByIdAndUpdate(this.classId, { 
                     averageScore: classAverageScore,
                     updatedAt: new Date()

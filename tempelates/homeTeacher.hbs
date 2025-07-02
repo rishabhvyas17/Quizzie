@@ -685,7 +685,8 @@
                                         <span class="class-stat-label">Lectures</span>
                                     </div>
                                     <div class="class-stat">
-                                        <span class="class-stat-value">{{this.averageScore}}%</span>
+                                        <!-- 🔧 FIX: Use toFixed helper for proper formatting -->
+                                        <span class="class-stat-value">{{toFixed this.averageScore 1}}%</span>
                                         <span class="class-stat-label">Avg Score</span>
                                     </div>
                                 </div>
@@ -766,9 +767,15 @@
         // Global variables
         const professorName = '{{{userName}}}';
 
+        // 🆕 NEW: Helper function for formatting percentages
+        function formatPercentage(value, decimals = 1) {
+            const num = parseFloat(value) || 0;
+            return num.toFixed(decimals);
+        }
+
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Simplified Teacher dashboard initializing...');
+            console.log('🚀 Enhanced Teacher dashboard initializing...');
             initializeDashboard();
             loadClasses();
         });
@@ -811,7 +818,7 @@
             }
         }
 
-        // Display classes
+        // 🔄 UPDATED: Display classes with proper percentage formatting
         function displayClasses(classes) {
             const container = document.getElementById('classesContainer');
             
@@ -846,7 +853,8 @@
                             <span class="class-stat-label">Lectures</span>
                         </div>
                         <div class="class-stat">
-                            <span class="class-stat-value">${classItem.averageScore}%</span>
+                            <!-- 🔧 FIX: Format average score properly -->
+                            <span class="class-stat-value">${formatPercentage(classItem.averageScore)}%</span>
                             <span class="class-stat-label">Avg Score</span>
                         </div>
                     </div>
