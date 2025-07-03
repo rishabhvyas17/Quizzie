@@ -531,6 +531,112 @@
             height: 300px;
         }
 
+        /* 🆕 NEW: Rankings Layout Styles */
+        .rankings-section {
+            margin-top: 2rem;
+        }
+
+        .rankings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .ranking-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .ranking-card-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .ranking-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: #f8fafc;
+            border-radius: 8px;
+            border-left: 3px solid #e5e7eb;
+            margin-bottom: 0.75rem;
+        }
+
+        .ranking-item.top-3 {
+            border-left-color: #10b981;
+            background: #f0fdf4;
+        }
+
+        .ranking-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .rank-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            min-width: 30px;
+            text-align: center;
+            margin-right: 0.75rem;
+        }
+
+        .rank-1 { background: #ffd700; color: #1e293b; }
+        .rank-2 { background: #c0c0c0; color: #1e293b; }
+        .rank-3 { background: #cd7f32; color: white; }
+        .rank-other { background: #e2e8f0; color: #64748b; }
+
+        .student-rank-info {
+            flex: 1;
+        }
+
+        .student-rank-name {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.25rem;
+        }
+
+        .student-rank-meta {
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+
+        .student-rank-score {
+            text-align: right;
+        }
+
+        .student-score-main {
+            font-weight: bold;
+            color: #10b981;
+            font-size: 0.95rem;
+        }
+
+        .student-score-sub {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        /* Quiz Header Styles */
+        .quiz-header-info {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            color: #1e40af;
+        }
+
         /* Loading States */
         .loading {
             text-align: center;
@@ -697,95 +803,6 @@
 
         .view-performance-btn:hover {
             background: #7c3aed;
-        }
-
-        /* Class Rankings Styles */
-        .rankings-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1rem;
-        }
-
-        .rank-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.75rem;
-            background: #f8fafc;
-            border-radius: 8px;
-            border-left: 3px solid #e5e7eb;
-        }
-
-        .rank-item.top-3 {
-            border-left-color: #10b981;
-            background: #f0fdf4;
-        }
-
-        .rank-badge {
-            display: inline-block;
-            padding: 0.25rem 0.5rem;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: bold;
-            min-width: 30px;
-            text-align: center;
-        }
-
-        .rank-1 { background: #ffd700; color: #1e293b; }
-        .rank-2 { background: #c0c0c0; color: #1e293b; }
-        .rank-3 { background: #cd7f32; color: white; }
-        .rank-other { background: #e2e8f0; color: #64748b; }
-
-        /* Analytics specific styles */
-        .analytics-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .insights-card {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        .insights-card h4 {
-            font-size: 1rem;
-            font-weight: 600;
-            color: #1e293b;
-            margin-bottom: 1rem;
-        }
-
-        .performer-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.75rem 0;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .performer-item:last-child {
-            border-bottom: none;
-        }
-
-        .performer-rank {
-            font-weight: bold;
-            color: #10b981;
-            margin-right: 0.5rem;
-        }
-
-        .activity-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.5rem 0;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .activity-item:last-child {
-            border-bottom: none;
         }
 
         /* Modal Overlay Styles */
@@ -1035,7 +1052,8 @@
             .analytics-grid,
             .grid-2,
             .grid-3,
-            .grid-4 {
+            .grid-4,
+            .rankings-grid {
                 grid-template-columns: 1fr;
             }
 
@@ -1208,16 +1226,8 @@
                         </div>
                     </div>
 
-                    <!-- Class Rankings Section -->
-                    <div class="card" style="margin-bottom: 2rem;">
-                        <h3 class="card-title">🏆 Class Rankings</h3>
-                        <div id="classRankingsContainer">
-                            <div class="loading">Loading class rankings...</div>
-                        </div>
-                    </div>
-
                     <!-- Charts Grid -->
-                    <div class="analytics-grid">
+                    <div class="grid-2" style="margin-bottom: 2rem;">
                         <!-- Performance Chart -->
                         <div class="chart-container">
                             <h3 class="card-title">📊 Class Performance Trend</h3>
@@ -1235,19 +1245,34 @@
                         </div>
                     </div>
 
-                    <!-- Insights Grid -->
-                    <div class="analytics-grid">
-                        <!-- Top Performers -->
-                        <div class="insights-card">
-                            <h4>🏆 Top Performers</h4>
-                            <div id="topPerformersContainer">
-                                <div class="loading">Loading top performers...</div>
+                    <!-- 🆕 NEW: Rankings Section Below Charts -->
+                    <div class="rankings-section">
+                        <div class="rankings-grid">
+                            <!-- Class Rankings -->
+                            <div class="ranking-card">
+                                <h3 class="ranking-card-title">
+                                    🏆 Class Rankings
+                                    <span style="font-size: 0.8rem; font-weight: normal; color: #64748b;">(Points Based)</span>
+                                </h3>
+                                <div id="classRankingsContainer">
+                                    <div class="loading">Loading class rankings...</div>
+                                </div>
+                            </div>
+
+                            <!-- Last Quiz Rankings -->
+                            <div class="ranking-card">
+                                <h3 class="ranking-card-title">
+                                    🎯 Latest Quiz Rankings
+                                </h3>
+                                <div id="lastQuizRankingsContainer">
+                                    <div class="loading">Loading latest quiz rankings...</div>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Recent Activity -->
-                        <div class="insights-card">
-                            <h4>📋 Recent Quiz Activity</h4>
+                        <!-- Recent Quiz Activity Below Rankings -->
+                        <div class="card">
+                            <h3 class="card-title">📋 Recent Quiz Activity</h3>
                             <div id="recentActivityContainer">
                                 <div class="loading">Loading recent activity...</div>
                             </div>
@@ -1467,6 +1492,35 @@
             className: className,
             classSubject: classSubject
         });
+
+        // 🆕 NEW: Helper functions for formatting
+        function formatPercentage(value, decimals = 1) {
+            const num = parseFloat(value) || 0;
+            return num.toFixed(decimals);
+        }
+
+        function formatNumber(value, decimals = 0) {
+            const num = parseFloat(value) || 0;
+            return num.toFixed(decimals);
+        }
+
+        // 🆕 NEW: Calculate time efficiency
+        function calculateTimeEfficiency(timeTakenSeconds, quizDurationSeconds) {
+            if (!timeTakenSeconds || !quizDurationSeconds || quizDurationSeconds <= 0) return 0;
+            
+            // Time Efficiency = (Quiz Duration - Time Taken) / Quiz Duration * 100
+            // But ensure it's not negative
+            const efficiency = Math.max(0, (quizDurationSeconds - timeTakenSeconds) / quizDurationSeconds * 100);
+            return Math.min(100, efficiency); // Cap at 100%
+        }
+
+        // 🆕 NEW: Calculate ranking points
+        function calculateRankingPoints(averageScore, timeEfficiency) {
+            // Points Formula: Points = (Score × 0.7) + (Time Efficiency × 0.3)
+            const score = parseFloat(averageScore) || 0;
+            const efficiency = parseFloat(timeEfficiency) || 0;
+            return parseFloat((score * 0.7 + efficiency * 0.3).toFixed(1));
+        }
 
         // Modal Functions
         function openCreateQuizModal() {
@@ -1819,7 +1873,7 @@
             }
         }
 
-        // Display quizzes with View Quiz button
+        // 🔄 UPDATED: Display quizzes with proper formatting
         function displayQuizzes(quizzes) {
             const container = document.getElementById('quizzesContainer');
             
@@ -1834,7 +1888,6 @@
             }
 
             const quizzesHTML = quizzes.map(quiz => {
-                // ✅ CRITICAL: Check for actual duration from database
                 console.log('🎯 Displaying quiz with duration:', {
                     quizId: quiz._id,
                     durationMinutes: quiz.durationMinutes,
@@ -1842,11 +1895,9 @@
                     title: quiz.lectureTitle
                 });
 
-                // ✅ CRITICAL: Use actual duration or fallback
                 const durationMinutes = quiz.durationMinutes || 15;
                 const durationText = `${durationMinutes}min`;
                 
-                // ✅ Add duration badge based on length
                 let durationBadge = '';
                 if (durationMinutes <= 10) {
                     durationBadge = '⚡ Quick';
@@ -2133,38 +2184,37 @@
             }
         }
 
-        // Enhanced analytics loading function
+        
+        // 🔄 UPDATED: Enhanced analytics loading function
         async function loadAnalytics() {
             try {
                 console.log('📊 Loading comprehensive analytics data...');
                 
-                // Load both overview and analytics data
-                const [overviewResponse, analyticsResponse, rankingsResponse] = await Promise.all([
+                // Load all required data
+                const [overviewResponse, analyticsResponse, teacherRankingsResponse, lastQuizResponse] = await Promise.all([
                     fetch(`/api/classes/${classId}/overview`),
                     fetch(`/api/classes/${classId}/analytics`),
-                    fetch(`/api/student/class/${classId}/rankings`)
+                    fetch(`/api/teacher/class/${classId}/rankings`), // 🔧 FIX: Use teacher endpoint
+                    fetch(`/api/classes/${classId}/last-quiz-rankings`)
                 ]);
                 
                 const overviewData = await overviewResponse.json();
                 const analyticsResponseData = await analyticsResponse.json();
-                const rankingsData = await rankingsResponse.json();
+                const rankingsData = await teacherRankingsResponse.json(); // 🔧 FIX: Updated variable name
+                const lastQuizData = await lastQuizResponse.json();
                 
                 if (overviewData.success) {
                     classData = overviewData.classData;
                     updateClassInfo();
                     updateAnalyticsStats(overviewData);
                     
-                    // Update top performers and recent activity
-                    if (overviewData.topPerformers) {
-                        displayTopPerformers(overviewData.topPerformers);
+                    // 🔧 FIX: Create performance trend chart with data
+                    if (overviewData.performanceTrend && overviewData.performanceTrend.length > 0) {
+                        createPerformanceTrendChart(overviewData.performanceTrend);
+                    } else {
+                        console.warn('⚠️ No performance trend data available');
+                        createPerformanceTrendChart([]); // Create empty chart
                     }
-                    
-                    if (overviewData.recentActivity) {
-                        displayRecentActivity(overviewData.recentActivity);
-                    }
-                    
-                    // Create performance trend chart
-                    createPerformanceTrendChart(overviewData.performanceTrend || []);
                 }
                 
                 if (analyticsResponseData.success) {
@@ -2173,11 +2223,24 @@
                     displayDetailedAnalytics(analyticsData);
                 }
 
-                // Display class rankings
+                // 🔧 FIX: Display class rankings with teacher data
                 if (rankingsData.success) {
                     displayClassRankings(rankingsData.data.rankings);
                 } else {
+                    console.warn('⚠️ No ranking data:', rankingsData.message);
                     displayClassRankings([]);
+                }
+
+                // Display last quiz rankings
+                if (lastQuizData.success) {
+                    displayLastQuizRankings(lastQuizData.data);
+                } else {
+                    displayLastQuizRankings({ rankings: [], quizTitle: null });
+                }
+
+                // Display recent activity
+                if (overviewData.recentActivity) {
+                    displayRecentActivity(overviewData.recentActivity);
                 }
                 
                 console.log('✅ Analytics data loaded successfully');
@@ -2187,7 +2250,6 @@
                 showError('Failed to load analytics data: ' + error.message);
             }
         }
-
         // Update class info in sidebar
         function updateClassInfo() {
             if (classData) {
@@ -2197,7 +2259,7 @@
             }
         }
 
-        // Update analytics stats
+        // 🔄 UPDATED: Update analytics stats with proper formatting
         function updateAnalyticsStats(data) {
             if (data && data.classData) {
                 document.getElementById('totalStudents').textContent = data.classData.studentCount || 0;
@@ -2212,7 +2274,7 @@
             }
         }
 
-        // Display class rankings
+        // 🆕 NEW: Display class rankings with points-based system
         function displayClassRankings(rankings) {
             const container = document.getElementById('classRankingsContainer');
             
@@ -2221,60 +2283,74 @@
                 return;
             }
 
-            const rankingsHTML = rankings.slice(0, 10).map((student, index) => {
+            const rankingsHTML = rankings.map((student, index) => {
                 const rankClass = index < 3 ? `rank-${index + 1}` : 'rank-other';
-                const itemClass = index < 3 ? 'rank-item top-3' : 'rank-item';
+                const itemClass = index < 3 ? 'ranking-item top-3' : 'ranking-item';
                 
                 return `
                     <div class="${itemClass}">
                         <div style="display: flex; align-items: center; gap: 0.75rem;">
                             <span class="rank-badge ${rankClass}">${student.rank}</span>
-                            <div>
-                                <div style="font-weight: 600; color: #1e293b;">${student.studentName}</div>
-                                <div style="font-size: 0.8rem; color: #64748b;">
-                                    ${student.totalQuizzes} quizzes • ${student.participationRate}% participation
+                            <div class="student-rank-info">
+                                <div class="student-rank-name">${student.studentName}</div>
+                                <div class="student-rank-meta">
+                                    ${student.totalQuizzes} quizzes • ${formatPercentage(student.participationRate)}% participation
                                 </div>
                             </div>
                         </div>
-                        <div style="text-align: right;">
-                            <div style="font-weight: bold; color: #10b981;">${(parseFloat(student.averageScore) || 0).toFixed(2)}%</div>
-                            <div style="font-size: 0.8rem; color: #64748b;">${student.averageTime} avg</div>
+                        <div class="student-rank-score">
+                            <div class="student-score-main">${(parseFloat(student.averageScore) || 0).toFixed(2)}% (${student.finalPoints}pts)</div>
+                            <div class="student-score-sub">Score + Time + Participation</div>
                         </div>
                     </div>
                 `;
             }).join('');
 
-            container.innerHTML = `
-                <div class="rankings-grid">
-                    ${rankingsHTML}
-                </div>
-            `;
+            container.innerHTML = rankingsHTML;
         }
-
-        // Display top performers
-        function displayTopPerformers(performers) {
-            const container = document.getElementById('topPerformersContainer');
+        // 🆕 NEW: Display last quiz rankings
+        function displayLastQuizRankings(data) {
+            const container = document.getElementById('lastQuizRankingsContainer');
             
-            if (!performers || performers.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #64748b;">No performance data yet.</p>';
+            if (!data || !data.rankings || data.rankings.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #64748b;">No recent quiz rankings available.</p>';
                 return;
             }
 
-            const performersHTML = performers.map((performer, index) => `
-                <div class="performer-item">
-                    <div>
-                        <span class="performer-rank">#${index + 1}</span>
-                        <span style="font-weight: 600;">${performer.studentName}</span>
-                        <div style="font-size: 0.8rem; color: #64748b;">${performer.totalQuizzes} quizzes taken</div>
-                    </div>
-                    <div style="font-weight: bold; color: #10b981;">${(parseFloat(performer.averageScore) || 0).toFixed(2)}%</div>
+            // Quiz header with title
+            const quizHeaderHTML = data.quizTitle ? `
+                <div class="quiz-header-info">
+                    📝 <strong>${data.quizTitle}</strong> • ${data.rankings.length} participants
                 </div>
-            `).join('');
+            ` : '';
 
-            container.innerHTML = performersHTML;
+            const rankingsHTML = data.rankings.map((student, index) => {
+                const rankClass = index < 3 ? `rank-${index + 1}` : 'rank-other';
+                const itemClass = index < 3 ? 'ranking-item top-3' : 'ranking-item';
+                
+                return `
+                    <div class="${itemClass}">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <span class="rank-badge ${rankClass}">${student.rank}</span>
+                            <div class="student-rank-info">
+                                <div class="student-rank-name">${student.studentName}</div>
+                                <div class="student-rank-meta">
+                                    Completed in ${student.timeTaken} • ${formatPercentage(student.timeEfficiency)}% efficiency
+                                </div>
+                            </div>
+                        </div>
+                        <div class="student-rank-score">
+                            <div class="student-score-main">${formatPercentage(student.score)}% (${student.points}pts)</div>
+                            <div class="student-score-sub">Score + Time</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = quizHeaderHTML + rankingsHTML;
         }
 
-        // Display recent activity
+        // 🔄 UPDATED: Display recent activity with proper formatting
         function displayRecentActivity(activities) {
             const container = document.getElementById('recentActivityContainer');
             
@@ -2298,29 +2374,45 @@
         // Create performance trend chart
         function createPerformanceTrendChart(trendData) {
             const ctx = document.getElementById('performanceChart');
-            if (!ctx) return;
+            if (!ctx) {
+                console.error('❌ Performance chart canvas not found');
+                return;
+            }
 
             // Destroy existing chart
             if (performanceChart) {
                 performanceChart.destroy();
             }
 
+            // Handle empty data
+            if (!trendData || trendData.length === 0) {
+                console.warn('⚠️ No trend data available, creating empty chart');
+                trendData = [{ quizTitle: 'No Data', score: 0, attempts: 0 }];
+            }
+
             // Prepare data for chart
-            const labels = trendData.map((item, index) => `Quiz ${index + 1}`);
-            const scores = trendData.map(item => item.score || 0);
+            const labels = trendData.map((item, index) => item.quizTitle || `Quiz ${index + 1}`);
+            const scores = trendData.map(item => parseFloat(item.score) || 0);
+
+            console.log('📊 Creating performance chart with data:', { labels, scores });
 
             performanceChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Average Score',
+                        label: 'Average Score (%)',
                         data: scores,
                         borderColor: '#3b82f6',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        borderWidth: 2,
+                        borderWidth: 3,
                         fill: true,
-                        tension: 0.4
+                        tension: 0.4,
+                        pointBackgroundColor: '#3b82f6',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 6,
+                        pointHoverRadius: 8
                     }]
                 },
                 options: {
@@ -2328,7 +2420,21 @@
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            display: false
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    const dataPoint = trendData[context.dataIndex];
+                                    return [
+                                        `Average Score: ${context.parsed.y.toFixed(1)}%`,
+                                        `Attempts: ${dataPoint.attempts || 0}`
+                                    ];
+                                }
+                            }
                         }
                     },
                     scales: {
@@ -2337,19 +2443,43 @@
                             max: 100,
                             title: {
                                 display: true,
-                                text: 'Score (%)'
+                                text: 'Score (%)',
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
                             }
                         },
                         x: {
                             title: {
                                 display: true,
-                                text: 'Quiz Attempts'
+                                text: 'Quizzes',
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
                             }
                         }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
                     }
                 }
             });
+
+            console.log('✅ Performance trend chart created successfully');
         }
+
+
+
 
         // Create distribution chart
         function createDistributionChart(distributionData) {
@@ -2392,7 +2522,7 @@
             });
         }
 
-        // Display detailed analytics
+        // 🔄 UPDATED: Display detailed analytics with proper formatting
         function displayDetailedAnalytics(analytics) {
             const container = document.getElementById('detailedAnalyticsContainer');
             
@@ -2489,7 +2619,7 @@
             }
         }
 
-        // Display students
+        // 🔄 UPDATED: Display students with proper formatting
         function displayStudents(students) {
             const container = document.getElementById('studentsContainer');
             
@@ -2643,6 +2773,21 @@
                 }
             }
         });
+
+        // 🆕 NEW: Format time function
+        function formatTime(seconds) {
+            if (typeof seconds !== 'number' || isNaN(seconds) || seconds < 0) return '0:00';
+            
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = Math.floor(seconds % 60);
+            
+            if (hours > 0) {
+                return `${hours}h ${minutes}m ${secs}s`;
+            } else {
+                return `${minutes}m ${secs}s`;
+            }
+        }
     </script>
 </body>
 </html>
