@@ -1020,6 +1020,94 @@
             line-height: 1.5;
         }
 
+        /* 🆕 NEW: Loading Overlay Styles */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .loading-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .loading-content {
+            background: white;
+            border-radius: 16px;
+            padding: 3rem 2.5rem;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            max-width: 400px;
+            width: 90%;
+            transform: translateY(-20px) scale(0.9);
+            transition: all 0.3s ease;
+        }
+
+        .loading-overlay.active .loading-content {
+            transform: translateY(0) scale(1);
+        }
+
+        .loading-animation {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 1.5rem;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+        }
+
+        .loading-animation img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .loading-text {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #64748b;
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        .loading-subtext {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-top: 0.5rem;
+            font-weight: normal;
+        }
+
+        /* Progress indicator */
+        .loading-progress {
+            width: 100%;
+            height: 4px;
+            background: #e2e8f0;
+            border-radius: 2px;
+            margin: 1.5rem 0 0.5rem 0;
+            overflow: hidden;
+        }
+
+        .loading-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #10b981);
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
         /* Mobile Responsiveness */
         @media (max-width: 1024px) {
             .sidebar {
@@ -1060,6 +1148,20 @@
             .modal-content {
                 width: 95%;
                 margin: 1rem;
+            }
+
+            .loading-content {
+                padding: 2rem 1.5rem;
+                margin: 1rem;
+            }
+
+            .loading-animation {
+                width: 100px;
+                height: 100px;
+            }
+
+            .loading-text {
+                font-size: 1.1rem;
             }
         }
 
@@ -1135,12 +1237,39 @@
                 text-align: center;
                 justify-content: center;
             }
+
+            .loading-content {
+                padding: 1.5rem 1rem;
+            }
+
+            .loading-animation {
+                width: 80px;
+                height: 80px;
+            }
+
+            .loading-text {
+                font-size: 1rem;
+            }
         }
     </style>
 </head>
 <body>
     <!-- Mobile Menu Button -->
     <button class="mobile-menu-btn" onclick="toggleSidebar()" style="display: none;">☰</button>
+
+    <!-- 🆕 NEW: Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-content">
+            <div class="loading-animation">
+                <img src="/Quizzie-main/public/Animation-1751710786188.gif" alt="Loading Animation" id="loadingGif">
+            </div>
+            <h3 class="loading-text" id="loadingText">Preparing your quiz...</h3>
+            <p class="loading-subtext">Please wait while we process your request</p>
+            <div class="loading-progress">
+                <div class="loading-progress-bar" id="loadingProgressBar"></div>
+            </div>
+        </div>
+    </div>
 
     <div class="layout">
         <!-- Sidebar -->
@@ -1493,6 +1622,41 @@
             classSubject: classSubject
         });
 
+        // 🆕 NEW: Loading overlay functions
+        function showLoadingOverlay(text = 'Processing...', progress = 0) {
+            const overlay = document.getElementById('loadingOverlay');
+            const loadingText = document.getElementById('loadingText');
+            const progressBar = document.getElementById('loadingProgressBar');
+            
+            loadingText.textContent = text;
+            progressBar.style.width = progress + '%';
+            
+            overlay.classList.add('active');
+            
+            // Disable all interactive elements
+            document.body.style.overflow = 'hidden';
+            console.log('🔄 Loading overlay shown:', text, `(${progress}%)`);
+        }
+
+        function hideLoadingOverlay() {
+            const overlay = document.getElementById('loadingOverlay');
+            overlay.classList.remove('active');
+            
+            // Re-enable scrolling
+            document.body.style.overflow = '';
+            console.log('✅ Loading overlay hidden');
+        }
+
+        function updateLoadingProgress(text, progress) {
+            const loadingText = document.getElementById('loadingText');
+            const progressBar = document.getElementById('loadingProgressBar');
+            
+            loadingText.textContent = text;
+            progressBar.style.width = progress + '%';
+            
+            console.log('📈 Loading progress updated:', text, `(${progress}%)`);
+        }
+
         // 🆕 NEW: Helper functions for formatting
         function formatPercentage(value, decimals = 1) {
             const num = parseFloat(value) || 0;
@@ -1734,7 +1898,7 @@
             }
         });
 
-        // Updated form submission handler
+        // 🔄 UPDATED: Enhanced form submission handler with loading overlay
         document.getElementById('createQuizForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -1746,6 +1910,9 @@
                 duration: capturedDuration,
                 questions: capturedQuestions
             });
+
+            // 🆕 Show loading overlay immediately
+            showLoadingOverlay('Uploading your file...', 0);
             
             const formData = new FormData();
             formData.append('lectureFile', document.getElementById('lectureFile').files[0]);
@@ -1760,9 +1927,9 @@
             const originalText = submitButton.textContent;
             
             try {
-                submitButton.textContent = '📤 Uploading...';
-                submitButton.disabled = true;
-
+                // Stage 1: Upload file
+                updateLoadingProgress('Uploading your file...', 10);
+                
                 console.log('📤 Uploading lecture with settings:', {
                     classId: classId,
                     duration: capturedDuration,
@@ -1778,35 +1945,49 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    showSuccess(`Lecture uploaded successfully! Generating ${capturedQuestions} questions with ${capturedDuration}-minute duration...`);
+                    // Stage 2: File uploaded, processing data
+                    updateLoadingProgress('Processing data...', 35);
+                    
+                    console.log('✅ File uploaded successfully, starting quiz generation...');
+                    
+                    // Reset form
                     document.getElementById('createQuizForm').reset();
                     setDuration(15); // Reset to defaults
                     setQuestions(10);
                     
-                    submitButton.textContent = '🤖 Generating Quiz...';
+                    // Stage 3: Generate quiz
+                    updateLoadingProgress('Generating questions...', 60);
                     
                     // ✅ DIRECTLY call quiz generation with captured values
                     await generateQuizFromLecture(result.lectureId, capturedDuration, capturedQuestions);
                     
-                    // Close modal after successful creation
-                    closeCreateQuizModal();
+                    // Stage 4: Wrapping up
+                    updateLoadingProgress('Wrapping things up!', 90);
+                    
+                    // Short delay to show final message
+                    setTimeout(() => {
+                        updateLoadingProgress('Quiz created successfully!', 100);
+                        
+                        // Hide loading after another short delay
+                        setTimeout(() => {
+                            hideLoadingOverlay();
+                            closeCreateQuizModal();
+                            showSuccess(`🎉 Quiz created successfully with ${capturedQuestions} questions and ${capturedDuration}-minute duration!`);
+                        }, 1000);
+                    }, 500);
                     
                 } else {
                     throw new Error(result.message || 'Upload failed');
                 }
             } catch (error) {
                 console.error('❌ Upload error:', error);
+                hideLoadingOverlay();
                 showError('Failed to upload lecture: ' + error.message);
-                
-                submitButton.textContent = originalText;
-                submitButton.disabled = false;
             }
         });
 
-        // Updated quiz generation function with duration and questions parameters
+        // 🔄 UPDATED: Enhanced quiz generation function
         async function generateQuizFromLecture(lectureId, durationMinutes, questionCount) {
-            const submitButton = document.querySelector('#createQuizForm button[type="submit"]');
-            
             try {
                 console.log('🤖 QUIZ GENERATION - Starting with exact settings:', {
                     lectureId: lectureId,
@@ -1852,24 +2033,16 @@
                         requestedQuestions: safeQuestions
                     });
                     
-                    const durationText = result.durationMinutes ? ` (${result.durationMinutes} minutes)` : '';
-                    showSuccess(`🎉 Quiz generated successfully${durationText}! ${result.totalQuestions} questions created with detailed explanations.`);
-                    
                     loadQuizzes(); // Refresh quiz list
                     loadAnalytics(); // Refresh analytics
                     
                 } else {
                     console.error('❌ Quiz generation failed:', result.message);
-                    showError('Quiz generation failed: ' + result.message);
+                    throw new Error(result.message || 'Quiz generation failed');
                 }
             } catch (error) {
                 console.error('❌ Quiz generation error:', error);
-                showError('Failed to generate quiz: ' + error.message);
-            } finally {
-                if (submitButton) {
-                    submitButton.textContent = '📤 Upload & Generate Quiz';
-                    submitButton.disabled = false;
-                }
+                throw error; // Re-throw to be caught by calling function
             }
         }
 
@@ -2479,9 +2652,6 @@
             console.log('✅ Performance trend chart created successfully');
         }
 
-
-
-
         // Create distribution chart
         function createDistributionChart(distributionData) {
             const ctx = document.getElementById('distributionChart');
@@ -2772,6 +2942,10 @@
                 if (document.getElementById('quizViewerModal').classList.contains('active')) {
                     closeQuizViewer();
                 }
+                // 🆕 NEW: Close loading overlay on escape (if there's an error)
+                if (document.getElementById('loadingOverlay').classList.contains('active')) {
+                    hideLoadingOverlay();
+                }
             }
         });
 
@@ -2788,6 +2962,40 @@
             } else {
                 return `${minutes}m ${secs}s`;
             }
+        }
+
+        // 🆕 NEW: Activity item styles (for recent activity)
+        const activityItemStyles = `
+            <style>
+                .activity-item {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 0.75rem;
+                    background: #f8fafc;
+                    border-radius: 6px;
+                    margin-bottom: 0.5rem;
+                    border-left: 3px solid #e2e8f0;
+                    transition: all 0.2s ease;
+                }
+                
+                .activity-item:hover {
+                    background: #f1f5f9;
+                    border-left-color: #3b82f6;
+                }
+                
+                .activity-item:last-child {
+                    margin-bottom: 0;
+                }
+            </style>
+        `;
+        
+        // Inject activity styles if not already present
+        if (!document.querySelector('#activityStyles')) {
+            const styleSheet = document.createElement('style');
+            styleSheet.id = 'activityStyles';
+            styleSheet.textContent = activityItemStyles;
+            document.head.appendChild(styleSheet);
         }
     </script>
 </body>
