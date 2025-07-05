@@ -1044,11 +1044,10 @@
         }
 
         .loading-content {
-            background: white;
+            background: transparent;
             border-radius: 16px;
             padding: 3rem 2.5rem;
             text-align: center;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
             max-width: 400px;
             width: 90%;
             transform: translateY(-20px) scale(0.9);
@@ -1065,29 +1064,34 @@
             margin: 0 auto 1.5rem;
             border-radius: 12px;
             overflow: hidden;
-            background: #f8fafc;
-            border: 2px solid #e2e8f0;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .loading-animation img {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: contain;
+            border-radius: 12px;
         }
 
         .loading-text {
             font-size: 1.25rem;
             font-weight: bold;
-            color: #64748b;
+            color: #d7dbe2;
             margin: 0;
             line-height: 1.4;
+            transition: opacity 0.3s ease;
         }
 
-        .loading-subtext {
-            font-size: 0.9rem;
-            color: #94a3b8;
-            margin-top: 0.5rem;
-            font-weight: normal;
+        .loading-text.fade-out {
+            opacity: 0;
+        }
+
+        .loading-text.fade-in {
+            opacity: 1;
         }
 
         /* Progress indicator */
@@ -1261,10 +1265,9 @@
     <div id="loadingOverlay" class="loading-overlay">
         <div class="loading-content">
             <div class="loading-animation">
-                <img src="/Quizzie-main/public/Animation-1751710786188.gif" alt="Loading Animation" id="loadingGif">
+                <img src="/Animation-1751710786188.gif" alt="Loading Animation" id="loadingGif" onload="console.log('✅ Loading GIF loaded successfully')" onerror="console.error('❌ Failed to load GIF')">
             </div>
-            <h3 class="loading-text" id="loadingText">Preparing your quiz...</h3>
-            <p class="loading-subtext">Please wait while we process your request</p>
+            <h3 class="loading-text fade-in" id="loadingText">Preparing your quiz...</h3>
             <div class="loading-progress">
                 <div class="loading-progress-bar" id="loadingProgressBar"></div>
             </div>
@@ -1627,8 +1630,14 @@
             const overlay = document.getElementById('loadingOverlay');
             const loadingText = document.getElementById('loadingText');
             const progressBar = document.getElementById('loadingProgressBar');
+            const loadingGif = document.getElementById('loadingGif');
+            
+            // Preload and force refresh the GIF
+            loadingGif.src = `/Animation-1751710786188.gif?t=${Date.now()}`;
             
             loadingText.textContent = text;
+            loadingText.classList.add('fade-in');
+            loadingText.classList.remove('fade-out');
             progressBar.style.width = progress + '%';
             
             overlay.classList.add('active');
@@ -1651,7 +1660,17 @@
             const loadingText = document.getElementById('loadingText');
             const progressBar = document.getElementById('loadingProgressBar');
             
-            loadingText.textContent = text;
+            // Fade out current text
+            loadingText.classList.add('fade-out');
+            loadingText.classList.remove('fade-in');
+            
+            // Update text after fade out completes
+            setTimeout(() => {
+                loadingText.textContent = text;
+                loadingText.classList.remove('fade-out');
+                loadingText.classList.add('fade-in');
+            }, 150); // Half of the CSS transition time
+            
             progressBar.style.width = progress + '%';
             
             console.log('📈 Loading progress updated:', text, `(${progress}%)`);
@@ -2202,6 +2221,20 @@
         // Initialize when DOM is loaded
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🔄 DOM loaded, starting initialization...');
+            
+            // 🆕 NEW: Preload the loading GIF for instant display
+            const preloadGif = new Image();
+            preloadGif.src = '/Animation-1751710786188.gif';
+            preloadGif.onload = () => {
+                console.log('✅ Loading GIF preloaded successfully');
+                // Set the src immediately to the image in the overlay
+                document.getElementById('loadingGif').src = preloadGif.src;
+            };
+            preloadGif.onerror = () => {
+                console.error('❌ Failed to preload loading GIF - check if file exists at /public/Animation-1751710786188.gif');
+                // Fallback: try without timestamp
+                document.getElementById('loadingGif').src = '/Animation-1751710786188.gif';
+            };
             
             // Set initial values
             document.getElementById('classTitle').textContent = className || 'Loading...';
