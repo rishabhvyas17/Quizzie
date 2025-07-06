@@ -4,7 +4,7 @@ const mongoose = require("mongoose")
 const quizAIConnection = mongoose.createConnection("mongodb://localhost:27017/QuizAI");
 
 quizAIConnection.on('connected', () => {
-    console.log("✅ Connected to QuizAI database - All collections unified!");
+    console.log("✅ Connected to QuizAI database - All collections unified with Join System!");
 });
 
 quizAIConnection.on('error', (error) => {
@@ -55,9 +55,9 @@ const teacherSchema = new mongoose.Schema({
     }
 })
 
-// ==================== NEW: CLASS MANAGEMENT SCHEMAS ====================
+// ==================== EXISTING CLASS MANAGEMENT SCHEMAS ====================
 
-// 🆕 Classes Schema - Core class information
+// Classes Schema - Core class information
 const classSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -115,7 +115,7 @@ const classSchema = new mongoose.Schema({
     }
 });
 
-// 🆕 ClassStudents Junction Table - Many-to-many relationship
+// ClassStudents Junction Table - Many-to-many relationship
 const classStudentSchema = new mongoose.Schema({
     classId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -145,9 +145,138 @@ const classStudentSchema = new mongoose.Schema({
     }
 });
 
+// ==================== 🆕 NEW: CLASS JOIN SYSTEM SCHEMAS ====================
+
+// 🆕 NEW: Class Join Codes Schema - Temporary codes with 10min expiry
+const classJoinCodeSchema = new mongoose.Schema({
+    classId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'ClassCollection',
+        required: true
+    },
+    teacherId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'TeacherCollection',
+        required: true
+    },
+    className: {
+        type: String,
+        required: true
+    },
+    classSubject: {
+        type: String,
+        required: true
+    },
+    teacherName: {
+        type: String,
+        required: true
+    },
+    joinCode: {
+        type: String,
+        required: true,
+        unique: true,
+        uppercase: true,
+        minlength: 6,
+        maxlength: 6
+    },
+    expiresAt: {
+        type: Date,
+        required: true,
+        index: { expireAfterSeconds: 0 } // MongoDB TTL index for automatic cleanup
+    },
+    isActive: {
+        type: Boolean,
+        default: true
+    },
+    generatedAt: {
+        type: Date,
+        default: Date.now
+    },
+    usageCount: {
+        type: Number,
+        default: 0
+    },
+    maxUsage: {
+        type: Number,
+        default: 50 // Prevent spam, reasonable limit for class size
+    }
+});
+
+// 🆕 NEW: Class Join Requests Schema - Pending approval requests
+const classJoinRequestSchema = new mongoose.Schema({
+    classId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'ClassCollection',
+        required: true
+    },
+    studentId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'StudentCollection',
+        required: true
+    },
+    studentName: {
+        type: String,
+        required: true
+    },
+    studentEnrollment: {
+        type: String,
+        required: true
+    },
+    joinCode: {
+        type: String,
+        required: true,
+        uppercase: true
+    },
+    // Class info for easier reference
+    className: {
+        type: String,
+        required: true
+    },
+    classSubject: {
+        type: String,
+        required: true
+    },
+    teacherId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'TeacherCollection',
+        required: true
+    },
+    teacherName: {
+        type: String,
+        required: true
+    },
+    status: {
+        type: String,
+        enum: ['pending', 'approved', 'rejected'],
+        default: 'pending'
+    },
+    requestedAt: {
+        type: Date,
+        default: Date.now
+    },
+    processedAt: {
+        type: Date
+    },
+    processedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'TeacherCollection'
+    },
+    rejectionReason: {
+        type: String,
+        trim: true
+    },
+    // Metadata
+    ipAddress: {
+        type: String
+    },
+    userAgent: {
+        type: String
+    }
+});
+
 // ==================== ENHANCED EXISTING SCHEMAS ====================
 
-// 🔄 UPDATED: Lectures Schema - Now supports classes
+// Lectures Schema - Now supports classes
 const lectureSchema = new mongoose.Schema({
     title: {
         type: String,
@@ -204,11 +333,11 @@ const lectureSchema = new mongoose.Schema({
         ref: 'TeacherCollection',
         required: true
     },
-    // 🆕 NEW: Class association
+    // Class association
     classId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'ClassCollection',
-        required: false // Optional for backward compatibility
+        required: false
     },
     className: {
         type: String,
@@ -216,7 +345,7 @@ const lectureSchema = new mongoose.Schema({
     }
 });
 
-// 🔄 ENSURE: Quiz Schema has proper duration field (your existing schema should already have this)
+// Quiz Schema with proper duration field
 const quizSchema = new mongoose.Schema({
     lectureId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -227,15 +356,13 @@ const quizSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    // 🆕 CRITICAL: Duration field (ensure this is exactly as shown)
     durationMinutes: {
         type: Number,
         required: true,
-        default: 15,  // Default 15 minutes
-        min: 2,       // Minimum 2 minutes
-        max: 60       // Maximum 60 minutes
+        default: 15,
+        min: 2,
+        max: 60
     },
-    // Class association
     classId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'ClassCollection',
@@ -261,7 +388,6 @@ const quizSchema = new mongoose.Schema({
             enum: ['A', 'B', 'C', 'D'],
             required: true
         },
-        // Enhanced explanation fields
         explanations: {
             A: { type: String, default: "" },
             B: { type: String, default: "" }, 
@@ -290,7 +416,6 @@ const quizSchema = new mongoose.Schema({
         ref: 'TeacherCollection',
         required: true
     },
-    // Performance stats (computed)
     totalAttempts: {
         type: Number,
         default: 0
@@ -305,7 +430,7 @@ const quizSchema = new mongoose.Schema({
     }
 });
 
-// 🔄 UPDATED: Quiz Results Schema - Now supports anti-cheating metadata
+// Quiz Results Schema with anti-cheating metadata
 const quizResultSchema = new mongoose.Schema({
     quizId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -317,11 +442,10 @@ const quizResultSchema = new mongoose.Schema({
         ref: 'LectureCollection',
         required: true
     },
-    // Class association
     classId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'ClassCollection',
-        required: false // Optional for backward compatibility
+        required: false
     },
     studentId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -356,32 +480,30 @@ const quizResultSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
-    // 🆕 NEW: Duration tracking fields
     quizDurationMinutes: {
         type: Number,
-        required: false, // Optional for backward compatibility
+        required: false,
         min: 2,
         max: 120
     },
     quizDurationSeconds: {
         type: Number,
-        required: false, // Optional for backward compatibility
-        min: 120, // 2 minutes minimum
-        max: 7200 // 2 hours maximum
+        required: false,
+        min: 120,
+        max: 7200
     },
     timeEfficiency: {
         type: Number,
-        required: false, // Optional for backward compatibility
+        required: false,
         min: 0,
         max: 100
     },
-    // 🆕 NEW: Anti-Cheat Metadata
     antiCheatMetadata: {
         violationCount: {
             type: Number,
             default: 0,
             min: 0,
-            max: 10 // Reasonable limit
+            max: 10
         },
         wasAutoSubmitted: {
             type: Boolean,
@@ -402,7 +524,6 @@ const quizResultSchema = new mongoose.Schema({
             enum: ['Manual', 'Auto-Submit', 'Timer-Submit'],
             default: 'Manual'
         },
-        // 🆕 Optional: Detailed violation log (for future enhancements)
         violationDetails: [{
             violationType: {
                 type: String,
@@ -414,11 +535,10 @@ const quizResultSchema = new mongoose.Schema({
                 required: false
             },
             duration: {
-                type: Number, // Duration of violation in seconds
+                type: Number,
                 required: false
             }
         }],
-        // Monitoring metadata
         monitoringStartTime: {
             type: Date,
             required: false
@@ -454,7 +574,7 @@ const quizResultSchema = new mongoose.Schema({
     }]
 });
 
-// AI Explanations Cache Schema (unchanged)
+// AI Explanations Cache Schema
 const explanationCacheSchema = new mongoose.Schema({
     questionText: {
         type: String,
@@ -506,36 +626,54 @@ lectureSchema.index({ professorId: 1, uploadDate: -1 });
 quizSchema.index({ lectureId: 1, generatedDate: -1 });
 quizResultSchema.index({ studentId: 1, submissionDate: -1 });
 
-// 🆕 NEW: Class management indexes
-classSchema.index({ teacherId: 1, createdAt: -1 }); // Find teacher's classes
-classSchema.index({ isActive: 1, teacherId: 1 }); // Active classes for teacher
-classStudentSchema.index({ classId: 1, isActive: 1 }); // Students in a class
-classStudentSchema.index({ studentId: 1, isActive: 1 }); // Classes for a student
-classStudentSchema.index({ classId: 1, studentId: 1 }, { unique: true }); // Prevent duplicates
+// Class management indexes
+classSchema.index({ teacherId: 1, createdAt: -1 });
+classSchema.index({ isActive: 1, teacherId: 1 });
+classStudentSchema.index({ classId: 1, isActive: 1 });
+classStudentSchema.index({ studentId: 1, isActive: 1 });
+classStudentSchema.index({ classId: 1, studentId: 1 }, { unique: true });
 
-// 🆕 NEW: Enhanced indexes for class-based queries
-lectureSchema.index({ classId: 1, uploadDate: -1 }); // Class lectures
-quizSchema.index({ classId: 1, generatedDate: -1 }); // Class quizzes
-quizResultSchema.index({ classId: 1, submissionDate: -1 }); // Class results
+// Enhanced indexes for class-based queries
+lectureSchema.index({ classId: 1, uploadDate: -1 });
+quizSchema.index({ classId: 1, generatedDate: -1 });
+quizResultSchema.index({ classId: 1, submissionDate: -1 });
 
-// 🆕 NEW: Anti-cheat indexes for performance
+// 🆕 NEW: Join System Indexes for Performance
+classJoinCodeSchema.index({ joinCode: 1 }, { unique: true }); // Fast code lookup
+classJoinCodeSchema.index({ classId: 1, isActive: 1 }); // Active codes for a class
+classJoinCodeSchema.index({ teacherId: 1, isActive: 1 }); // Teacher's active codes
+classJoinCodeSchema.index({ expiresAt: 1 }); // TTL cleanup and expiry checks
+classJoinCodeSchema.index({ generatedAt: -1 }); // Recent codes first
+
+classJoinRequestSchema.index({ classId: 1, status: 1 }); // Requests by class and status
+classJoinRequestSchema.index({ studentId: 1, status: 1 }); // Student's requests
+classJoinRequestSchema.index({ teacherId: 1, status: 1 }); // Teacher's pending requests
+classJoinRequestSchema.index({ requestedAt: -1 }); // Recent requests first
+classJoinRequestSchema.index({ joinCode: 1 }); // Track usage of codes
+classJoinRequestSchema.index({ 
+    studentId: 1, 
+    classId: 1 
+}, { 
+    unique: true, 
+    partialFilterExpression: { status: { $in: ['pending', 'approved'] } } 
+}); // Prevent duplicate active requests
+
+// Anti-cheat indexes
 quizResultSchema.index({ 
     'antiCheatMetadata.violationCount': 1, 
     submissionDate: -1 
-}); // Find violations by date
-
+});
 quizResultSchema.index({ 
     'antiCheatMetadata.wasAutoSubmitted': 1, 
     submissionDate: -1 
-}); // Find auto-submitted quizzes
-
+});
 quizResultSchema.index({ 
     'antiCheatMetadata.securityStatus': 1, 
     classId: 1, 
     submissionDate: -1 
-}); // Security status queries by class
+});
 
-// Create compound index for fast explanation lookups
+// Explanation cache index
 explanationCacheSchema.index({ 
     questionText: 1, 
     correctAnswer: 1, 
@@ -545,7 +683,7 @@ explanationCacheSchema.index({
 
 // ==================== SCHEMA MIDDLEWARE ====================
 
-// 🆕 Update class stats when students are added/removed
+// Update class stats when students are added/removed
 classStudentSchema.post('save', async function() {
     try {
         const ClassCollection = this.constructor.model('ClassCollection');
@@ -565,7 +703,7 @@ classStudentSchema.post('save', async function() {
     }
 });
 
-// 🆕 Update class stats when lectures are added
+// Update class stats when lectures are added
 lectureSchema.post('save', async function() {
     try {
         if (this.classId) {
@@ -583,7 +721,7 @@ lectureSchema.post('save', async function() {
     }
 });
 
-// 🆕 Update class and quiz stats when quizzes are added
+// Update class and quiz stats when quizzes are added
 quizSchema.post('save', async function() {
     try {
         if (this.classId) {
@@ -601,7 +739,7 @@ quizSchema.post('save', async function() {
     }
 });
 
-// 🆕 Update quiz stats when results are submitted
+// Update quiz stats when results are submitted
 quizResultSchema.post('save', async function() {
     try {
         const QuizCollection = this.constructor.db.model('QuizCollection');
@@ -609,10 +747,10 @@ quizResultSchema.post('save', async function() {
         
         const totalAttempts = allResults.length;
         const averageScore = totalAttempts > 0 
-            ? parseFloat((allResults.reduce((sum, result) => sum + result.percentage, 0) / totalAttempts).toFixed(1)) // 🔧 FIX
+            ? parseFloat((allResults.reduce((sum, result) => sum + result.percentage, 0) / totalAttempts).toFixed(1))
             : 0;
         const highestScore = totalAttempts > 0 
-            ? parseFloat(Math.max(...allResults.map(result => result.percentage)).toFixed(1)) // 🔧 FIX
+            ? parseFloat(Math.max(...allResults.map(result => result.percentage)).toFixed(1))
             : 0;
         
         await QuizCollection.findByIdAndUpdate(this.quizId, {
@@ -621,13 +759,12 @@ quizResultSchema.post('save', async function() {
             highestScore
         });
         
-        // 🔧 FIX: Update class average score with proper formatting
         if (this.classId) {
             const ClassCollection = this.constructor.db.model('ClassCollection');
             const classResults = await this.constructor.find({ classId: this.classId });
             
             if (classResults.length > 0) {
-                const classAverageScore = parseFloat((classResults.reduce((sum, result) => sum + result.percentage, 0) / classResults.length).toFixed(1)); // 🔧 FIX
+                const classAverageScore = parseFloat((classResults.reduce((sum, result) => sum + result.percentage, 0) / classResults.length).toFixed(1));
                 await ClassCollection.findByIdAndUpdate(this.classId, { 
                     averageScore: classAverageScore,
                     updatedAt: new Date()
@@ -639,10 +776,9 @@ quizResultSchema.post('save', async function() {
     }
 });
 
-// 🆕 NEW: Pre-save middleware to set default anti-cheat metadata
+// 🆕 NEW: Auto-set anti-cheat metadata
 quizResultSchema.pre('save', function(next) {
     try {
-        // Ensure anti-cheat metadata exists with defaults
         if (!this.antiCheatMetadata) {
             this.antiCheatMetadata = {
                 violationCount: 0,
@@ -656,7 +792,6 @@ quizResultSchema.pre('save', function(next) {
             };
         }
         
-        // Auto-set security status based on violation count
         if (this.antiCheatMetadata.violationCount === 0) {
             this.antiCheatMetadata.securityStatus = 'Clean';
         } else if (this.antiCheatMetadata.violationCount === 1) {
@@ -672,7 +807,61 @@ quizResultSchema.pre('save', function(next) {
     }
 });
 
-// 🆕 NEW: Virtual field for security summary
+// 🆕 NEW: Join Code Methods
+classJoinCodeSchema.methods.isExpired = function() {
+    return new Date() > this.expiresAt;
+};
+
+classJoinCodeSchema.methods.canBeUsed = function() {
+    return this.isActive && !this.isExpired() && this.usageCount < this.maxUsage;
+};
+
+classJoinCodeSchema.statics.generateUniqueCode = async function() {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let attempts = 0;
+    const maxAttempts = 10;
+    
+    while (attempts < maxAttempts) {
+        let code = '';
+        for (let i = 0; i < 6; i++) {
+            code += characters.charAt(Math.floor(Math.random() * characters.length));
+        }
+        
+        const existing = await this.findOne({ joinCode: code, isActive: true });
+        if (!existing) {
+            return code;
+        }
+        
+        attempts++;
+    }
+    
+    throw new Error('Unable to generate unique join code after maximum attempts');
+};
+
+// 🆕 NEW: Join Request Methods
+classJoinRequestSchema.methods.approve = async function(approvedBy) {
+    this.status = 'approved';
+    this.processedAt = new Date();
+    this.processedBy = approvedBy;
+    return await this.save();
+};
+
+classJoinRequestSchema.methods.reject = async function(rejectedBy, reason) {
+    this.status = 'rejected';
+    this.processedAt = new Date();
+    this.processedBy = rejectedBy;
+    this.rejectionReason = reason || 'No reason provided';
+    return await this.save();
+};
+
+classJoinRequestSchema.statics.findPendingForTeacher = function(teacherId) {
+    return this.find({
+        teacherId: teacherId,
+        status: 'pending'
+    }).sort({ requestedAt: -1 });
+};
+
+// 🆕 NEW: Security summary virtual
 quizResultSchema.virtual('securitySummary').get(function() {
     const metadata = this.antiCheatMetadata || {};
     return {
@@ -685,80 +874,7 @@ quizResultSchema.virtual('securitySummary').get(function() {
     };
 });
 
-// 🆕 NEW: Schema methods for anti-cheat operations
-quizResultSchema.methods.getSecurityStatus = function() {
-    const metadata = this.antiCheatMetadata || {};
-    return {
-        violationCount: metadata.violationCount || 0,
-        wasAutoSubmitted: metadata.wasAutoSubmitted || false,
-        securityStatus: metadata.securityStatus || 'Clean',
-        riskAssessment: this.securitySummary.riskLevel
-    };
-};
-
-// 🆕 NEW: Static method to find suspicious submissions
-quizResultSchema.statics.findSuspiciousSubmissions = function(classId, days = 7) {
-    const sinceDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-    
-    return this.find({
-        classId: classId,
-        submissionDate: { $gte: sinceDate },
-        'antiCheatMetadata.violationCount': { $gt: 0 }
-    })
-    .sort({ 'antiCheatMetadata.violationCount': -1, submissionDate: -1 })
-    .lean();
-};
-
-// 🆕 NEW: Static method to get security statistics
-quizResultSchema.statics.getSecurityStats = function(classId, days = 30) {
-    const sinceDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-    
-    return this.aggregate([
-        {
-            $match: {
-                classId: mongoose.Types.ObjectId(classId),
-                submissionDate: { $gte: sinceDate }
-            }
-        },
-        {
-            $group: {
-                _id: null,
-                totalSubmissions: { $sum: 1 },
-                cleanSubmissions: {
-                    $sum: {
-                        $cond: [
-                            { $eq: ['$antiCheatMetadata.violationCount', 0] },
-                            1,
-                            0
-                        ]
-                    }
-                },
-                violationSubmissions: {
-                    $sum: {
-                        $cond: [
-                            { $gt: ['$antiCheatMetadata.violationCount', 0] },
-                            1,
-                            0
-                        ]
-                    }
-                },
-                autoSubmissions: {
-                    $sum: {
-                        $cond: [
-                            { $eq: ['$antiCheatMetadata.wasAutoSubmitted', true] },
-                            1,
-                            0
-                        ]
-                    }
-                },
-                averageViolations: { $avg: '$antiCheatMetadata.violationCount' }
-            }
-        }
-    ]);
-};
-
 // ==================== CREATE COLLECTIONS ====================
-// 🔄 UPDATED: All collections now in single QuizAI Database
 
 // User authentication collections
 const studentCollection = quizAIConnection.model("StudentCollection", studentSchema);
@@ -770,12 +886,15 @@ const quizCollection = quizAIConnection.model("QuizCollection", quizSchema);
 const quizResultCollection = quizAIConnection.model("QuizResultCollection", quizResultSchema);
 const explanationCacheCollection = quizAIConnection.model("ExplanationCache", explanationCacheSchema);
 
-// 🆕 NEW: Class management collections
+// Class management collections
 const classCollection = quizAIConnection.model("ClassCollection", classSchema);
 const classStudentCollection = quizAIConnection.model("ClassStudentCollection", classStudentSchema);
 
+// 🆕 NEW: Join System Collections
+const classJoinCodeCollection = quizAIConnection.model("ClassJoinCodeCollection", classJoinCodeSchema);
+const classJoinRequestCollection = quizAIConnection.model("ClassJoinRequestCollection", classJoinRequestSchema);
+
 // ==================== EXPORT ALL COLLECTIONS ====================
-// 🎯 All collections now unified in single QuizAI Database with Anti-Cheat Support!
 
 module.exports = {
     // User authentication collections
@@ -788,7 +907,11 @@ module.exports = {
     quizResultCollection,
     explanationCacheCollection,
     
-    // 🆕 NEW: Class management collections
+    // Class management collections
     classCollection,
-    classStudentCollection
+    classStudentCollection,
+    
+    // 🆕 NEW: Join system collections
+    classJoinCodeCollection,
+    classJoinRequestCollection
 }

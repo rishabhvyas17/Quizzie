@@ -7,6 +7,7 @@
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
+        /* All your existing styles remain the same... */
         /* Reset and Base Styles */
         * {
             margin: 0;
@@ -170,6 +171,353 @@
             color: #64748b;
             margin-top: 0.25rem;
             font-size: 0.9rem;
+        }
+
+        /* 🆕 NEW: Student Management Layout - Grid for side-by-side sections */
+        .student-management-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        /* 🆕 NEW: Compact Join Code System */
+        .join-code-container {
+            background: linear-gradient(135deg, #1072b9, #165aa3);
+            color: white;
+            border-radius: 12px;
+            padding: 1.25rem;
+            position: relative;
+            overflow: hidden;
+            height: fit-content;
+        }
+
+        .join-code-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transform: translate(20px, -20px);
+        }
+
+        .join-code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .join-code-title {
+            font-size: 1rem;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .generate-code-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            font-size: 0.85rem;
+        }
+
+        .generate-code-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .active-code-display {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            padding: 0.8rem;
+            text-align: center;
+        }
+
+        .code-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.4rem;
+            font-family: 'Courier New', monospace;
+        }
+
+        .code-info {
+            font-size: 0.8rem;
+            opacity: 0.9;
+            margin-bottom: 0.4rem;
+        }
+
+        .countdown-timer {
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #fef3c7;
+        }
+
+        .no-active-code {
+            text-align: center;
+            padding: 1.5rem;
+            opacity: 0.8;
+        }
+
+        /* 🆕 NEW: Compact Add Student Form */
+        .add-student-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.25rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            height: fit-content;
+        }
+
+        .add-student-title {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* 🆕 NEW: Pending Requests Button */
+        .pending-requests-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .pending-requests-btn {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+            position: relative;
+        }
+
+        .pending-requests-btn:hover {
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .pending-requests-btn:active {
+            transform: translateY(0);
+        }
+
+        /* 🆕 NEW: Notification Badge */
+        .notification-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+            border: 2px solid white;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+            }
+        }
+
+        /* 🆕 NEW: Pending Requests Modal */
+        .pending-requests-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .pending-requests-modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .pending-requests-modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow: hidden;
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .pending-requests-modal.active .pending-requests-modal-content {
+            transform: translateY(0);
+        }
+
+        .pending-requests-modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+        }
+
+        .pending-requests-modal-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .pending-requests-modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: white;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pending-requests-modal-close:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .pending-requests-modal-body {
+            padding: 1.5rem;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        /* 🆕 NEW: Updated Request Item Styles for Modal */
+        .modal-request-item {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 1.25rem;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .modal-request-item:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+        }
+
+        .modal-request-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .modal-request-info {
+            margin-bottom: 1rem;
+        }
+
+        .modal-request-student-name {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+            font-size: 1.05rem;
+        }
+
+        .modal-request-meta {
+            font-size: 0.85rem;
+            color: #64748b;
+            line-height: 1.4;
+        }
+
+        .modal-request-actions {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+        }
+
+        .modal-approve-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 0.6rem 1.25rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .modal-approve-btn:hover {
+            background: #059669;
+            transform: translateY(-1px);
+        }
+
+        .modal-reject-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 0.6rem 1.25rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .modal-reject-btn:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+        }
+
+        .no-pending-requests {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: #64748b;
+        }
+
+        .no-pending-requests h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: #1e293b;
         }
 
         /* Cards and Containers */
@@ -435,11 +783,11 @@
         }
 
         .btn-success {
-            background: #10b981;
+            ackground: linear-gradient(135deg, #0d63a1, #0b4f99);
         }
 
         .btn-success:hover {
-            background: #059669;
+            ackground: linear-gradient(135deg, #1072b9, #165aa3);
         }
 
         .btn-warning {
@@ -531,7 +879,7 @@
             height: 300px;
         }
 
-        /* 🆕 NEW: Rankings Layout Styles */
+        /* Rankings Layout Styles */
         .rankings-section {
             margin-top: 2rem;
         }
@@ -1053,11 +1401,13 @@
             .grid-2,
             .grid-3,
             .grid-4,
-            .rankings-grid {
+            .rankings-grid,
+            .student-management-grid {
                 grid-template-columns: 1fr;
             }
 
-            .modal-content {
+            .modal-content,
+            .pending-requests-modal-content {
                 width: 95%;
                 margin: 1rem;
             }
@@ -1117,7 +1467,8 @@
                 min-width: 40px;
             }
 
-            .modal-body {
+            .modal-body,
+            .pending-requests-modal-body {
                 padding: 1rem;
             }
 
@@ -1133,6 +1484,27 @@
 
             .create-quiz-btn {
                 text-align: center;
+                justify-content: center;
+            }
+
+            /* Responsive modal request items */
+            .modal-request-actions {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .modal-approve-btn,
+            .modal-reject-btn {
+                width: 100%;
+            }
+
+            .pending-requests-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 1rem;
+            }
+
+            .pending-requests-btn {
                 justify-content: center;
             }
         }
@@ -1194,7 +1566,7 @@
             </div>
 
             <div class="content-wrapper">
-                <!-- Analytics Section (Now Default) -->
+                <!-- Analytics Section (Default) -->
                 <section id="analyticsSection" class="content-section active">
                     <div class="section-header">
                         <div>
@@ -1245,7 +1617,7 @@
                         </div>
                     </div>
 
-                    <!-- 🆕 NEW: Rankings Section Below Charts -->
+                    <!-- Rankings Section Below Charts -->
                     <div class="rankings-section">
                         <div class="rankings-grid">
                             <!-- Class Rankings -->
@@ -1313,25 +1685,53 @@
                     </div>
                 </section>
 
-                <!-- Students Section -->
+                <!-- 🆕 UPDATED: Students Section with improved layout -->
                 <section id="studentsSection" class="content-section">
                     <div class="section-header">
                         <div>
                             <h2 class="section-title">👥 Student Management</h2>
                             <p class="section-subtitle">Manage students enrolled in this class</p>
                         </div>
+                        <!-- 🆕 NEW: Pending Requests Button in Header -->
+                        <div class="pending-requests-header">
+                            <button class="pending-requests-btn" onclick="openPendingRequestsModal()" id="pendingRequestsBtn">
+                                📬 Pending Requests
+                                <span class="notification-badge" id="pendingRequestsBadge" style="display: none;">0</span>
+                            </button>
+                        </div>
                     </div>
 
-                    <!-- Add Student Form -->
-                    <div class="card">
-                        <h3 class="card-title">➕ Add Student</h3>
-                        <form id="addStudentForm">
-                            <div class="form-group">
-                                <label class="form-label">Student Enrollment Number</label>
-                                <input type="text" id="enrollmentNumber" class="form-input" placeholder="Enter student enrollment number" required>
+                    <!-- 🆕 NEW: Side-by-side layout for Join Code and Add Student -->
+                    <div class="student-management-grid">
+                        <!-- Join Code System - Left Column -->
+                        <div class="join-code-container">
+                            <div class="join-code-header">
+                                <h3 class="join-code-title">🔐 Class Join Code System</h3>
+                                <button class="generate-code-btn" onclick="generateJoinCode()">
+                                    🔄 Generate Code
+                                </button>
                             </div>
-                            <button type="submit" class="btn btn-success">👥 Add Student</button>
-                        </form>
+                            <div id="joinCodeDisplay">
+                                <div class="no-active-code">
+                                    <p>🚀 Generate a join code to let students request to join!</p>
+                                    <p style="font-size: 0.8rem; margin-top: 0.5rem;">Valid for 10 minutes, up to 50 requests.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Add Student Manually - Right Column -->
+                        <div class="add-student-card">
+                            <h3 class="add-student-title">
+                                ➕ Add Student Manually
+                            </h3>
+                            <form id="addStudentForm">
+                                <div class="form-group">
+                                    <label class="form-label">Student Enrollment Number</label>
+                                    <input type="text" id="enrollmentNumber" class="form-input" placeholder="Enter enrollment number" required>
+                                </div>
+                                <button type="submit" class="btn btn-success" style="width: 100%;">👥 Add Student</button>
+                            </form>
+                        </div>
                     </div>
 
                     <!-- Student List -->
@@ -1473,6 +1873,19 @@
         </div>
     </div>
 
+    <!-- 🆕 NEW: Pending Requests Modal -->
+    <div id="pendingRequestsModal" class="pending-requests-modal">
+        <div class="pending-requests-modal-content">
+            <div class="pending-requests-modal-header">
+                <h3 class="pending-requests-modal-title">📬 Pending Join Requests</h3>
+                <button class="pending-requests-modal-close" onclick="closePendingRequestsModal()">&times;</button>
+            </div>
+            <div class="pending-requests-modal-body" id="pendingRequestsModalBody">
+                <div class="loading">Loading pending requests...</div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Global variables
         const classId = '{{classId}}';
@@ -1482,6 +1895,8 @@
         let analyticsData = {};
         let performanceChart = null;
         let distributionChart = null;
+        let joinCodeTimer = null;
+        let pendingRequestsCount = 0; // 🆕 NEW: Track pending requests count
 
         // Quiz configuration variables
         let currentDuration = 15; // Default 15 minutes
@@ -1492,6 +1907,269 @@
             className: className,
             classSubject: classSubject
         });
+
+        // 🆕 NEW: Pending Requests Modal Functions
+        function openPendingRequestsModal() {
+            console.log('📬 Opening pending requests modal');
+            document.getElementById('pendingRequestsModal').classList.add('active');
+            loadPendingRequestsForModal();
+        }
+
+        function closePendingRequestsModal() {
+            console.log('📬 Closing pending requests modal');
+            document.getElementById('pendingRequestsModal').classList.remove('active');
+        }
+
+        // 🆕 NEW: Load pending requests specifically for modal
+        async function loadPendingRequestsForModal() {
+            try {
+                console.log('📬 Loading pending requests for modal');
+                
+                const response = await fetch(`/api/classes/${classId}/join-requests`);
+                const result = await response.json();
+
+                if (result.success) {
+                    displayPendingRequestsInModal(result.requests);
+                } else {
+                    console.error('❌ Failed to load pending requests:', result.message);
+                }
+            } catch (error) {
+                console.error('❌ Error loading pending requests for modal:', error);
+                document.getElementById('pendingRequestsModalBody').innerHTML = `
+                    <p style="text-align: center; color: #ef4444;">Failed to load pending requests.</p>
+                `;
+            }
+        }
+
+        // 🆕 NEW: Display pending requests in modal
+        function displayPendingRequestsInModal(requests) {
+            const container = document.getElementById('pendingRequestsModalBody');
+            
+            if (requests.length === 0) {
+                container.innerHTML = `
+                    <div class="no-pending-requests">
+                        <h3>📭 No Pending Requests</h3>
+                        <p>Students will appear here when they request to join using your class code.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const requestsHTML = requests.map(request => `
+                <div class="modal-request-item">
+                    <div class="modal-request-info">
+                        <div class="modal-request-student-name">${request.studentName}</div>
+                        <div class="modal-request-meta">
+                            <strong>Enrollment:</strong> ${request.studentEnrollment}<br>
+                            <strong>Requested:</strong> ${request.timeAgo}<br>
+                            <strong>Join Code:</strong> ${request.joinCode}
+                        </div>
+                    </div>
+                    <div class="modal-request-actions">
+                        <button class="modal-approve-btn" onclick="processJoinRequestFromModal('${request.requestId}', 'approve')">
+                            ✅ Approve
+                        </button>
+                        <button class="modal-reject-btn" onclick="processJoinRequestFromModal('${request.requestId}', 'reject')">
+                            ❌ Reject
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = requestsHTML;
+        }
+
+        // 🆕 NEW: Process join request from modal (simplified - no rejection reason)
+        async function processJoinRequestFromModal(requestId, action) {
+            try {
+                console.log(`⚖️ Processing join request from modal: ${action}`, requestId);
+                
+                const response = await fetch(`/api/classes/${classId}/join-requests/${requestId}/${action}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        rejectionReason: action === 'reject' ? 'Request rejected by teacher' : '' 
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    if (action === 'approve') {
+                        showSuccess(`${result.studentName} has been added to the class!`);
+                        loadStudents(); // Refresh student list
+                        loadAnalytics(); // Refresh analytics
+                    } else {
+                        showSuccess(`Join request from ${result.studentName} has been rejected.`);
+                    }
+                    
+                    // Refresh modal content and update badge
+                    loadPendingRequestsForModal();
+                    updatePendingRequestsBadge();
+                } else {
+                    showError('Failed to process request: ' + result.message);
+                }
+            } catch (error) {
+                console.error('❌ Error processing join request from modal:', error);
+                showError('Network error while processing request.');
+            }
+        }
+
+        // 🆕 NEW: Update pending requests badge
+        async function updatePendingRequestsBadge() {
+            try {
+                const response = await fetch(`/api/classes/${classId}/join-requests`);
+                const result = await response.json();
+
+                if (result.success) {
+                    pendingRequestsCount = result.requests.length;
+                    const badge = document.getElementById('pendingRequestsBadge');
+                    const btn = document.getElementById('pendingRequestsBtn');
+                    
+                    if (pendingRequestsCount > 0) {
+                        badge.textContent = pendingRequestsCount;
+                        badge.style.display = 'flex';
+                        btn.innerHTML = `📬 Pending Requests <span class="notification-badge" id="pendingRequestsBadge">${pendingRequestsCount}</span>`;
+                    } else {
+                        badge.style.display = 'none';
+                        btn.innerHTML = '📬 Pending Requests';
+                    }
+                    
+                    console.log(`🔔 Updated badge: ${pendingRequestsCount} pending requests`);
+                }
+            } catch (error) {
+                console.error('❌ Error updating pending requests badge:', error);
+            }
+        }
+
+        // 🆕 NEW: Join Code Management Functions (existing functions updated)
+        async function generateJoinCode() {
+            try {
+                console.log('🔐 Generating join code for class:', classId);
+                
+                const response = await fetch(`/api/classes/${classId}/generate-join-code`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showSuccess(`Join code generated: ${result.joinCode} (Valid for 10 minutes)`);
+                    displayActiveJoinCode(result);
+                    startCountdownTimer(result.expiresAt);
+                } else {
+                    showError('Failed to generate join code: ' + result.message);
+                }
+            } catch (error) {
+                console.error('❌ Error generating join code:', error);
+                showError('Network error while generating join code.');
+            }
+        }
+
+        function displayActiveJoinCode(codeData) {
+            const container = document.getElementById('joinCodeDisplay');
+            
+            const expiresAt = new Date(codeData.expiresAt);
+            const remainingSeconds = Math.max(0, Math.floor((expiresAt - new Date()) / 1000));
+            
+            container.innerHTML = `
+                <div class="active-code-display">
+                    <div class="code-value">${codeData.joinCode}</div>
+                    <div class="code-info">
+                        Share with students • Used: ${codeData.usageCount}/${codeData.maxUsage}
+                    </div>
+                    <div class="countdown-timer" id="countdownTimer">
+                        ⏰ Expires in: <span id="timeRemaining">${formatTime(remainingSeconds)}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function startCountdownTimer(expiresAt) {
+            // Clear existing timer
+            if (joinCodeTimer) {
+                clearInterval(joinCodeTimer);
+            }
+
+            joinCodeTimer = setInterval(() => {
+                const now = new Date();
+                const expiry = new Date(expiresAt);
+                const remainingSeconds = Math.max(0, Math.floor((expiry - now) / 1000));
+
+                const timeDisplay = document.getElementById('timeRemaining');
+                if (timeDisplay) {
+                    timeDisplay.textContent = formatTime(remainingSeconds);
+                }
+
+                if (remainingSeconds <= 0) {
+                    clearInterval(joinCodeTimer);
+                    showCodeExpired();
+                    updatePendingRequestsBadge(); // Update badge when code expires
+                }
+            }, 1000);
+        }
+
+        function showCodeExpired() {
+            const container = document.getElementById('joinCodeDisplay');
+            container.innerHTML = `
+                <div class="no-active-code">
+                    <p>⏰ The join code has expired.</p>
+                    <p style="font-size: 0.8rem; margin-top: 0.5rem;">Generate a new code to allow more students to join.</p>
+                </div>
+            `;
+        }
+
+        async function loadActiveJoinCode() {
+            try {
+                const response = await fetch(`/api/classes/${classId}/active-join-code`);
+                const result = await response.json();
+
+                if (result.success && result.hasActiveCode) {
+                    displayActiveJoinCode(result);
+                    startCountdownTimer(result.expiresAt);
+                } else {
+                    document.getElementById('joinCodeDisplay').innerHTML = `
+                        <div class="no-active-code">
+                            <p>🚀 Generate a join code to let students request to join!</p>
+                            <p style="font-size: 0.8rem; margin-top: 0.5rem;">Valid for 10 minutes, up to 50 requests.</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('❌ Error loading active join code:', error);
+            }
+        }
+
+        // 🆕 NEW: Updated loadPendingRequests function (now just updates badge)
+        async function loadPendingRequests() {
+            // This function now just updates the badge instead of displaying requests
+            await updatePendingRequestsBadge();
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('click', function(e) {
+            const modal = document.getElementById('pendingRequestsModal');
+            if (e.target === modal) {
+                closePendingRequestsModal();
+            }
+        });
+
+        // Helper function for time formatting
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            
+            if (minutes > 0) {
+                return `${minutes}m ${remainingSeconds}s`;
+            } else {
+                return `${remainingSeconds}s`;
+            }
+        }
 
         // 🆕 NEW: Helper functions for formatting
         function formatPercentage(value, decimals = 1) {
@@ -2050,6 +2728,8 @@
             loadAnalytics();
             loadQuizzes();
             loadStudents();
+            loadActiveJoinCode();
+            updatePendingRequestsBadge(); // 🆕 NEW: Load badge instead of full requests
 
             // Initialize selectors
             setDuration(15);
@@ -2134,6 +2814,8 @@
                     break;
                 case 'students':
                     loadStudents();
+                    loadActiveJoinCode();
+                    updatePendingRequestsBadge(); // 🆕 NEW: Update badge instead of loading requests
                     break;
                 case 'settings':
                     loadClassSettings();
@@ -2173,6 +2855,8 @@
                         break;
                     case 'students':
                         loadStudents();
+                        loadActiveJoinCode();
+                        updatePendingRequestsBadge();
                         break;
                 }
             } else {
@@ -2194,13 +2878,13 @@
                 const [overviewResponse, analyticsResponse, teacherRankingsResponse, lastQuizResponse] = await Promise.all([
                     fetch(`/api/classes/${classId}/overview`),
                     fetch(`/api/classes/${classId}/analytics`),
-                    fetch(`/api/teacher/class/${classId}/rankings`), // 🔧 FIX: Use teacher endpoint
+                    fetch(`/api/teacher/class/${classId}/rankings`),
                     fetch(`/api/classes/${classId}/last-quiz-rankings`)
                 ]);
                 
                 const overviewData = await overviewResponse.json();
                 const analyticsResponseData = await analyticsResponse.json();
-                const rankingsData = await teacherRankingsResponse.json(); // 🔧 FIX: Updated variable name
+                const rankingsData = await teacherRankingsResponse.json();
                 const lastQuizData = await lastQuizResponse.json();
                 
                 if (overviewData.success) {
@@ -2208,12 +2892,11 @@
                     updateClassInfo();
                     updateAnalyticsStats(overviewData);
                     
-                    // 🔧 FIX: Create performance trend chart with data
                     if (overviewData.performanceTrend && overviewData.performanceTrend.length > 0) {
                         createPerformanceTrendChart(overviewData.performanceTrend);
                     } else {
                         console.warn('⚠️ No performance trend data available');
-                        createPerformanceTrendChart([]); // Create empty chart
+                        createPerformanceTrendChart([]);
                     }
                 }
                 
@@ -2223,7 +2906,6 @@
                     displayDetailedAnalytics(analyticsData);
                 }
 
-                // 🔧 FIX: Display class rankings with teacher data
                 if (rankingsData.success) {
                     displayClassRankings(rankingsData.data.rankings);
                 } else {
@@ -2231,14 +2913,12 @@
                     displayClassRankings([]);
                 }
 
-                // Display last quiz rankings
                 if (lastQuizData.success) {
                     displayLastQuizRankings(lastQuizData.data);
                 } else {
                     displayLastQuizRankings({ rankings: [], quizTitle: null });
                 }
 
-                // Display recent activity
                 if (overviewData.recentActivity) {
                     displayRecentActivity(overviewData.recentActivity);
                 }
@@ -2250,6 +2930,7 @@
                 showError('Failed to load analytics data: ' + error.message);
             }
         }
+
         // Update class info in sidebar
         function updateClassInfo() {
             if (classData) {
@@ -2259,14 +2940,13 @@
             }
         }
 
-        // 🔄 UPDATED: Update analytics stats with proper formatting
+        // Update analytics stats with proper formatting
         function updateAnalyticsStats(data) {
             if (data && data.classData) {
                 document.getElementById('totalStudents').textContent = data.classData.studentCount || 0;
                 document.getElementById('classAverage').textContent = formatPercentage(data.classData.averageScore || 0) + '%';
                 document.getElementById('totalQuizzes').textContent = data.classData.quizCount || 0;
                 
-                // Calculate total attempts from recent activity or analytics data
                 const totalAttempts = analyticsData && analyticsData.totalQuizAttempts 
                     ? analyticsData.totalQuizAttempts 
                     : (data.recentActivity ? data.recentActivity.length : 0);
@@ -2274,7 +2954,7 @@
             }
         }
 
-        // 🆕 NEW: Display class rankings with points-based system
+        // Display class rankings with points-based system
         function displayClassRankings(rankings) {
             const container = document.getElementById('classRankingsContainer');
             
@@ -2308,7 +2988,8 @@
 
             container.innerHTML = rankingsHTML;
         }
-        // 🆕 NEW: Display last quiz rankings
+
+        // Display last quiz rankings
         function displayLastQuizRankings(data) {
             const container = document.getElementById('lastQuizRankingsContainer');
             
@@ -2317,7 +2998,6 @@
                 return;
             }
 
-            // Quiz header with title
             const quizHeaderHTML = data.quizTitle ? `
                 <div class="quiz-header-info">
                     📝 <strong>${data.quizTitle}</strong> • ${data.rankings.length} participants
@@ -2350,7 +3030,7 @@
             container.innerHTML = quizHeaderHTML + rankingsHTML;
         }
 
-        // 🔄 UPDATED: Display recent activity with proper formatting
+        // Display recent activity with proper formatting
         function displayRecentActivity(activities) {
             const container = document.getElementById('recentActivityContainer');
             
@@ -2380,18 +3060,15 @@
                 return;
             }
 
-            // Destroy existing chart
             if (performanceChart) {
                 performanceChart.destroy();
             }
 
-            // Handle empty data
             if (!trendData || trendData.length === 0) {
                 console.warn('⚠️ No trend data available, creating empty chart');
                 trendData = [{ quizTitle: 'No Data', score: 0, attempts: 0 }];
             }
 
-            // Prepare data for chart
             const labels = trendData.map((item, index) => item.quizTitle || `Quiz ${index + 1}`);
             const scores = trendData.map(item => parseFloat(item.score) || 0);
 
@@ -2479,20 +3156,15 @@
             console.log('✅ Performance trend chart created successfully');
         }
 
-
-
-
         // Create distribution chart
         function createDistributionChart(distributionData) {
             const ctx = document.getElementById('distributionChart');
             if (!ctx) return;
 
-            // Destroy existing chart
             if (distributionChart) {
                 distributionChart.destroy();
             }
 
-            // Prepare data
             const data = {
                 excellent: distributionData.excellent || 0,
                 good: distributionData.good || 0,
@@ -2523,7 +3195,7 @@
             });
         }
 
-        // 🔄 UPDATED: Display detailed analytics with proper formatting
+        // Display detailed analytics with proper formatting
         function displayDetailedAnalytics(analytics) {
             const container = document.getElementById('detailedAnalyticsContainer');
             
@@ -2620,7 +3292,7 @@
             }
         }
 
-        // 🔄 UPDATED: Display students with proper formatting
+        // Display students with proper formatting
         function displayStudents(students) {
             const container = document.getElementById('studentsContainer');
             
@@ -2628,7 +3300,7 @@
                 container.innerHTML = `
                     <div class="empty-state">
                         <h3>👥 No Students Enrolled</h3>
-                        <p>Add students using their enrollment numbers.</p>
+                        <p>Add students using their enrollment numbers or share a join code.</p>
                     </div>
                 `;
                 return;
@@ -2682,7 +3354,7 @@
                 if (result.success) {
                     showSuccess('Student removed successfully!');
                     loadStudents();
-                    loadAnalytics(); // Refresh analytics
+                    loadAnalytics();
                 } else {
                     showError('Failed to remove student: ' + result.message);
                 }
@@ -2764,7 +3436,6 @@
 
         // Keyboard shortcuts
         document.addEventListener('keydown', function(e) {
-            // Close modals with Escape key
             if (e.key === 'Escape') {
                 if (document.getElementById('createQuizModal').classList.contains('active')) {
                     closeCreateQuizModal();
@@ -2772,23 +3443,18 @@
                 if (document.getElementById('quizViewerModal').classList.contains('active')) {
                     closeQuizViewer();
                 }
+                if (document.getElementById('pendingRequestsModal').classList.contains('active')) {
+                    closePendingRequestsModal();
+                }
             }
         });
 
-        // 🆕 NEW: Format time function
-        function formatTime(seconds) {
-            if (typeof seconds !== 'number' || isNaN(seconds) || seconds < 0) return '0:00';
-            
-            const hours = Math.floor(seconds / 3600);
-            const minutes = Math.floor((seconds % 3600) / 60);
-            const secs = Math.floor(seconds % 60);
-            
-            if (hours > 0) {
-                return `${hours}h ${minutes}m ${secs}s`;
-            } else {
-                return `${minutes}m ${secs}s`;
+        // Cleanup function when page unloads
+        window.addEventListener('beforeunload', function() {
+            if (joinCodeTimer) {
+                clearInterval(joinCodeTimer);
             }
-        }
+        });
     </script>
 </body>
 </html>
