@@ -17,39 +17,145 @@
             background-color: #f8fafc;
             color: #334155;
             line-height: 1.6;
-            height: 100vh;
-            overflow: hidden;
-            display: flex;
         }
 
-        /* Timer - Top Right */
+        /* Header */
+        .quiz-header {
+            background: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        /* Security Monitor Badge */
+        .security-monitor {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+            animation: securityPulse 2s infinite;
+        }
+
+        @keyframes securityPulse {
+            0%, 100% { box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2); }
+            50% { box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4); }
+        }
+
+        .violation-counter {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-weight: bold;
+        }
+
+        /* Breadcrumb Navigation */
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        .breadcrumb a {
+            color: #3b82f6;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .breadcrumb a:hover {
+            color: #2563eb;
+        }
+
+        .breadcrumb-separator {
+            color: #94a3b8;
+        }
+
+        /* Quiz Header Info */
+        .quiz-header-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .quiz-info {
+            flex: 1;
+        }
+
+        .quiz-info h1 {
+            font-size: 1.25rem;
+            color: #1e293b;
+            margin-bottom: 0.25rem;
+        }
+
+        .quiz-meta {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.85rem;
+            color: #64748b;
+            flex-wrap: wrap;
+        }
+
+        .class-badge {
+            background: #3b82f6;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .subject-badge {
+            background: #10b981;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
         .timer-container {
-            position: fixed;
-            top: 2rem;
-            right: 2rem;
-            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
         }
 
         .timer {
             background: #3b82f6;
             color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 12px;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
             font-weight: bold;
-            font-size: 1.5rem;
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-            min-width: 120px;
-            text-align: center;
+            font-size: 1.1rem;
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
         }
 
         .timer.warning {
             background: #f59e0b;
-            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+            box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
         }
 
         .timer.danger {
             background: #ef4444;
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
             animation: pulse 1s infinite;
         }
 
@@ -58,31 +164,23 @@
             50% { opacity: 0.7; }
         }
 
-        /* Main Content Area */
-        .main-content {
-            flex: 1;
-            padding: 2rem;
+        /* Security Alert Banner */
+        .security-alert {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
             display: flex;
-            justify-content: center;
             align-items: center;
-            padding-right: 280px; /* Space for navigation panel */
+            gap: 0.75rem;
+            animation: slideDown 0.5s ease-out;
         }
 
-        /* Quiz Container */
-        .quiz-container {
-            background: white;
-            border-radius: 20px;
-            padding: 3rem;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 800px;
-            animation: slideUp 0.6s ease-out;
-        }
-
-        @keyframes slideUp {
+        @keyframes slideDown {
             from {
                 opacity: 0;
-                transform: translateY(30px);
+                transform: translateY(-10px);
             }
             to {
                 opacity: 1;
@@ -90,57 +188,141 @@
             }
         }
 
+        .security-alert-icon {
+            background: #f59e0b;
+            color: white;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            flex-shrink: 0;
+        }
+
+        .security-alert-text {
+            color: #92400e;
+            font-weight: 500;
+        }
+
+        /* Main Content */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        /* Quiz Container */
+        .quiz-container {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            margin-bottom: 2rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #e2e8f0;
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(to right, #3b82f6, #1d4ed8);
+            border-radius: 5px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            margin-top: 0.75rem;
+            font-size: 0.9rem;
+            color: #64748b;
+            text-align: center;
+            font-weight: 500;
+        }
+
         /* Question Styles */
         .question-container {
             margin-bottom: 2rem;
         }
 
-        .question-text {
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: #1e293b;
-            margin-bottom: 2rem;
-            line-height: 1.7;
-            padding: 1.5rem;
-            background: #f8fafc;
-            border-radius: 12px;
-            border-left: 5px solid #3b82f6;
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #e2e8f0;
         }
 
-        /* Options Styles with Enhanced Animation */
+        .question-number {
+            font-size: 0.9rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .question-difficulty {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .question-text {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 8px;
+            border-left: 4px solid #3b82f6;
+        }
+
+        /* Options Styles */
         .options-container {
             display: flex;
             flex-direction: column;
-            gap: 1rem;
+            gap: 0.75rem;
         }
 
         .option {
             background: #f8fafc;
             border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 1.5rem;
+            border-radius: 10px;
+            padding: 1.25rem;
             cursor: pointer;
             transition: all 0.2s ease;
             display: flex;
             align-items: center;
-            gap: 1.5rem;
+            gap: 1rem;
             position: relative;
             overflow: hidden;
-            transform: translateZ(0); /* Enable hardware acceleration */
         }
 
         .option:hover {
             border-color: #3b82f6;
             background: #eff6ff;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.15);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.1);
         }
 
         .option.selected {
             border-color: #3b82f6;
             background: #eff6ff;
-            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
-            animation: optionSelect 0.2s ease-out;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
         .option.selected::before {
@@ -148,227 +330,126 @@
             position: absolute;
             top: 0;
             left: 0;
-            width: 5px;
+            width: 4px;
             height: 100%;
             background: #3b82f6;
-        }
-
-        /* Toned Down Option Selection Animation */
-        @keyframes optionSelect {
-            0% {
-                transform: scale(1) translateY(0);
-                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.2);
-            }
-            50% {
-                transform: scale(1.01) translateY(-1px);
-                box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.1);
-            }
-            100% {
-                transform: scale(1) translateY(-1px);
-                box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
-            }
-        }
-
-        /* Lighter Click Flash Animation */
-        .option.click-flash {
-            animation: clickFlash 0.2s ease-out;
-        }
-
-        @keyframes clickFlash {
-            0% {
-                background: #eff6ff;
-                transform: scale(1);
-            }
-            50% {
-                background: #dbeafe;
-                transform: scale(1.005);
-            }
-            100% {
-                background: #eff6ff;
-                transform: scale(1);
-            }
         }
 
         .option-letter {
             background: #3b82f6;
             color: white;
             border-radius: 50%;
-            width: 45px;
-            height: 45px;
+            width: 35px;
+            height: 35px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 1.1rem;
+            font-size: 0.95rem;
             flex-shrink: 0;
-            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
-            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
         }
 
         .option.selected .option-letter {
             background: #1d4ed8;
-            box-shadow: 0 4px 8px rgba(29, 78, 216, 0.4);
-            transform: scale(1.05);
-            animation: letterPulse 0.2s ease-out;
-        }
-
-        @keyframes letterPulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.08); }
-            100% { transform: scale(1.05); }
+            box-shadow: 0 2px 4px rgba(29, 78, 216, 0.3);
         }
 
         .option-text {
             flex: 1;
-            font-size: 1.1rem;
+            font-size: 0.95rem;
             color: #334155;
-            line-height: 1.6;
+            line-height: 1.5;
         }
 
-        /* Right Navigation Panel - Enhanced for 3 Columns */
-        .navigation-panel {
-            position: fixed;
-            top: 50%;
-            right: 2rem;
-            transform: translateY(-50%);
-            width: 240px; /* Reduced width for smaller buttons */
-            background: white;
-            border-radius: 20px;
-            padding: 1.5rem;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        /* Navigation Buttons */
+        .navigation-container {
             display: flex;
-            flex-direction: column;
-            max-height: 80vh;
-        }
-
-        /* Navigation Controls */
-        .nav-controls {
-            display: flex;
-            gap: 0.75rem;
-            margin-bottom: 1.5rem;
-            justify-content: center;
-        }
-
-        .nav-btn {
-            background: #3b82f6;
-            color: white;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            width: 45px;
-            height: 45px;
-            display: flex;
+            justify-content: space-between;
             align-items: center;
-            justify-content: center;
-            font-size: 1.8rem; /* Increased from 1.3rem for better visibility */
-            font-weight: bold; /* Added for better visibility */
-        }
-
-        .nav-btn:hover {
-            background: #2563eb;
-            transform: translateY(-2px);
-        }
-
-        .nav-btn:disabled {
-            background: #94a3b8;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        /* Enhanced Question Grid - Always 3 Columns */
-        .question-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr); /* Always 3 columns */
-            gap: 0.25rem; /* Reduced from 0.5rem to minimize horizontal space */
-            overflow-y: auto;
-            max-height: calc(80vh - 200px);
-            padding-right: 0.25rem;
-            padding-bottom: 0.5rem;
-            justify-items: center; /* Center items horizontally in each grid cell */
-            align-items: center; /* Center items vertically in each grid cell */
-        }
-
-        /* Bigger Question Navigation Buttons */
-        .question-nav-btn {
-            width: 38px; /* Increased from 32px */
-            height: 38px; /* Increased from 32px */
-            border: 2px solid #e2e8f0;
-            background: white;
-            color: #64748b;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.9rem; /* Slightly larger text */
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto; /* Center within grid cell */
-        }
-
-        .question-nav-btn:hover {
-            border-color: #3b82f6;
-            background: #eff6ff;
-            transform: scale(1.05);
-        }
-
-        .question-nav-btn.current {
-            background: #3b82f6;
-            color: white;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
-            transform: scale(1.1);
-        }
-
-        .question-nav-btn.answered {
-            background: rgba(16, 185, 129, 0.1);
-            color: #10b981;
-            border-color: #10b981;
-            border-style: solid;
-        }
-
-        .question-nav-btn.answered:hover {
-            background: rgba(16, 185, 129, 0.2);
-            transform: scale(1.05);
-        }
-
-        .question-nav-btn.skipped {
-            background: rgba(245, 158, 11, 0.1);
-            color: #f59e0b;
-            border-color: #f59e0b;
-            border-style: solid;
-        }
-
-        .question-nav-btn.skipped:hover {
-            background: rgba(245, 158, 11, 0.2);
-            transform: scale(1.05);
-        }
-
-        /* Submit Button */
-        .submit-container {
-            margin-top: 1.5rem;
-            padding-top: 1.5rem;
+            margin-top: 2rem;
+            padding-top: 2rem;
             border-top: 1px solid #e2e8f0;
         }
 
-        .submit-btn {
-            width: 100%;
-            background: linear-gradient(135deg, #10b981, #059669);
+        .btn {
+            background: #3b82f6;
             color: white;
             border: none;
-            padding: 0.8rem; /* Slightly smaller padding */
-            border-radius: 12px;
-            font-weight: bold;
-            font-size: 0.9rem; /* Slightly smaller text */
+            padding: 0.875rem 1.75rem;
+            border-radius: 8px;
+            font-weight: 500;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
-        .submit-btn:hover {
-            background: linear-gradient(135deg, #059669, #047857);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+        .btn:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.2);
+        }
+
+        .btn:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: #64748b;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .btn-success {
+            background: #10b981;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        /* Question Indicators */
+        .question-indicators {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .question-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .question-dot:hover {
+            transform: scale(1.2);
+        }
+
+        .question-dot.current {
+            background: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        .question-dot.answered {
+            background: #10b981;
+        }
+
+        .question-dot.unanswered {
+            background: #e2e8f0;
         }
 
         /* Warning Modal Styles */
@@ -378,11 +459,11 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.7);
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 2000;
+            z-index: 1000;
             animation: fadeIn 0.3s ease-out;
         }
 
@@ -393,8 +474,8 @@
 
         .warning-modal {
             background: white;
-            border-radius: 20px;
-            padding: 2.5rem;
+            border-radius: 16px;
+            padding: 2rem;
             max-width: 500px;
             width: 90%;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
@@ -415,19 +496,19 @@
 
         .modal-header {
             text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
         }
 
         .modal-icon {
             background: linear-gradient(135deg, #ef4444, #dc2626);
             color: white;
             border-radius: 50%;
-            width: 80px;
-            height: 80px;
+            width: 64px;
+            height: 64px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2rem;
+            font-size: 1.5rem;
             margin: 0 auto 1rem;
             box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
         }
@@ -441,7 +522,7 @@
 
         .modal-subtitle {
             color: #64748b;
-            font-size: 1rem;
+            font-size: 0.9rem;
         }
 
         .modal-content {
@@ -457,23 +538,23 @@
         .violation-status {
             background: #fef2f2;
             border: 1px solid #fecaca;
-            border-radius: 12px;
+            border-radius: 8px;
             padding: 1rem;
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: 0.75rem;
         }
 
         .violation-icon {
             background: #ef4444;
             color: white;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
+            width: 32px;
+            height: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1rem;
+            font-size: 0.875rem;
         }
 
         .violation-details {
@@ -487,7 +568,7 @@
         }
 
         .violation-warning {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: #7f1d1d;
         }
 
@@ -498,13 +579,13 @@
         }
 
         .modal-btn {
-            padding: 1rem 2.5rem;
-            border-radius: 12px;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
             border: none;
-            font-size: 1rem;
+            font-size: 0.95rem;
         }
 
         .modal-btn-primary {
@@ -521,19 +602,16 @@
         .loading-container {
             text-align: center;
             padding: 4rem 2rem;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
 
         .loading-spinner {
             border: 4px solid #e2e8f0;
             border-top: 4px solid #3b82f6;
             border-radius: 50%;
-            width: 60px;
-            height: 60px;
+            width: 50px;
+            height: 50px;
             animation: spin 1s linear infinite;
-            margin: 0 auto 2rem;
+            margin: 0 auto 1.5rem;
         }
 
         @keyframes spin {
@@ -543,14 +621,14 @@
 
         .result-container {
             text-align: center;
-            padding: 4rem 2rem;
+            padding: 3rem 2rem;
             background: white;
-            border-radius: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
         .result-score {
-            font-size: 5rem;
+            font-size: 4rem;
             font-weight: bold;
             color: #10b981;
             margin-bottom: 1rem;
@@ -560,83 +638,154 @@
         .result-details {
             color: #64748b;
             margin-bottom: 2rem;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
         }
 
         .result-details p {
             margin-bottom: 0.5rem;
         }
 
-        /* Mobile Responsiveness */
-        @media (max-width: 1024px) {
-            .main-content {
-                padding-right: 260px;
-            }
-
-            .navigation-panel {
-                width: 220px;
-            }
+        /* Class Context Alert */
+        .class-context {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
         }
 
+        .class-context-icon {
+            background: #3b82f6;
+            color: white;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+        }
+
+        .class-context-text {
+            color: #1e40af;
+        }
+
+        /* Mobile Responsiveness */
         @media (max-width: 768px) {
-            .main-content {
-                padding-right: 0;
-                padding-bottom: 180px;
+            .header-content {
+                padding: 0 0.5rem;
             }
 
-            .navigation-panel {
-                position: fixed;
-                bottom: 0;
-                top: auto;
-                right: 0;
-                left: 0;
-                transform: none;
-                width: 100%;
-                max-height: 180px;
-                border-radius: 20px 20px 0 0;
-                padding: 1rem;
+            .quiz-header-info {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .quiz-meta {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
             }
 
             .timer-container {
-                top: 1rem;
-                right: 1rem;
+                width: 100%;
+                justify-content: space-between;
+                flex-direction: row-reverse;
             }
 
-            .timer {
-                padding: 0.4rem 1rem;
-                font-size: 1.2rem;
+            .security-monitor {
+                font-size: 0.75rem;
+                padding: 0.4rem 0.8rem;
             }
 
-            .question-grid {
-                max-height: 80px;
-                display: grid;
-                grid-template-columns: repeat(6, 1fr); /* More columns on mobile */
-                gap: 0.2rem; /* Reduced gap on mobile too */
-                overflow-x: auto;
-                overflow-y: hidden;
-                padding-bottom: 0.5rem;
-                justify-items: center; /* Center items on mobile too */
-                align-items: center;
+            .main-content {
+                padding: 1rem 0.5rem;
             }
 
-            .question-nav-btn {
-                width: 32px; /* Slightly bigger on mobile */
-                height: 32px;
+            .quiz-container {
+                padding: 1.5rem;
+            }
+
+            .navigation-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .question-indicators {
+                gap: 0.25rem;
+            }
+
+            .question-dot {
+                width: 12px;
+                height: 12px;
+            }
+
+            .breadcrumb {
                 font-size: 0.8rem;
-                min-width: 32px; /* Prevent shrinking */
-                margin: 0 auto; /* Center in mobile grid too */
             }
 
-            .nav-btn {
-                width: 40px;
-                height: 40px;
-                font-size: 1.6rem; /* Slightly smaller on mobile but still visible */
+            .warning-modal {
+                padding: 1.5rem;
+                margin: 1rem;
             }
 
-            .submit-btn {
-                padding: 0.7rem;
-                font-size: 0.85rem;
+            .modal-actions {
+                flex-direction: column;
             }
+
+            .modal-btn {
+                width: 100%;
+            }
+        }
+
+        /* Additional Animations */
+        .quiz-container {
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Status Messages */
+        .status-message {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+
+        .status-message.info {
+            background: #eff6ff;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+
+        .status-message.warning {
+            background: #fefce8;
+            color: #a16207;
+            border: 1px solid #fde047;
+        }
+
+        .status-message.error {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
         }
 
         /* Security Features */
@@ -647,52 +796,116 @@
             -ms-user-select: none;
         }
 
-        /* Enhanced Scrollbar Styling */
-        .question-grid::-webkit-scrollbar {
-            width: 4px;
-            height: 4px;
-        }
-
-        .question-grid::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 2px;
-        }
-
-        .question-grid::-webkit-scrollbar-thumb {
-            background: #3b82f6;
-            border-radius: 2px;
-        }
-
-        .question-grid::-webkit-scrollbar-thumb:hover {
-            background: #2563eb;
+        .no-context-menu {
+            pointer-events: none;
         }
     </style>
 </head>
 <body class="quiz-secured">
-    <!-- Timer - Top Right -->
-    <div class="timer-container">
-        <div class="timer" id="timer">--:--</div>
-    </div>
+    <!-- Header -->
+    <header class="quiz-header">
+        <div class="header-content">
+            <!-- Breadcrumb Navigation -->
+            <nav class="breadcrumb">
+                <a href="/homeStudent">🏠 Dashboard</a>
+                <span class="breadcrumb-separator">›</span>
+                {{#if quiz.className}}
+                    <a href="/student/class/{{quiz.classId}}">{{quiz.className}}</a>
+                    <span class="breadcrumb-separator">›</span>
+                {{/if}}
+                <span>Quiz</span>
+            </nav>
+
+            <!-- Quiz Header Info -->
+            <div class="quiz-header-info">
+                <div class="quiz-info">
+                    <h1 id="quizTitle">Loading Quiz...</h1>
+                    <div class="quiz-meta">
+                        {{#if quiz.className}}
+                            <span class="class-badge">📚 {{quiz.className}}</span>
+                        {{/if}}
+                        {{#if quiz.classSubject}}
+                            <span class="subject-badge">🎯 {{quiz.classSubject}}</span>
+                        {{/if}}
+                        <span id="questionCount">- questions</span>
+                        <span id="durationInfo">- minutes</span>
+                        <span>👤 {{userName}}</span>
+                    </div>
+                </div>
+                <div class="timer-container">
+                    <!-- Security Monitor Badge -->
+                    <div class="security-monitor" id="securityMonitor">
+                        🛡️ Monitoring Active
+                        <span class="violation-counter" id="violationCounter">0/2</span>
+                    </div>
+                    <div class="timer" id="timer">--:--</div>
+                </div>
+            </div>
+        </div>
+    </header>
 
     <!-- Main Content -->
     <main class="main-content">
+        <!-- Security Alert Banner -->
+        <div class="security-alert" id="securityAlert">
+            <div class="security-alert-icon">⚠️</div>
+            <div class="security-alert-text">
+                <strong>Enhanced Anti-Cheating System Active:</strong> Tab switching, window switching, and app switching are monitored. You get 1 warning, then auto-submit on 2nd violation.
+            </div>
+        </div>
+
+        <!-- Class Context Alert -->
+        {{#if quiz.className}}
+        <div class="class-context">
+            <div class="class-context-icon">📚</div>
+            <div class="class-context-text">
+                <strong>Class Quiz:</strong> This quiz is part of your {{quiz.className}} class. Your results will be tracked for class performance.
+            </div>
+        </div>
+        {{/if}}
+
         <!-- Loading State -->
         <div id="loadingContainer" class="loading-container">
             <div class="loading-spinner"></div>
             <h3>Loading Quiz Questions...</h3>
-            <p>Please wait while we prepare your quiz.</p>
+            <p>Please wait while we prepare your {{#if quiz.className}}{{quiz.className}} {{/if}}quiz.</p>
         </div>
 
         <!-- Quiz Container -->
         <div id="quizContainer" class="quiz-container" style="display: none;">
+            <!-- Progress Bar -->
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText">Question 1 of -</div>
+            </div>
+
             <!-- Question -->
             <div class="question-container">
+                <div class="question-header">
+                    <div class="question-number" id="questionNumber">Question 1</div>
+                    <div class="question-difficulty" id="questionDifficulty">Standard</div>
+                </div>
                 <div class="question-text" id="questionText">Loading question...</div>
             </div>
 
             <!-- Options -->
             <div class="options-container" id="optionsContainer">
                 <!-- Options will be dynamically inserted here -->
+            </div>
+
+            <!-- Navigation -->
+            <div class="navigation-container">
+                <button class="btn btn-secondary" id="prevBtn" onclick="previousQuestion()" disabled>
+                    ← Previous
+                </button>
+                <div class="question-indicators" id="questionIndicators">
+                    <!-- Question dots will be inserted here -->
+                </div>
+                <button class="btn" id="nextBtn" onclick="nextQuestion()">
+                    Next →
+                </button>
             </div>
         </div>
 
@@ -702,36 +915,11 @@
             <div class="result-details" id="resultDetails">
                 Processing your results...
             </div>
-            <button class="submit-btn" onclick="goToDashboard()">
+            <button class="btn" onclick="goToDashboard()">
                 View Detailed Results
             </button>
         </div>
     </main>
-
-    <!-- Right Navigation Panel -->
-    <div class="navigation-panel">
-        <!-- Navigation Controls -->
-        <div class="nav-controls">
-            <button class="nav-btn" id="prevBtn" onclick="previousQuestion()" disabled title="Previous Question">
-                ‹
-            </button>
-            <button class="nav-btn" id="nextBtn" onclick="nextQuestion()" title="Next Question">
-                ›
-            </button>
-        </div>
-
-        <!-- Question Grid -->
-        <div class="question-grid" id="questionGrid">
-            <!-- Question navigation buttons will be inserted here -->
-        </div>
-
-        <!-- Submit Button -->
-        <div class="submit-container">
-            <button class="submit-btn" id="submitBtn" onclick="submitQuiz()" style="display: none;">
-                Submit Quiz
-            </button>
-        </div>
-    </div>
 
     <!-- Warning Modal -->
     <div id="warningModal" class="modal-overlay" style="display: none;">
@@ -784,7 +972,6 @@
         let quizData = null;
         let currentQuestionIndex = 0;
         let studentAnswers = [];
-        let visitedQuestions = []; // Track which questions have been viewed
         let startTime = Date.now();
         let timerInterval = null;
         const quizId = window.location.pathname.split('/').pop();
@@ -803,11 +990,11 @@
 
         console.log('🏫 Enhanced class context:', classContext);
         console.log('🧭 Enhanced navigation context:', navigationContext);
-        console.log('🛡️ Anti-cheating system initialized');
+        console.log('🛡️ Enhanced Anti-cheating system initialized');
 
         // Enhanced initialization
         function initializeAntiCheating() {
-            console.log('🛡️ Initializing anti-cheating system...');
+            console.log('🛡️ Initializing ENHANCED anti-cheating system...');
             
             // Primary: Tab Visibility Detection
             document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -829,7 +1016,7 @@
             // Disable common cheating methods
             disableCheatingMethods();
             
-            console.log('✅ Anti-cheating system active - detecting tabs, windows, and apps');
+            console.log('✅ ENHANCED anti-cheating system active - detecting tabs, windows, and apps');
         }
 
         // Handle tab visibility changes
@@ -952,12 +1139,41 @@
             violationCount++;
             console.log(`🚨 VIOLATION DETECTED! Type: ${activityType}, Count: ${violationCount}/${MAX_VIOLATIONS}`);
             
+            // Enhanced logging with activity type
+            console.log('🔍 Enhanced Debug - Violation details:', {
+                violationCount: violationCount,
+                maxViolations: MAX_VIOLATIONS,
+                activityType: activityType,
+                willShowWarning: violationCount === 1,
+                willAutoSubmit: violationCount >= MAX_VIOLATIONS,
+                isQuizSubmitted: isQuizSubmitted,
+                timestamp: new Date().toISOString()
+            });
+            
+            // Update UI
+            updateSecurityUI();
+            
             if (violationCount === 1) {
                 console.log('⚠️ First violation - showing warning modal');
                 showWarningModal(activityType);
             } else if (violationCount >= MAX_VIOLATIONS) {
                 console.log('🚨 Multiple violations - auto-submitting');
                 autoSubmitForViolation();
+            }
+        }
+
+        // Update security UI
+        function updateSecurityUI() {
+            const violationCounter = document.getElementById('violationCounter');
+            const securityMonitor = document.getElementById('securityMonitor');
+            
+            violationCounter.textContent = `${violationCount}/${MAX_VIOLATIONS}`;
+            
+            // Change color based on violation count
+            if (violationCount === 1) {
+                securityMonitor.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
+            } else if (violationCount >= MAX_VIOLATIONS) {
+                securityMonitor.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
             }
         }
 
@@ -1051,6 +1267,23 @@
             });
         }
 
+        // Debug function for testing
+        window.debugEnhancedAntiCheat = function() {
+            console.log('🔍 Enhanced Anti-cheat debug info:', {
+                violationCount: violationCount,
+                maxViolations: MAX_VIOLATIONS,
+                isQuizSubmitted: isQuizSubmitted,
+                isTabHidden: isTabHidden,
+                isWindowFocused: isWindowFocused,
+                mouseInsideWindow: mouseInsideWindow,
+                graceTimer: graceTimer ? 'Active' : 'Inactive',
+                focusMonitoring: focusCheckInterval ? 'Active' : 'Inactive',
+                detectionActive: isDetectionActive,
+                documentHasFocus: document.hasFocus(),
+                documentVisibility: document.visibilityState
+            });
+        };
+
         // Utility function to format time
         function formatTime(seconds) {
             const minutes = Math.floor(seconds / 60);
@@ -1060,67 +1293,7 @@
 
         // Initialize quiz when page loads
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🎯 Initializing anti-cheating quiz with ID:', quizId);
-            
-            // ROBUST CHECK: Ensure user came through proper quiz info flow
-            const referrer = document.referrer;
-            const hasQuizInfoFlag = sessionStorage.getItem('quiz-info-visited-' + quizId) === 'true';
-            const isFromQuizInfo = referrer.includes('/quiz-info/') || hasQuizInfoFlag;
-            
-            // Additional checks for direct access
-            const urlParams = new URLSearchParams(window.location.search);
-            const hasDirectAccess = urlParams.get('direct') === 'true'; // This shouldn't exist in normal flow
-            
-            console.log('🔍 COMPREHENSIVE QUIZ ACCESS CHECK:', {
-                referrer: referrer,
-                hasQuizInfoFlag: hasQuizInfoFlag,
-                isFromQuizInfo: isFromQuizInfo,
-                hasDirectAccess: hasDirectAccess,
-                quizId: quizId,
-                classContext: classContext
-            });
-            
-            // If ANY indication of bypassing quiz info page, redirect back
-            if (!isFromQuizInfo || hasDirectAccess) {
-                console.log('🚫 UNAUTHORIZED QUIZ ACCESS DETECTED - Enforcing proper flow');
-                console.log('📋 Source: Student Dashboard or other direct access point');
-                
-                // Clear any existing flags
-                sessionStorage.removeItem('quiz-info-visited-' + quizId);
-                
-                // Build proper quiz info URL with class context
-                let quizInfoUrl = `/quiz-info/${quizId}`;
-                if (classContext.classId) {
-                    quizInfoUrl += `?classId=${classContext.classId}`;
-                } else {
-                    // Check URL params for class context
-                    const classIdFromUrl = urlParams.get('classId');
-                    if (classIdFromUrl) {
-                        quizInfoUrl += `?classId=${classIdFromUrl}`;
-                    }
-                }
-                
-                console.log('🔄 ENFORCING QUIZ INFO FLOW - Redirecting to:', quizInfoUrl);
-                
-                // Show brief message and redirect
-                document.getElementById('loadingContainer').innerHTML = `
-                    <div class="loading-spinner"></div>
-                    <h3>Redirecting to Quiz Information...</h3>
-                    <p>Please review quiz details before starting.</p>
-                `;
-                
-                // Redirect after brief delay
-                setTimeout(() => {
-                    window.location.href = quizInfoUrl;
-                }, 1000);
-                
-                return; // Stop initialization
-            }
-            
-            console.log('✅ PROPER QUIZ FLOW VERIFIED - Continuing with quiz initialization');
-            
-            // Clear the session storage flag now that we've used it
-            sessionStorage.removeItem('quiz-info-visited-' + quizId);
+            console.log('🎯 Initializing enhanced anti-cheating quiz with ID:', quizId);
             
             // Initialize anti-cheating system first
             initializeAntiCheating();
@@ -1141,6 +1314,9 @@
                 if (durationData.success) {
                     QUIZ_TIME_LIMIT = durationData.durationSeconds;
                     console.log('⏱️ Quiz duration set to:', durationData.durationMinutes, 'minutes');
+                    
+                    // Update duration info in header
+                    document.getElementById('durationInfo').textContent = `${durationData.durationMinutes} minutes`;
                 } else {
                     console.warn('⚠️ Could not fetch quiz duration, using default 30 minutes');
                 }
@@ -1152,6 +1328,11 @@
                 if (data.success && data.quiz) {
                     quizData = data.quiz;
                     console.log('✅ Quiz loaded:', quizData.lectureTitle);
+                    
+                    // Update quiz title in header if not already set
+                    if (document.getElementById('quizTitle').textContent === 'Loading Quiz...') {
+                        document.getElementById('quizTitle').textContent = quizData.lectureTitle;
+                    }
                     
                     initializeQuiz();
                 } else {
@@ -1166,10 +1347,12 @@
 
         // Initialize quiz interface
         function initializeQuiz() {
+            // Update header information
+            document.getElementById('quizTitle').textContent = quizData.lectureTitle;
+            document.getElementById('questionCount').textContent = `${quizData.totalQuestions} questions`;
+            
             // Initialize student answers array
             studentAnswers = new Array(quizData.totalQuestions).fill(null);
-            // Initialize visited questions array
-            visitedQuestions = new Array(quizData.totalQuestions).fill(false);
             
             // Hide loading, show quiz
             document.getElementById('loadingContainer').style.display = 'none';
@@ -1181,50 +1364,10 @@
             // Display first question
             displayQuestion(0);
             
-            // Create question navigation
-            createQuestionNavigation();
+            // Create question indicators
+            createQuestionIndicators();
             
-            console.log('🚀 Anti-cheating quiz initialized successfully with', QUIZ_TIME_LIMIT / 60, 'minutes duration');
-        }
-
-        // Create question navigation grid (Enhanced for 3 columns)
-        function createQuestionNavigation() {
-            const grid = document.getElementById('questionGrid');
-            grid.innerHTML = '';
-            
-            // Always use 3 columns layout
-            console.log('📋 Creating question navigation with 3 columns for', quizData.totalQuestions, 'questions');
-            
-            for (let i = 0; i < quizData.totalQuestions; i++) {
-                const btn = document.createElement('button');
-                btn.className = 'question-nav-btn';
-                btn.textContent = i + 1;
-                btn.onclick = () => displayQuestion(i);
-                btn.title = `Question ${i + 1}`;
-                grid.appendChild(btn);
-            }
-        }
-
-        // Update question navigation with proper visited/skipped logic
-        function updateQuestionNavigation() {
-            const buttons = document.getElementById('questionGrid').children;
-            
-            for (let i = 0; i < buttons.length; i++) {
-                const btn = buttons[i];
-                btn.className = 'question-nav-btn';
-                
-                if (i === currentQuestionIndex) {
-                    // Current question - blue highlight
-                    btn.classList.add('current');
-                } else if (studentAnswers[i] !== null) {
-                    // Answered question - green border
-                    btn.classList.add('answered');
-                } else if (visitedQuestions[i] === true) {
-                    // Visited but not answered - orange border (truly skipped)
-                    btn.classList.add('skipped');
-                }
-                // Unvisited questions stay default gray - no special styling
-            }
+            console.log('🚀 Enhanced anti-cheating quiz initialized successfully with', QUIZ_TIME_LIMIT / 60, 'minutes duration');
         }
 
         // Display a specific question
@@ -1237,11 +1380,14 @@
             const question = quizData.questions[index];
             currentQuestionIndex = index;
 
-            // Mark this question as visited
-            visitedQuestions[index] = true;
-
-            // Update question text
+            // Update question info
+            document.getElementById('questionNumber').textContent = `Question ${index + 1}`;
             document.getElementById('questionText').textContent = question.question;
+            
+            // Update progress
+            const progress = ((index + 1) / quizData.totalQuestions) * 100;
+            document.getElementById('progressFill').style.width = `${progress}%`;
+            document.getElementById('progressText').textContent = `Question ${index + 1} of ${quizData.totalQuestions}`;
             
             // Display options
             const optionsContainer = document.getElementById('optionsContainer');
@@ -1250,7 +1396,7 @@
             ['A', 'B', 'C', 'D'].forEach(letter => {
                 const option = document.createElement('div');
                 option.className = 'option';
-                option.onclick = (e) => selectOption(letter, e);
+                option.onclick = () => selectOption(letter);
                 
                 // Check if this option was previously selected
                 if (studentAnswers[index] === letter) {
@@ -1267,45 +1413,33 @@
             
             // Update navigation buttons
             updateNavigationButtons();
-            updateQuestionNavigation();
+            updateQuestionIndicators();
         }
 
-        // Enhanced select option with toned-down animation
-        function selectOption(letter, event) {
-            console.log(`📝 Selecting option ${letter} for question ${currentQuestionIndex + 1}`);
-            
-            // Get the clicked option element
-            const clickedOption = event.target.closest('.option');
-            
+        // Select an option
+        function selectOption(letter) {
             // Remove previous selection
             document.querySelectorAll('.option').forEach(opt => {
-                opt.classList.remove('selected', 'click-flash');
+                opt.classList.remove('selected');
             });
             
-            // Add click flash animation first
-            clickedOption.classList.add('click-flash');
+            // Add selection to clicked option
+            event.target.closest('.option').classList.add('selected');
             
-            // Then add selection after a brief delay
+            // Store answer
+            studentAnswers[currentQuestionIndex] = letter;
+            
+            console.log(`📝 Selected ${letter} for question ${currentQuestionIndex + 1}`);
+            
+            // Update question indicators
+            updateQuestionIndicators();
+            
+            // Auto-advance to next question after a short delay
             setTimeout(() => {
-                clickedOption.classList.remove('click-flash');
-                clickedOption.classList.add('selected');
-                
-                // Store answer
-                studentAnswers[currentQuestionIndex] = letter;
-                
-                // Update question navigation
-                updateQuestionNavigation();
-                
-                console.log('✨ Option selection animation completed');
-                
-                // Auto-advance to next question after animation
-                setTimeout(() => {
-                    if (currentQuestionIndex < quizData.totalQuestions - 1) {
-                        nextQuestion();
-                    }
-                }, 300); // Reduced from 400ms to match toned-down animation
-                
-            }, 100); // Reduced from 150ms for quicker response
+                if (currentQuestionIndex < quizData.totalQuestions - 1) {
+                    nextQuestion();
+                }
+            }, 500);
         }
 
         // Navigation functions
@@ -1324,18 +1458,50 @@
         function updateNavigationButtons() {
             const prevBtn = document.getElementById('prevBtn');
             const nextBtn = document.getElementById('nextBtn');
-            const submitBtn = document.getElementById('submitBtn');
             
             // Previous button
             prevBtn.disabled = currentQuestionIndex === 0;
             
-            // Next/Submit button logic
+            // Next button
             if (currentQuestionIndex === quizData.totalQuestions - 1) {
-                nextBtn.style.display = 'none';
-                submitBtn.style.display = 'block';
+                nextBtn.textContent = 'Submit Quiz';
+                nextBtn.className = 'btn btn-success';
+                nextBtn.onclick = submitQuiz;
             } else {
-                nextBtn.style.display = 'block';
-                submitBtn.style.display = 'none';
+                nextBtn.textContent = 'Next →';
+                nextBtn.className = 'btn';
+                nextBtn.onclick = nextQuestion;
+            }
+        }
+
+        // Create question indicators (dots)
+        function createQuestionIndicators() {
+            const container = document.getElementById('questionIndicators');
+            container.innerHTML = '';
+            
+            for (let i = 0; i < quizData.totalQuestions; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'question-dot';
+                dot.onclick = () => displayQuestion(i);
+                dot.title = `Question ${i + 1}`;
+                container.appendChild(dot);
+            }
+        }
+
+        function updateQuestionIndicators() {
+            const dots = document.getElementById('questionIndicators').children;
+            
+            for (let i = 0; i < dots.length; i++) {
+                const dot = dots[i];
+                dot.className = 'question-dot';
+                
+                if (i === currentQuestionIndex) {
+                    dot.classList.add('current');
+                } else if (studentAnswers[i] !== null) {
+                    dot.classList.add('answered');
+                } else {
+                    dot.classList.add('unanswered');
+                }
             }
         }
 
@@ -1665,7 +1831,7 @@
             document.getElementById('loadingContainer').innerHTML = `
                 <h3 style="color: #ef4444;">❌ Error</h3>
                 <p>${message}</p>
-                <button class="submit-btn" onclick="window.location.href='${backUrl}'" style="margin-top: 1rem;">
+                <button class="btn" onclick="window.location.href='${backUrl}'" style="margin-top: 1rem;">
                     ${backButtonText}
                 </button>
             `;
@@ -1687,7 +1853,7 @@
         });
 
         // Console log for debugging
-        console.log('🎯 Enhanced takeQuiz.hbs loaded with anti-cheating system:', {
+        console.log('🎯 Enhanced takeQuiz.hbs loaded with COMPLETE anti-cheating system:', {
             classContext: classContext,
             quizId: quizId,
             enhancedNavigation: true,
@@ -1695,11 +1861,7 @@
             antiCheatingActive: true,
             maxViolations: MAX_VIOLATIONS,
             gracePeriod: GRACE_PERIOD / 1000 + ' seconds',
-            detectionMethods: ['tab_switch', 'window_blur', 'task_switcher', 'windows_key', 'focus_loss'],
-            fullscreenMode: false,
-            improvedUI: true,
-            navigationPanel: '3-column grid, smaller buttons',
-            optionAnimation: 'enhanced click animations'
+            detectionMethods: ['tab_switch', 'window_blur', 'task_switcher', 'windows_key', 'focus_loss']
         });
     </script>
 </body>
