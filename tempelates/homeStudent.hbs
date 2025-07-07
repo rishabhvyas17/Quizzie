@@ -1012,7 +1012,7 @@
             });
         }
 
-        // Load only the most recent quiz for a class (UPDATED - Fixed Flow)
+        // Load only the most recent quiz for a class
         async function loadMostRecentQuiz(classId) {
             try {
                 const response = await fetch(`/api/student/class/${classId}/recent-quiz`);
@@ -1058,7 +1058,7 @@
             }
         }
 
-        // Function to view detailed quiz results
+        // View detailed quiz results
         function viewQuizResults(resultId, quizTitle, classId) {
             console.log(`📊 Viewing detailed results: ${resultId} - ${quizTitle} from class ${classId}`);
             window.location.href = `/quiz-result/${resultId}/detailed?classId=${classId}`;
@@ -1112,18 +1112,13 @@
             window.location.href = `/student/class/${classId}`;
         }
 
-        // takeQuiz function - NOW GOES TO QUIZ INFO FIRST!
+        // Take quiz function
         function takeQuiz(quizId, quizTitle, classId) {
-            console.log(`📋 Going to quiz info first: ${quizId} - ${quizTitle} from class ${classId}`);
+            console.log(`🎯 Taking quiz: ${quizId} - ${quizTitle} from class ${classId}`);
             
-            // Build quiz info URL with class context
-            let quizInfoUrl = `/quiz-info/${quizId}`;
-            if (classId) {
-                quizInfoUrl += `?classId=${classId}`;
+            if (confirm(`Are you ready to take the quiz: "${quizTitle}"?\n\nOnce started, the quiz timer will begin immediately.`)) {
+                window.location.href = `/take_quiz/${quizId}?classId=${classId}`;
             }
-            
-            console.log(`✅ Redirecting to quiz info page: ${quizInfoUrl}`);
-            window.location.href = quizInfoUrl;
         }
 
         // 🆕 NEW: Join Class Modal Functions
