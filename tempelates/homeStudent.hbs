@@ -128,7 +128,7 @@
             margin-bottom: 2rem;
         }
 
-        /* Stats Section - UPDATED */
+        /* Stats Section */
         .stats-section {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -198,7 +198,49 @@
             margin-bottom: 1.5rem;
         }
 
-        /* UPDATED CLASS CARDS - New Design */
+        /* 🆕 NEW: Section Header with Right-Aligned Button */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-header h2 {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1e293b;
+            margin: 0;
+        }
+
+        /* 🆕 NEW: Join Class Button */
+        .join-class-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .join-class-btn:hover {
+            background: #059669;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .join-class-btn .icon {
+            font-size: 1rem;
+        }
+
+        /* Class Cards */
         .classes-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
@@ -223,7 +265,6 @@
             margin-bottom: 1rem;
         }
 
-        /* NEW: Subject name is now the main title */
         .class-subject {
             font-size: 1.4rem;
             font-weight: bold;
@@ -238,7 +279,6 @@
             font-size: 1.6rem;
         }
 
-        /* NEW: Class name is now smaller subtitle */
         .class-name {
             font-size: 1rem;
             color: #3b82f6;
@@ -251,7 +291,6 @@
             color: #64748b;
         }
 
-        /* Class stats remain the same */
         .class-stats {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -279,7 +318,6 @@
             margin-top: 0.25rem;
         }
 
-        /* UPDATED: Recent Quiz Section */
         .class-recent-quiz {
             margin-top: 1rem;
             padding: 1rem;
@@ -325,7 +363,6 @@
             margin-left: 1rem;
         }
 
-        /* NEW: Action Buttons Row */
         .class-actions {
             display: flex;
             gap: 0.75rem;
@@ -361,13 +398,20 @@
             background: #4b5563;
         }
 
+        .btn-success {
+            background: #10b981;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
         .btn-sm {
             padding: 0.4rem 0.8rem;
             font-size: 0.75rem;
             flex: none;
         }
 
-        /* No quiz available state */
         .no-recent-quiz {
             text-align: center;
             padding: 1rem;
@@ -376,6 +420,138 @@
             background: #f8fafc;
             border-radius: 6px;
             margin-top: 0.5rem;
+        }
+
+        /* 🆕 NEW: Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #1e293b;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #64748b;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+        }
+
+        .close-btn:hover {
+            background: #f1f5f9;
+        }
+
+        /* 🆕 NEW: Form Styles for Modal */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        /* 🆕 NEW: Class Preview Styles */
+        .class-preview {
+            background: #f8fafc;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .class-preview h3 {
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+
+        .class-preview-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .preview-stat {
+            text-align: center;
+            background: white;
+            padding: 0.75rem;
+            border-radius: 6px;
+        }
+
+        .preview-stat-value {
+            font-weight: bold;
+            color: #3b82f6;
+        }
+
+        .preview-stat-label {
+            font-size: 0.75rem;
+            color: #64748b;
         }
 
         /* Loading States */
@@ -432,7 +608,19 @@
             border: 1px solid #fcd34d;
         }
 
-        /* 🆕 NEW: Footer Styles - Adapted for Dashboard */
+        .alert-success {
+            background-color: #dcfce7;
+            color: #16a34a;
+            border: 1px solid #86efac;
+        }
+
+        .alert-error {
+            background-color: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #fca5a5;
+        }
+
+        /* Footer Styles */
         .footer {
             background: white;
             border-top: 1px solid #e2e8f0;
@@ -509,11 +697,31 @@
                 flex: none;
             }
 
-            /* 🆕 NEW: Mobile footer styles */
+            /* 🆕 NEW: Mobile responsiveness for section header */
+            .section-header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: stretch;
+            }
+
+            .join-class-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
             .footer-content {
                 flex-direction: column;
                 gap: 0.75rem;
                 text-align: center;
+            }
+
+            .modal-content {
+                width: 95%;
+                padding: 1.5rem;
+            }
+
+            .class-preview-stats {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -554,7 +762,7 @@
     <main class="main-content">
         <h1 class="dashboard-title" id="dashboardTitle"></h1>
 
-        <!-- UPDATED Stats Section -->
+        <!-- Stats Section -->
         <section class="stats-section">
             <div class="stat-card blue">
                 <div class="stat-value">
@@ -586,9 +794,15 @@
             </div>
         </section>
 
-        <!-- My Classes Section -->
+        <!-- 🆕 UPDATED: My Classes Section with Join Button -->
         <section class="section">
-            <h2 class="section-title">📚 My Classes</h2>
+            <div class="section-header">
+                <h2>📚 My Classes</h2>
+                <button class="join-class-btn" onclick="showJoinClassModal()">
+                    <span class="icon">➕</span>
+                    Join New Class
+                </button>
+            </div>
             <div id="classesContainer">
                 <div class="loading">
                     <div class="loading-spinner"></div>
@@ -598,7 +812,7 @@
         </section>
     </main>
 
-    <!-- 🆕 NEW: Footer Section -->
+    <!-- Footer Section -->
     <footer class="footer">
         <div class="footer-content">
             <div class="footer-copyright">
@@ -610,10 +824,67 @@
         </div>
     </footer>
 
+    <!-- 🆕 NEW: Join Class Modal -->
+    <div id="joinClassModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">🎓 Join New Class</h2>
+                <button class="close-btn" onclick="hideJoinClassModal()">&times;</button>
+            </div>
+            
+            <!-- Step 1: Enter Join Code -->
+            <div id="joinStep1">
+                <div class="form-group">
+                    <label class="form-label">Class Join Code</label>
+                    <input type="text" id="joinCode" class="form-input" 
+                           placeholder="Enter 6-digit code (e.g., PHY123)" 
+                           maxlength="6" style="text-transform: uppercase;">
+                    <small style="color: #64748b; font-size: 0.85rem; margin-top: 0.5rem; display: block;">
+                        💡 Ask your teacher for the class join code (expires in 10 minutes)
+                    </small>
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                    <button type="button" class="btn btn-secondary" onclick="hideJoinClassModal()">
+                        Cancel
+                    </button>
+                    <button type="button" class="btn" onclick="validateJoinCode()" style="flex: 1;">
+                        🔍 Validate Code
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 2: Confirm Class Details -->
+            <div id="joinStep2" style="display: none;">
+                <div id="classPreview" class="class-preview">
+                    <!-- Class details will be loaded here -->
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                    <button type="button" class="btn btn-secondary" onclick="backToStep1()">
+                        ← Back
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="submitJoinRequest()" style="flex: 1;">
+                        📝 Send Join Request
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 3: Request Status -->
+            <div id="joinStep3" style="display: none;">
+                <div id="requestStatus">
+                    <!-- Status will be shown here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Global variables
         const studentName = '{{{userName}}}';
         let enrolledClasses = [];
+
+        // 🆕 NEW: Global variables for join process
+        let currentJoinCode = '';
+        let currentClassData = {};
 
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function() {
@@ -638,7 +909,7 @@
             avatar.textContent = initials;
         }
 
-        // NEW: Get subject emoji based on subject name
+        // Get subject emoji based on subject name
         function getSubjectEmoji(subject) {
             const subjectLower = subject.toLowerCase();
             
@@ -681,7 +952,7 @@
             }
         }
 
-        // UPDATED: Display enrolled classes with new design
+        // Display enrolled classes
         function displayEnrolledClasses(classes) {
             const container = document.getElementById('classesContainer');
             
@@ -741,7 +1012,7 @@
             });
         }
 
-        // NEW: Load only the most recent quiz for a class (UPDATED - Fixed Flow)
+        // Load only the most recent quiz for a class (UPDATED - Fixed Flow)
         async function loadMostRecentQuiz(classId) {
             try {
                 const response = await fetch(`/api/student/class/${classId}/recent-quiz`);
@@ -787,34 +1058,30 @@
             }
         }
 
-        // 🆕 NEW: Function to view detailed quiz results
+        // Function to view detailed quiz results
         function viewQuizResults(resultId, quizTitle, classId) {
             console.log(`📊 Viewing detailed results: ${resultId} - ${quizTitle} from class ${classId}`);
             window.location.href = `/quiz-result/${resultId}/detailed?classId=${classId}`;
         }
 
-        // UPDATED: Calculate and display dashboard stats
+        // Calculate and display dashboard stats
         function updateDashboardStats(classes, overallStats) {
-            // Use the overallStats from backend if available
             if (overallStats) {
                 document.getElementById('enrolledClassesCount').textContent = overallStats.totalClasses;
                 document.getElementById('overallAverage').textContent = (overallStats.overallAverage || 0) + '%';
                 document.getElementById('totalQuizAttempts').textContent = overallStats.totalQuizAttempts;
                 document.getElementById('activeClassesCount').textContent = overallStats.activeClasses;
                 
-                // Update comparison texts
                 document.getElementById('enrollmentInfo').textContent = overallStats.totalClasses === 1 ? '1 course' : `${overallStats.totalClasses} courses`;
                 document.getElementById('averageComparison').textContent = overallStats.totalQuizAttempts > 0 ? `Based on ${overallStats.totalQuizAttempts} attempts` : 'No attempts yet';
                 document.getElementById('attemptsComparison').textContent = `Across ${overallStats.totalClasses} classes`;
                 
-                // Update trend indicator
                 const trendElement = document.getElementById('trendIndicator');
                 const avgScore = parseFloat(overallStats.overallAverage) || 0;
                 if (avgScore >= 80) trendElement.textContent = '📈';
                 else if (avgScore >= 60) trendElement.textContent = '→';
                 else trendElement.textContent = '📉';
             } else {
-                // Fallback to local calculation
                 const totalClasses = classes.length;
                 let totalQuizzes = 0;
                 let totalScore = 0;
@@ -839,13 +1106,13 @@
             }
         }
 
-        // NEW: Navigate to class-specific page
+        // Navigate to class-specific page
         function goToClass(classId, className) {
             console.log(`📚 Navigating to class: ${className} (${classId})`);
             window.location.href = `/student/class/${classId}`;
         }
 
-        // 🔄 UPDATED: takeQuiz function - NOW GOES TO QUIZ INFO FIRST!
+        // takeQuiz function - NOW GOES TO QUIZ INFO FIRST!
         function takeQuiz(quizId, quizTitle, classId) {
             console.log(`📋 Going to quiz info first: ${quizId} - ${quizTitle} from class ${classId}`);
             
@@ -859,16 +1126,201 @@
             window.location.href = quizInfoUrl;
         }
 
+        // 🆕 NEW: Join Class Modal Functions
+        function showJoinClassModal() {
+            console.log('🎓 Opening join class modal');
+            document.getElementById('joinClassModal').classList.add('show');
+            resetJoinModal();
+            document.getElementById('joinCode').focus();
+        }
+
+        function hideJoinClassModal() {
+            console.log('🎓 Closing join class modal');
+            document.getElementById('joinClassModal').classList.remove('show');
+            resetJoinModal();
+        }
+
+        function resetJoinModal() {
+            // Reset to step 1
+            document.getElementById('joinStep1').style.display = 'block';
+            document.getElementById('joinStep2').style.display = 'none';
+            document.getElementById('joinStep3').style.display = 'none';
+            
+            // Clear form
+            document.getElementById('joinCode').value = '';
+            currentJoinCode = '';
+            currentClassData = {};
+        }
+
+        // 🔧 FIXED: Step 1 - Validate join code
+        async function validateJoinCode() {
+            const code = document.getElementById('joinCode').value.trim().toUpperCase();
+            
+            if (!code || code.length !== 6) {
+                showError('Please enter a valid 6-digit join code.');
+                return;
+            }
+
+            try {
+                console.log('🔍 Validating join code:', code); // Debug log
+                
+                const response = await fetch(`/api/classes/validate-join-code/${code}`);
+                
+                // Check if response is OK
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('❌ API Error:', errorData);
+                    showError(errorData.message || 'Server error validating join code.');
+                    return;
+                }
+                
+                const data = await response.json();
+                console.log('📡 API Response:', data); // Debug log
+                
+                if (data.success) {
+                    currentJoinCode = code;
+                    // 🔧 FIX: Use 'classInfo' instead of 'classData'
+                    currentClassData = data.classInfo;
+                    showClassPreview(data.classInfo);
+                    
+                    // Move to step 2
+                    document.getElementById('joinStep1').style.display = 'none';
+                    document.getElementById('joinStep2').style.display = 'block';
+                } else {
+                    console.error('❌ Validation failed:', data.message);
+                    showError(data.message || 'Invalid or expired join code.');
+                }
+            } catch (error) {
+                console.error('❌ Error validating join code:', error);
+                showError('Network error validating join code. Please check your connection and try again.');
+            }
+        }
+
+        // 🔧 FIXED: Step 2 - Show class preview
+        function showClassPreview(classInfo) {
+            const preview = document.getElementById('classPreview');
+            const emoji = getSubjectEmoji(classInfo.classSubject);
+            
+            preview.innerHTML = `
+                <h3 style="color: #1e293b; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <span style="font-size: 1.5rem;">${emoji}</span>
+                    ${classInfo.classSubject}
+                </h3>
+                <p style="color: #3b82f6; font-weight: 500; margin-bottom: 0.5rem;">${classInfo.className}</p>
+                <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 1rem;">👨‍🏫 ${classInfo.teacherName}</p>
+                
+                <div class="class-preview-stats">
+                    <div class="preview-stat">
+                        <div class="preview-stat-value">${classInfo.studentCount || 0}</div>
+                        <div class="preview-stat-label">Students</div>
+                    </div>
+                    <div class="preview-stat">
+                        <div class="preview-stat-value">${classInfo.quizCount || 0}</div>
+                        <div class="preview-stat-label">Quizzes</div>
+                    </div>
+                    <div class="preview-stat">
+                        <div class="preview-stat-value">${Math.floor((classInfo.remainingTime || 0) / 60)}m</div>
+                        <div class="preview-stat-label">Time Left</div>
+                    </div>
+                </div>
+                
+                <div style="background: #dbeafe; padding: 1rem; border-radius: 6px; margin-top: 1rem; border: 1px solid #93c5fd;">
+                    <p style="color: #1e40af; font-size: 0.9rem; margin: 0;">
+                        <strong>📝 Join Request:</strong> Your request will be sent to the teacher for approval. 
+                        You'll be notified once it's processed.
+                    </p>
+                </div>
+            `;
+        }
+
+        // 🔧 FIXED: Step 3 - Submit join request
+        async function submitJoinRequest() {
+            try {
+                console.log('📝 Submitting join request:', {
+                    joinCode: currentJoinCode,
+                    classData: currentClassData
+                });
+
+                const response = await fetch('/api/classes/join-request', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        joinCode: currentJoinCode
+                    })
+                });
+
+                const data = await response.json();
+                console.log('📡 Submit response:', data);
+                
+                if (data.success) {
+                    // Show success status
+                    document.getElementById('joinStep2').style.display = 'none';
+                    document.getElementById('joinStep3').style.display = 'block';
+                    
+                    document.getElementById('requestStatus').innerHTML = `
+                        <div style="text-align: center; padding: 2rem;">
+                            <div style="font-size: 3rem; margin-bottom: 1rem;">✅</div>
+                            <h3 style="color: #10b981; margin-bottom: 1rem;">Request Sent Successfully!</h3>
+                            <p style="color: #64748b; margin-bottom: 1.5rem;">
+                                Your join request for <strong>${currentClassData.classSubject}</strong> has been sent to 
+                                <strong>${currentClassData.teacherName}</strong>.
+                            </p>
+                            <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 1.5rem;">
+                                You'll receive a notification once your request is approved or rejected.
+                            </p>
+                            <button class="btn" onclick="hideJoinClassModal()" style="width: 100%;">
+                                Close
+                            </button>
+                        </div>
+                    `;
+                    
+                    // Auto-close after 5 seconds
+                    setTimeout(() => {
+                        hideJoinClassModal();
+                        // Refresh the page to show updated data
+                        loadEnrolledClasses();
+                    }, 5000);
+                    
+                } else {
+                    console.error('❌ Submit failed:', data.message);
+                    showError(data.message || 'Failed to send join request.');
+                }
+            } catch (error) {
+                console.error('❌ Error submitting join request:', error);
+                showError('Network error submitting join request. Please try again.');
+            }
+        }
+
+        function backToStep1() {
+            document.getElementById('joinStep1').style.display = 'block';
+            document.getElementById('joinStep2').style.display = 'none';
+        }
+
+        // Format join code as user types
+        document.addEventListener('DOMContentLoaded', function() {
+            const joinCodeInput = document.getElementById('joinCode');
+            if (joinCodeInput) {
+                joinCodeInput.addEventListener('input', function(e) {
+                    e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                });
+            }
+        });
+
         // Error states
         function showEmptyClasses() {
             const container = document.getElementById('classesContainer');
             container.innerHTML = `
                 <div class="empty-state">
                     <h3>🏫 No Classes Enrolled</h3>
-                    <p>You haven't been enrolled in any classes yet. Please contact your teachers to get enrolled.</p>
+                    <p>You haven't been enrolled in any classes yet. Use the "Join New Class" button above to join a class with a join code from your teacher.</p>
                     <div class="alert alert-info" style="margin-top: 1rem;">
-                        <strong>How to get enrolled:</strong><br>
-                        Ask your teacher to add you to their class using your enrollment number.
+                        <strong>How to join a class:</strong><br>
+                        1. Get a join code from your teacher (valid for 10 minutes)<br>
+                        2. Click "Join New Class" button above<br>
+                        3. Enter the 6-digit code and send a join request<br>
+                        4. Wait for teacher approval
                     </div>
                 </div>
             `;
@@ -886,6 +1338,60 @@
                 </div>
             `;
         }
+
+        // Utility functions
+        function showSuccess(message) {
+            console.log('✅', message);
+            
+            document.querySelectorAll('.alert').forEach(alert => alert.remove());
+            
+            const messageHTML = `
+                <div class="alert alert-success" style="position: fixed; top: 20px; right: 20px; z-index: 1000; max-width: 400px;">
+                    <strong>Success!</strong> ${message}
+                    <button onclick="this.parentElement.remove()" style="float: right; background: none; border: none; font-size: 18px; cursor: pointer;">&times;</button>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('afterbegin', messageHTML);
+            
+            setTimeout(() => {
+                const alert = document.querySelector('.alert-success');
+                if (alert) alert.remove();
+            }, 8000);
+        }
+
+        function showError(message) {
+            console.error('❌', message);
+            
+            document.querySelectorAll('.alert').forEach(alert => alert.remove());
+            
+            const messageHTML = `
+                <div class="alert alert-error" style="position: fixed; top: 20px; right: 20px; z-index: 1000; max-width: 400px;">
+                    <strong>Error!</strong> ${message}
+                    <button onclick="this.parentElement.remove()" style="float: right; background: none; border: none; font-size: 18px; cursor: pointer;">&times;</button>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('afterbegin', messageHTML);
+            
+            setTimeout(() => {
+                const alert = document.querySelector('.alert-error');
+                if (alert) alert.remove();
+            }, 10000);
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('joinClassModal');
+            if (event.target === modal) {
+                hideJoinClassModal();
+            }
+        }
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                hideJoinClassModal();
+            }
+        });
 
         // Auto-refresh data every 30 seconds
         setInterval(() => {
