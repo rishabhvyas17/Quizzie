@@ -15,6 +15,12 @@
             box-sizing: border-box;
         }
 
+        html, body {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background-color: #f8fafc;
@@ -140,6 +146,10 @@
             flex: 1;
             margin-left: 280px;
             background: #f8fafc;
+            width: calc(100vw - 280px);
+            max-width: calc(100vw - 280px);
+            box-sizing: border-box;
+            overflow-x: hidden;
         }
 
         .content-wrapper {
@@ -527,6 +537,35 @@
             padding: 1.5rem;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             margin-bottom: 1.5rem;
+        }
+
+        /* 🔧 FIX: Perfect screen fit for recent activity card - COMPLETE SOLUTION */
+        .card.recent_submit {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        /* Ensure parent containers don't cause overflow */
+        .rankings-section {
+            margin-top: 2rem;
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        .content-wrapper {
+            padding: 2rem;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
         }
 
         .card-title {
@@ -1368,7 +1407,202 @@
             line-height: 1.5;
         }
 
-        /* Mobile Responsiveness */
+        /* 🆕 NEW: Loading Overlay Styles */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .loading-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .loading-content {
+            background: transparent;
+            border-radius: 16px;
+            padding: 3rem 2.5rem;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            transform: translateY(-20px) scale(0.9);
+            transition: all 0.3s ease;
+        }
+
+        .loading-overlay.active .loading-content {
+            transform: translateY(0) scale(1);
+        }
+
+        .loading-animation {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 1.5rem;
+            border-radius: 12px;
+            overflow: hidden;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loading-animation img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 12px;
+        }
+
+        .loading-text {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #d7dbe2;
+            margin: 0;
+            line-height: 1.4;
+            transition: opacity 0.3s ease;
+        }
+
+        .loading-text.fade-out {
+            opacity: 0;
+        }
+
+        .loading-text.fade-in {
+            opacity: 1;
+        }
+
+        /* Progress indicator */
+        .loading-progress {
+            width: 100%;
+            height: 4px;
+            background: #e2e8f0;
+            border-radius: 2px;
+            margin: 1.5rem 0 0.5rem 0;
+            overflow: hidden;
+        }
+
+        .loading-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #10b981);
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* 🔥 NEW: Enhanced Recent Activity Styles - Perfect Responsive Fit */
+        .recent-activity-container {
+            display: flex;
+            gap: 1rem;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: 0.5rem 0;
+            min-height: 120px;
+            width: 100%;
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 #f1f5f9;
+        }
+
+        .recent-activity-container::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .recent-activity-container::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+
+        .recent-activity-container::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        .recent-activity-container::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        .activity-item {
+            flex: 0 0 180px;
+            height: 100px;
+            padding: 1rem;
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            color: #1f2937;
+            min-width: 180px;
+        }
+
+        .activity-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-color: #cbd5e1;
+        }
+
+        .activity-item-header {
+            display: flex;
+            justify-content: flex-start;
+            align-items: flex-start;
+            margin-bottom: auto;
+        }
+
+        .activity-student-name {
+            font-weight: bold;
+            font-size: 0.9rem;
+            line-height: 1.2;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 150px;
+            color: #1f2937;
+        }
+
+        .activity-item-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .activity-score {
+            color: #1f2937;
+            font-weight: bold;
+        }
+
+        .activity-time {
+            color: #64748b;
+            opacity: 0.9;
+        }
+
+        /* Empty state for recent activity */
+        .recent-activity-empty {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 120px;
+            color: #64748b;
+            font-style: italic;
+            width: 100%;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 2px dashed #e2e8f0;
+        }
+
         @media (max-width: 1024px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -1411,11 +1645,59 @@
                 width: 95%;
                 margin: 1rem;
             }
+
+            .loading-content {
+                padding: 2rem 1.5rem;
+                margin: 1rem;
+            }
+
+            .loading-animation {
+                width: 100px;
+                height: 100px;
+            }
+
+            .loading-text {
+                font-size: 1.1rem;
+            }
+
+            /* Tablet responsive for recent activity */
+            .card.recent_submit {
+                padding: 1.25rem;
+                margin-bottom: 1.25rem;
+            }
+
+            .recent-activity-container {
+                gap: 0.75rem;
+                padding: 0.25rem 0;
+            }
+
+            .activity-item {
+                flex: 0 0 150px;
+                min-width: 150px;
+                height: 90px;
+                padding: 0.75rem;
+            }
+
+            .activity-student-name {
+                font-size: 0.85rem;
+                max-width: 120px;
+            }
+
+            .activity-item-footer {
+                font-size: 0.75rem;
+            }
         }
 
         @media (max-width: 768px) {
             .content-wrapper {
                 padding: 1rem;
+                width: 100%;
+                max-width: 100%;
+            }
+
+            .main-content {
+                width: 100vw;
+                max-width: 100vw;
             }
 
             .class-quick-stats {
@@ -1487,6 +1769,55 @@
                 justify-content: center;
             }
 
+            .loading-content {
+                padding: 1.5rem 1rem;
+            }
+
+            .loading-animation {
+                width: 80px;
+                height: 80px;
+            }
+
+            .loading-text {
+                font-size: 1rem;
+            }
+
+            /* Mobile responsive for recent activity - Perfect fit */
+            .card.recent_submit {
+                padding: 1rem;
+                margin-bottom: 1rem;
+                width: 100%;
+                max-width: 100%;
+            }
+
+            .rankings-section {
+                margin-top: 1.5rem;
+                width: 100%;
+                max-width: 100%;
+            }
+
+            .recent-activity-container {
+                gap: 0.5rem;
+                padding: 0.25rem 0;
+                width: 100%;
+            }
+
+            .activity-item {
+                flex: 0 0 130px;
+                min-width: 130px;
+                height: 85px;
+                padding: 0.625rem;
+            }
+
+            .activity-student-name {
+                font-size: 0.8rem;
+                max-width: 100px;
+            }
+
+            .activity-item-footer {
+                font-size: 0.7rem;
+            }
+
             /* Responsive modal request items */
             .modal-request-actions {
                 flex-direction: column;
@@ -1508,11 +1839,57 @@
                 justify-content: center;
             }
         }
+
+        /* Extra small screens */
+        @media (max-width: 480px) {
+            .content-wrapper {
+                padding: 0.75rem;
+            }
+
+            .card.recent_submit {
+                padding: 0.75rem;
+                margin-bottom: 0.75rem;
+            }
+
+            .recent-activity-container {
+                gap: 0.375rem;
+                padding: 0.125rem 0;
+            }
+
+            .activity-item {
+                flex: 0 0 110px;
+                min-width: 110px;
+                height: 80px;
+                padding: 0.5rem;
+            }
+
+            .activity-student-name {
+                font-size: 0.75rem;
+                max-width: 85px;
+            }
+
+            .activity-item-footer {
+                font-size: 0.65rem;
+            }
+        }
     </style>
 </head>
 <body>
     <!-- Mobile Menu Button -->
     <button class="mobile-menu-btn" onclick="toggleSidebar()" style="display: none;">☰</button>
+
+    <!-- 🆕 NEW: Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-content">
+            <div class="loading-animation">
+                <img src="/Animation-1751710786188.gif" alt="Loading Animation" id="loadingGif" onload="console.log('✅ Loading GIF loaded successfully')" onerror="console.error('❌ Failed to load GIF')">
+            </div>
+            <h3 class="loading-text fade-in" id="loadingText">Preparing your quiz...</h3>
+            <div class="loading-progress">
+                <div class="loading-progress-bar" id="loadingProgressBar"></div>
+            </div>
+        </div>
+    </div>
 
     <div class="layout">
         <!-- Sidebar -->
@@ -1642,10 +2019,10 @@
                             </div>
                         </div>
 
-                        <!-- Recent Quiz Activity Below Rankings -->
-                        <div class="card">
-                            <h3 class="card-title">📋 Recent Quiz Activity</h3>
-                            <div id="recentActivityContainer">
+                        <!-- 🔥 UPDATED: Enhanced Recently submitted Section -->
+                        <div class="card recent_submit">
+                            <h3 class="card-title">🏃‍♂️ Recently Submitted</h3>
+                            <div id="recentActivityContainer" class="recent-activity-container">
                                 <div class="loading">Loading recent activity...</div>
                             </div>
                         </div>
@@ -1907,6 +2284,57 @@
             className: className,
             classSubject: classSubject
         });
+
+        // 🆕 NEW: Loading overlay functions
+        function showLoadingOverlay(text = 'Processing...', progress = 0) {
+            const overlay = document.getElementById('loadingOverlay');
+            const loadingText = document.getElementById('loadingText');
+            const progressBar = document.getElementById('loadingProgressBar');
+            const loadingGif = document.getElementById('loadingGif');
+            
+            // Preload and force refresh the GIF
+            loadingGif.src = `/Animation-1751710786188.gif?t=${Date.now()}`;
+            
+            loadingText.textContent = text;
+            loadingText.classList.add('fade-in');
+            loadingText.classList.remove('fade-out');
+            progressBar.style.width = progress + '%';
+            
+            overlay.classList.add('active');
+            
+            // Disable all interactive elements
+            document.body.style.overflow = 'hidden';
+            console.log('🔄 Loading overlay shown:', text, `(${progress}%)`);
+        }
+
+        function hideLoadingOverlay() {
+            const overlay = document.getElementById('loadingOverlay');
+            overlay.classList.remove('active');
+            
+            // Re-enable scrolling
+            document.body.style.overflow = '';
+            console.log('✅ Loading overlay hidden');
+        }
+
+        function updateLoadingProgress(text, progress) {
+            const loadingText = document.getElementById('loadingText');
+            const progressBar = document.getElementById('loadingProgressBar');
+            
+            // Fade out current text
+            loadingText.classList.add('fade-out');
+            loadingText.classList.remove('fade-in');
+            
+            // Update text after fade out completes
+            setTimeout(() => {
+                loadingText.textContent = text;
+                loadingText.classList.remove('fade-out');
+                loadingText.classList.add('fade-in');
+            }, 150); // Half of the CSS transition time
+            
+            progressBar.style.width = progress + '%';
+            
+            console.log('📈 Loading progress updated:', text, `(${progress}%)`);
+        }
 
         // 🆕 NEW: Pending Requests Modal Functions
         function openPendingRequestsModal() {
@@ -2286,9 +2714,6 @@
             if (decreaseBtn) decreaseBtn.disabled = currentQuestions <= 5;
             if (increaseBtn) increaseBtn.disabled = currentQuestions >= 30;
             
-            console.log('📝 Questions set to:', currentQuestions);
-        }
-
         // Quiz Viewer Functions
         async function viewQuiz(quizId) {
             console.log('👁️ Opening quiz viewer for:', quizId);
@@ -2412,7 +2837,7 @@
             }
         });
 
-        // Updated form submission handler
+        // 🔄 UPDATED: Enhanced form submission handler with loading overlay
         document.getElementById('createQuizForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -2424,6 +2849,9 @@
                 duration: capturedDuration,
                 questions: capturedQuestions
             });
+
+            // 🆕 Show loading overlay immediately
+            showLoadingOverlay('Uploading your file...', 0);
             
             const formData = new FormData();
             formData.append('lectureFile', document.getElementById('lectureFile').files[0]);
@@ -2438,9 +2866,9 @@
             const originalText = submitButton.textContent;
             
             try {
-                submitButton.textContent = '📤 Uploading...';
-                submitButton.disabled = true;
-
+                // Stage 1: Upload file
+                updateLoadingProgress('Uploading your file...', 10);
+                
                 console.log('📤 Uploading lecture with settings:', {
                     classId: classId,
                     duration: capturedDuration,
@@ -2456,35 +2884,49 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    showSuccess(`Lecture uploaded successfully! Generating ${capturedQuestions} questions with ${capturedDuration}-minute duration...`);
+                    // Stage 2: File uploaded, processing data
+                    updateLoadingProgress('Processing data...', 35);
+                    
+                    console.log('✅ File uploaded successfully, starting quiz generation...');
+                    
+                    // Reset form
                     document.getElementById('createQuizForm').reset();
                     setDuration(15); // Reset to defaults
                     setQuestions(10);
                     
-                    submitButton.textContent = '🤖 Generating Quiz...';
+                    // Stage 3: Generate quiz
+                    updateLoadingProgress('Generating questions...', 60);
                     
                     // ✅ DIRECTLY call quiz generation with captured values
                     await generateQuizFromLecture(result.lectureId, capturedDuration, capturedQuestions);
                     
-                    // Close modal after successful creation
-                    closeCreateQuizModal();
+                    // Stage 4: Wrapping up
+                    updateLoadingProgress('Wrapping things up!', 90);
+                    
+                    // Short delay to show final message
+                    setTimeout(() => {
+                        updateLoadingProgress('Quiz created successfully!', 100);
+                        
+                        // Hide loading after another short delay
+                        setTimeout(() => {
+                            hideLoadingOverlay();
+                            closeCreateQuizModal();
+                            showSuccess(`🎉 Quiz created successfully with ${capturedQuestions} questions and ${capturedDuration}-minute duration!`);
+                        }, 1000);
+                    }, 500);
                     
                 } else {
                     throw new Error(result.message || 'Upload failed');
                 }
             } catch (error) {
                 console.error('❌ Upload error:', error);
+                hideLoadingOverlay();
                 showError('Failed to upload lecture: ' + error.message);
-                
-                submitButton.textContent = originalText;
-                submitButton.disabled = false;
             }
         });
 
-        // Updated quiz generation function with duration and questions parameters
+        // 🔄 UPDATED: Enhanced quiz generation function
         async function generateQuizFromLecture(lectureId, durationMinutes, questionCount) {
-            const submitButton = document.querySelector('#createQuizForm button[type="submit"]');
-            
             try {
                 console.log('🤖 QUIZ GENERATION - Starting with exact settings:', {
                     lectureId: lectureId,
@@ -2530,24 +2972,16 @@
                         requestedQuestions: safeQuestions
                     });
                     
-                    const durationText = result.durationMinutes ? ` (${result.durationMinutes} minutes)` : '';
-                    showSuccess(`🎉 Quiz generated successfully${durationText}! ${result.totalQuestions} questions created with detailed explanations.`);
-                    
                     loadQuizzes(); // Refresh quiz list
                     loadAnalytics(); // Refresh analytics
                     
                 } else {
                     console.error('❌ Quiz generation failed:', result.message);
-                    showError('Quiz generation failed: ' + result.message);
+                    throw new Error(result.message || 'Quiz generation failed');
                 }
             } catch (error) {
                 console.error('❌ Quiz generation error:', error);
-                showError('Failed to generate quiz: ' + error.message);
-            } finally {
-                if (submitButton) {
-                    submitButton.textContent = '📤 Upload & Generate Quiz';
-                    submitButton.disabled = false;
-                }
+                throw error; // Re-throw to be caught by calling function
             }
         }
 
@@ -2615,9 +3049,6 @@
                     </div>
                 `;
             }).join('');
-
-            container.innerHTML = quizzesHTML;
-        }
 
         // Edit class form handler
         document.getElementById('editClassForm').addEventListener('submit', async function(e) {
@@ -2707,6 +3138,20 @@
         // Initialize when DOM is loaded
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🔄 DOM loaded, starting initialization...');
+            
+            // 🆕 NEW: Preload the loading GIF for instant display
+            const preloadGif = new Image();
+            preloadGif.src = '/Animation-1751710786188.gif';
+            preloadGif.onload = () => {
+                console.log('✅ Loading GIF preloaded successfully');
+                // Set the src immediately to the image in the overlay
+                document.getElementById('loadingGif').src = preloadGif.src;
+            };
+            preloadGif.onerror = () => {
+                console.error('❌ Failed to preload loading GIF - check if file exists at /public/Animation-1751710786188.gif');
+                // Fallback: try without timestamp
+                document.getElementById('loadingGif').src = '/Animation-1751710786188.gif';
+            };
             
             // Set initial values
             document.getElementById('classTitle').textContent = className || 'Loading...';
@@ -2986,9 +3431,6 @@
                 `;
             }).join('');
 
-            container.innerHTML = rankingsHTML;
-        }
-
         // Display last quiz rankings
         function displayLastQuizRankings(data) {
             const container = document.getElementById('lastQuizRankingsContainer');
@@ -3035,21 +3477,45 @@
             const container = document.getElementById('recentActivityContainer');
             
             if (!activities || activities.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #64748b;">No recent activity.</p>';
+                container.innerHTML = '<div class="recent-activity-empty">No recent activity to display.</div>';
                 return;
             }
 
-            const activitiesHTML = activities.map(activity => `
-                <div class="activity-item">
-                    <div>
-                        <span style="font-weight: 500;">${activity.studentName}</span>
-                        <div style="font-size: 0.8rem; color: #64748b;">${activity.submissionDate} • ${activity.timeTaken}</div>
+            // Sort activities by score in descending order
+            const sortedActivities = [...activities].sort((a, b) => (b.score || 0) - (a.score || 0));
+
+            const activitiesHTML = sortedActivities.map((activity, index) => {
+                const rank = index + 1;
+
+                // Format time taken (assuming it comes as a string like "2m 30s" or needs formatting)
+                const formattedTime = activity.timeTaken || 'N/A';
+                
+                return `
+                    <div class="activity-item" data-rank="${rank}">
+                        <div class="activity-item-header">
+                            <div class="activity-student-name" title="${activity.studentName}">
+                                ${activity.studentName}
+                            </div>
+                        </div>
+                        <div class="activity-item-footer">
+                            <div class="activity-score">${formatPercentage(activity.score || 0)}%</div>
+                            <div class="activity-time">${formattedTime}</div>
+                        </div>
                     </div>
-                    <div style="font-weight: bold; color: #3b82f6;">${formatPercentage(activity.score)}%</div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
 
             container.innerHTML = activitiesHTML;
+            
+            // Log the activity display for debugging
+            console.log('🏃‍♂️ Recent activity displayed with clean styling:', {
+                total: sortedActivities.length,
+                activities: sortedActivities.map((activity, index) => ({
+                    rank: index + 1,
+                    name: activity.studentName,
+                    score: activity.score
+                }))
+            });
         }
 
         // Create performance trend chart
@@ -3445,6 +3911,10 @@
                 }
                 if (document.getElementById('pendingRequestsModal').classList.contains('active')) {
                     closePendingRequestsModal();
+                }
+                // 🆕 NEW: Close loading overlay on escape (if there's an error)
+                if (document.getElementById('loadingOverlay').classList.contains('active')) {
+                    hideLoadingOverlay();
                 }
             }
         });
