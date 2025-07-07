@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{quizTitle}} - Quiz Information | QuizzieI</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+            line-height: 1.6;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Main Container */
+        .quiz-info-container {
+            background: white;
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            width: 90%;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Quiz Title Section */
+        .quiz-header-section {
+            margin-bottom: 2rem;
+        }
+
+        .quiz-title {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+
+        .class-subject {
+            font-size: 1.25rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        /* Quiz Details */
+        .quiz-details {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .detail-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .detail-value {
+            color: #1e293b;
+            font-weight: 500;
+        }
+
+        /* Ranking Criteria */
+        .ranking-criteria {
+            background: #eff6ff;
+            border: 1px solid #dbeafe;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .ranking-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1e40af;
+            margin-bottom: 0.75rem;
+        }
+
+        .ranking-formula {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+
+        .ranking-description {
+            color: #64748b;
+            font-size: 0.95rem;
+        }
+
+        /* Anti-cheating Alert */
+        .anti-cheat-alert {
+            background: #fef2f2;
+            border: 2px solid #fecaca;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2.5rem;
+            position: relative;
+        }
+
+        .alert-icon {
+            position: absolute;
+            top: 1.5rem;
+            left: 1.5rem;
+            font-size: 1.5rem;
+        }
+
+        .alert-content {
+            margin-left: 2.5rem;
+        }
+
+        .alert-title {
+            font-weight: 600;
+            color: #dc2626;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .alert-text {
+            color: #7f1d1d;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        /* Start Button */
+        .start-button-container {
+            display: flex;
+            justify-content: center;
+        }
+
+        .start-quiz-btn {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            border: none;
+            padding: 1rem 3rem;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .start-quiz-btn:hover {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .start-quiz-btn:active {
+            transform: translateY(0);
+        }
+
+        .start-quiz-btn:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Loading State */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .loading-content {
+            text-align: center;
+        }
+
+        .loading-spinner {
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .quiz-info-container {
+                padding: 2rem;
+                width: 95%;
+            }
+
+            .quiz-title {
+                font-size: 1.5rem;
+            }
+
+            .class-subject {
+                font-size: 1.1rem;
+            }
+
+            .detail-row {
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+
+            .alert-content {
+                margin-left: 0;
+            }
+
+            .alert-icon {
+                position: static;
+                margin-bottom: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p>Initializing quiz environment...</p>
+        </div>
+    </div>
+
+    <!-- Main Quiz Info Container -->
+    <div class="quiz-info-container">
+        <!-- Quiz Header -->
+        <div class="quiz-header-section">
+            <h2 class="quiz-title">{{quizTitle}}</h2>
+            <div class="class-subject">{{classSubject}}</div>
+        </div>
+
+        <!-- Quiz Details -->
+        <div class="quiz-details">
+            <div class="detail-row">
+                <span class="detail-label">Total Questions:</span>
+                <span class="detail-value">{{totalQuestions}} questions</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Time Limit:</span>
+                <span class="detail-value">{{durationMinutes}} minutes</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Student Name:</span>
+                <span class="detail-value">{{studentName}}</span>
+            </div>
+        </div>
+
+        <!-- Ranking Criteria -->
+        <div class="ranking-criteria">
+            <div class="ranking-title">🏆 Ranking Criteria</div>
+            <div class="ranking-formula">
+                <strong>Points Formula:</strong> Final Points = Base Points × (0.3 + 0.7 × Participation Rate)
+            </div>
+            <div class="ranking-description">
+                Rankings encourage both performance and participation. Take more quizzes to improve your rank!
+            </div>
+        </div>
+
+        <!-- Anti-cheating Alert -->
+        <div class="anti-cheat-alert">
+            <div class="alert-icon">⚠️</div>
+            <div class="alert-content">
+                <div class="alert-title">Anti-Cheating System Active</div>
+                <div class="alert-text">
+                    Tab switching, window switching, and app switching are monitored. 
+                    You get 1 warning, then auto-submit on 2nd violation.
+                </div>
+            </div>
+        </div>
+
+        <!-- Start Button -->
+        <div class="start-button-container">
+            <button class="start-quiz-btn" id="startQuizBtn" onclick="startQuiz()">
+                Start Quiz
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Quiz data from server
+        const quizData = {
+            quizId: '{{quizId}}',
+            classId: '{{classId}}',
+            quizTitle: '{{quizTitle}}',
+            totalQuestions: {{totalQuestions}},
+            durationMinutes: {{durationMinutes}}
+        };
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📋 Quiz Info Page Loaded:', quizData);
+            console.log('✅ Quiz info page initialized - proper flow enabled');
+        });
+
+        // UPDATED: Enhanced start quiz function with proper flow management
+        function startQuiz() {
+            console.log('🚀 Starting quiz via proper flow:', quizData.quizId);
+            
+            // Disable button to prevent multiple clicks
+            const startBtn = document.getElementById('startQuizBtn');
+            startBtn.disabled = true;
+            startBtn.textContent = 'Preparing Quiz...';
+            
+            // Set flag to indicate user came from quiz info page (THIS IS THE KEY!)
+            sessionStorage.setItem('quiz-info-visited-' + quizData.quizId, 'true');
+            console.log('✅ Quiz info flow flag set for quiz:', quizData.quizId);
+            
+            // Show loading
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            
+            // Build quiz URL with class context
+            let quizUrl = `/take_quiz/${quizData.quizId}`;
+            if (quizData.classId) {
+                quizUrl += `?classId=${quizData.classId}`;
+            }
+            
+            console.log('✅ Navigating to quiz with proper flow flag set:', quizUrl);
+            
+            // Small delay for better UX, then navigate
+            setTimeout(() => {
+                window.location.href = quizUrl;
+            }, 500);
+        }
+
+        // Security measures
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            return false;
+        });
+
+        document.addEventListener('keydown', function(e) {
+            // Prevent developer tools and other shortcuts
+            if (e.keyCode === 123 || // F12
+                (e.ctrlKey && e.shiftKey && e.keyCode === 73) || // Ctrl+Shift+I
+                (e.ctrlKey && e.keyCode === 85)) { // Ctrl+U
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        console.log('📋 Quiz Info Page loaded with enhanced flow management:', {
+            quizId: quizData.quizId,
+            classId: quizData.classId,
+            properFlowEnabled: true,
+            sessionStorageFlag: 'quiz-info-visited-' + quizData.quizId
+        });
+    </script>
+</body>
+</html>

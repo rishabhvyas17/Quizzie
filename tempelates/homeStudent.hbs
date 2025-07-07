@@ -741,8 +741,7 @@
             });
         }
 
-        // NEW: Load only the most recent quiz for a class
-        // NEW: Load only the most recent quiz for a class (UPDATED - No Retake)
+        // NEW: Load only the most recent quiz for a class (UPDATED - Fixed Flow)
         async function loadMostRecentQuiz(classId) {
             try {
                 const response = await fetch(`/api/student/class/${classId}/recent-quiz`);
@@ -787,6 +786,7 @@
                 `;
             }
         }
+
         // 🆕 NEW: Function to view detailed quiz results
         function viewQuizResults(resultId, quizTitle, classId) {
             console.log(`📊 Viewing detailed results: ${resultId} - ${quizTitle} from class ${classId}`);
@@ -845,14 +845,18 @@
             window.location.href = `/student/class/${classId}`;
         }
 
-        
-        // 🔄 UPDATED: takeQuiz function (REPLACE EXISTING - REMOVE RETAKE FUNCTIONALITY)
+        // 🔄 UPDATED: takeQuiz function - NOW GOES TO QUIZ INFO FIRST!
         function takeQuiz(quizId, quizTitle, classId) {
-            console.log(`🎯 Taking quiz: ${quizId} - ${quizTitle} from class ${classId}`);
+            console.log(`📋 Going to quiz info first: ${quizId} - ${quizTitle} from class ${classId}`);
             
-            if (confirm(`Are you ready to take the quiz: "${quizTitle}"?\n\nOnce started, the quiz timer will begin immediately.`)) {
-                window.location.href = `/take_quiz/${quizId}?classId=${classId}`;
+            // Build quiz info URL with class context
+            let quizInfoUrl = `/quiz-info/${quizId}`;
+            if (classId) {
+                quizInfoUrl += `?classId=${classId}`;
             }
+            
+            console.log(`✅ Redirecting to quiz info page: ${quizInfoUrl}`);
+            window.location.href = quizInfoUrl;
         }
 
         // Error states
@@ -868,12 +872,6 @@
                     </div>
                 </div>
             `;
-        }
-
-        
-        function viewQuizResults(resultId, quizTitle, classId) {
-            console.log(`📊 Viewing detailed results: ${resultId} - ${quizTitle} from class ${classId}`);
-            window.location.href = `/quiz-result/${resultId}/detailed?classId=${classId}`;
         }
 
         function showErrorClasses() {
