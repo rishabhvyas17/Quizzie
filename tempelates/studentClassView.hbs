@@ -1071,32 +1071,59 @@
         }
 
         // Update performance stats
-        function updatePerformanceStats(data) {
-            const container = document.getElementById('performanceStatsGrid');
-            const metrics = data.performanceMetrics;
-            
-            container.innerHTML = `
-                <div class="performance-stat">
-                    <div class="performance-stat-value">${metrics.totalQuizzes}</div>
-                    <div class="performance-stat-label">Total Quizzes</div>
-                </div>
-                <div class="performance-stat">
-                    <div class="performance-stat-value">${metrics.studentAverage}%</div>
-                    <div class="performance-stat-label">Your Average</div>
-                </div>
-                <div class="performance-stat">
-                    <div class="performance-stat-value">${metrics.classAverage}%</div>
-                    <div class="performance-stat-label">Class Average</div>
-                </div>
-                <div class="performance-stat">
-                    <div class="performance-stat-value">${metrics.averageTime}s</div>
-                    <div class="performance-stat-label">Avg Time</div>
-                </div>
-            `;
-            
-            // Update rank info in stats cards
-            loadRankingForStats();
+        // Load performance data and create charts - FIXED VERSION
+        async function loadPerformanceData() {
+            try {
+                console.log('📊 Loading performance data for class:', classId);
+                
+                const [performanceResponse, analyticsResponse] = await Promise.all([
+                    fetch(`/api/student/class/${classId}/performance`),
+                    fetch(`/api/student/class/${classId}/analytics`)
+                ]);
+
+                console.log('📊 Performance response status:', performanceResponse.status);
+                console.log('📊 Analytics response status:', analyticsResponse.status);
+
+                if (!performanceResponse.ok) {
+                    throw new Error(`Performance API error: ${performanceResponse.status}`);
+                }
+                
+                if (!analyticsResponse.ok) {
+                    throw new Error(`Analytics API error: ${analyticsResponse.status}`);
+                }
+
+                const performanceData = await performanceResponse.json();
+                const analyticsData = await analyticsResponse.json();
+
+                console.log('📊 Performance data received:', performanceData.success);
+                console.log('📊 Analytics data received:', analyticsData.success);
+
+                if (performanceData.success && analyticsData.success) {
+                    updatePerformanceStats(performanceData.data);
+                    createCharts(analyticsData.data);
+                    
+                    // Load ranking info with error handling
+                    try {
+                        await loadRankingForStats();
+                    } catch (rankError) {
+                        console.warn('⚠️ Could not load ranking info:', rankError);
+                        // Continue without ranking info
+                    }
+                    
+                    console.log('✅ Performance data loaded successfully');
+                } else {
+                    console.error('❌ API returned error:', {
+                        performance: performanceData.message || 'Unknown error',
+                        analytics: analyticsData.message || 'Unknown error'
+                    });
+                    showPerformanceError('Failed to load performance data from server');
+                }
+            } catch (error) {
+                console.error('❌ Error loading performance data:', error);
+                showPerformanceError('Network error while loading performance data');
+            }
         }
+
 
         // Create charts
         function createCharts(data) {
@@ -1197,25 +1224,91 @@
             }
         }
 
+
+        // Update performance stats with better error handling
+        function updatePerformanceStats(data) {
+            try {
+                const container = document.getElementById('performanceStatsGrid');
+                if (!container) {
+                    console.error('❌ Performance stats container not found');
+                    return;
+                }
+
+                const metrics = data.performanceMetrics;
+                if (!metrics) {
+                    console.error('❌ Performance metrics not found in data');
+                    showPerformanceError('Invalid performance data received');
+                    return;
+                }
+                
+                container.innerHTML = `
+                    <div class="performance-stat">
+                        <div class="performance-stat-value">${metrics.totalQuizzes || 0}</div>
+                        <div class="performance-stat-label">Total Quizzes</div>
+                    </div>
+                    <div class="performance-stat">
+                        <div class="performance-stat-value">${metrics.studentAverage || 0}%</div>
+                        <div class="performance-stat-label">Your Average</div>
+                    </div>
+                    <div class="performance-stat">
+                        <div class="performance-stat-value">${metrics.classAverage || 0}%</div>
+                        <div class="performance-stat-label">Class Average</div>
+                    </div>
+                    <div class="performance-stat">
+                        <div class="performance-stat-value">${Math.round(metrics.averageTime / 60) || 0}min</div>
+                        <div class="performance-stat-label">Avg Time</div>
+                    </div>
+                `;
+                
+                console.log('✅ Performance stats updated');
+            } catch (error) {
+                console.error('❌ Error updating performance stats:', error);
+                showPerformanceError('Error displaying performance statistics');
+            }
+        }
+
+
         // Load ranking for stats update
         async function loadRankingForStats() {
             try {
                 const response = await fetch(`/api/student/class/${classId}/rankings`);
+                
+                if (!response.ok) {
+                    throw new Error(`Rankings API error: ${response.status}`);
+                }
+                
                 const data = await response.json();
                 
                 if (data.success && data.data.currentStudent) {
                     const rank = data.data.currentStudent.rank;
                     const total = data.data.totalStudents;
                     
-                    document.getElementById('classRank').textContent = `#${rank}`;
-                    document.getElementById('rankComparison').textContent = `out of ${total} students`;
-                    document.getElementById('avgComparison').textContent = `vs class avg: ${data.data.currentStudent.averageScore}%`;
+                    // Update rank in stats cards if elements exist
+                    const classRankElement = document.getElementById('classRank');
+                    const rankComparisonElement = document.getElementById('rankComparison');
+                    const avgComparisonElement = document.getElementById('avgComparison');
+                    
+                    if (classRankElement) {
+                        classRankElement.textContent = `#${rank}`;
+                    }
+                    
+                    if (rankComparisonElement) {
+                        rankComparisonElement.textContent = `out of ${total} students`;
+                    }
+                    
+                    if (avgComparisonElement && data.data.currentStudent.averageScore) {
+                        avgComparisonElement.textContent = `vs class avg: ${data.data.currentStudent.averageScore}%`;
+                    }
+                    
+                    console.log('✅ Ranking info updated:', { rank, total });
+                } else {
+                    console.warn('⚠️ No ranking data available or student not ranked yet');
                 }
             } catch (error) {
-                console.error('❌ Error loading ranking for stats:', error);
+                console.warn('⚠️ Could not load ranking info:', error.message);
+                // This is not critical, so we don't show an error to the user
             }
         }
-
         // Display rankings
         function displayRankings(data) {
             const container = document.getElementById('rankingsContainer');
@@ -1291,13 +1384,20 @@
             `;
         }
 
-        function showPerformanceError() {
-            document.getElementById('performanceStatsGrid').innerHTML = `
-                <div class="empty-state">
-                    <h3>❌ Error Loading Performance</h3>
-                    <p>Failed to load performance data. Please refresh the page.</p>
-                </div>
-            `;
+        // Enhanced error display function
+        function showPerformanceError(message = 'Failed to load performance data') {
+            const container = document.getElementById('performanceStatsGrid');
+            if (container) {
+                container.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 2rem;">
+                        <h3 style="color: #ef4444; margin-bottom: 0.5rem;">❌ Error Loading Performance</h3>
+                        <p style="color: #64748b;">${message}</p>
+                        <button onclick="loadPerformanceData()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                            Try Again
+                        </button>
+                    </div>
+                `;
+            }
         }
 
         function showRankingsError() {
