@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Professor Dashboard - Quizzie</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
         /* Reset and Base Styles */
         * {
@@ -605,7 +606,7 @@
 <body>
     <header class="header">
         <div class="header-content">
-            <div class="logo">QuizAI</div>
+            <div class="logo">Quizzie</div>
             <div class="profile-section">
                 <div class="profile-avatar" id="profileAvatar"></div>
                 <div class="profile-info">
@@ -853,8 +854,7 @@
                             <span class="class-stat-label">Lectures</span>
                         </div>
                         <div class="class-stat">
-                            <!-- 🔧 FIX: Format average score properly -->
-                            <span class="class-stat-value">${formatPercentage(classItem.averageScore)}%</span>
+                            <span class="class-stat-value">${(parseFloat(classItem.averageScore) || 0).toFixed(2)}%</span>
                             <span class="class-stat-label">Avg Score</span>
                         </div>
                     </div>

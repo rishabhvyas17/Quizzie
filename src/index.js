@@ -1,7 +1,18 @@
 // QuizAI Server - Express.js Application
 // Dependencies to install:
-// npm i express hbs mongoose multer pdf-parse mammoth pptx2json @google/generative-ai dotenv nodemon express-session
+// npm i express hbs mongoose multer pdf-parse mammoth node-pptx-parser @google/generative-ai dotenv nodemon express-session connect-mongo
 // Run with: nodemon src/index.js
+
+/* 
+    Deployment Essentials :- 
+
+    gcloud run deploy quizai-service-1 \
+  --source . \
+  --region asia-east1 \
+  --allow-unauthenticated \
+--set-env-vars 'GEMINI_API_KEY=AIzaSyDaD6ki59Xh7dX8f4CpRGzcucgdVpLd9Q8,MONGODB_URI=mongodb+srv://rishabhvyas:faCWMxbu0XPPVwSe@quizziedb.jdvsntc.mongodb.net/?retryWrites=true&w=majority&appName=QuizzieDB,SESSION_SECRET=xKj8mP9$vL2@nQ5!rT7&wE3*uI6%oA1^sD4+fG8-hB0~xC99'
+
+*/
 
 const express = require("express")
 const app = express()
@@ -12,11 +23,12 @@ const fs = require("fs")
 const pdfParse = require("pdf-parse")
 const mammoth = require("mammoth")
 const session = require('express-session');
+const MongoStore = require('connect-mongo'); // ADD THIS LINE for persistent sessions
 
 
 
-// Fix for pptx2json import/usage
-const { toJson } = require("pptx2json")
+// Add the new import for node-pptx-parser
+const PptxParser = require("node-pptx-parser").default; // Note the .default for CommonJS
 
 // Load environment variables from .env file
 require('dotenv').config()
@@ -41,7 +53,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
 
 // Configuration
-const PORT = 3000
+const PORT = process.env.PORT || 8080
 const TEMP_UPLOAD_DIR = './temp_uploads'
 const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100MB
 const templatePath = path.join(__dirname, '../tempelates')
@@ -49,22 +61,28 @@ const templatePath = path.join(__dirname, '../tempelates')
 // Express configuration
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
-
 app.use(express.static(path.join(__dirname, '../public')))
-
 app.set("view engine", "hbs")
 app.set("views", templatePath)
 
-
-// Session configuration
+// Configure and use express-session middleware with MongoStore
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'a_very_secret_key_for_quizai',
-    resave: false,
-    saveUninitialized: false,
+    secret: process.env.SESSION_SECRET, // IMPORTANT: Ensure this env var is set in Render/GCP
+    resave: false, // Prevents session from being saved back to the session store on every request
+    saveUninitialized: false, // Prevents uninitialized sessions from being saved to the store
+    store: MongoStore.create({
+        mongoUrl: process.env.MONGODB_URI, // CRITICAL: Use your Atlas URI for session storage
+        ttl: 14 * 24 * 60 * 60, // Session will expire after 14 days (in seconds)
+        autoRemove: 'interval', // Auto-remove expired sessions
+        autoRemoveInterval: 10 // In minutes. MongoStore will clean up expired sessions every 10 minutes.
+    }),
     cookie: {
-        maxAge: 1000 * 60 * 60 * 24, // 1 day
-        httpOnly: true
-    }
+        maxAge: 1000 * 60 * 60 * 24 * 14, // 14 days in milliseconds
+        secure: false, // IMPORTANT: Set to true in production (requires HTTPS, which Render/GCP provide)
+        httpOnly: true, // Prevents client-side JavaScript from accessing the cookie
+        sameSite: 'lax' // Recommended for security: 'strict', 'lax', or 'none'. 'lax' is often a good balance.
+    },
+    proxy: true // IMPORTANT: Trust the reverse proxy (Cloud Run)
 }));
 
 // ==================== HANDLEBARS HELPERS REGISTRATION ====================
@@ -174,53 +192,33 @@ const upload = multer({
 
 // ==================== TEXT EXTRACTION FUNCTIONS ====================
 
-async function extractTextFromPDF(filePath) {
-    try {
-        const dataBuffer = fs.readFileSync(filePath)
-        const data = await pdfParse(dataBuffer)
-        console.log(`✅ PDF text extracted - Length: ${data.text.length} characters`)
-        return data.text
-    } catch (error) {
-        console.error('❌ PDF extraction error:', error)
-        throw new Error('Failed to extract text from PDF')
-    }
-}
-
-async function extractTextFromWord(filePath) {
-    try {
-        const result = await mammoth.extractRawText({ path: filePath })
-        console.log(`✅ Word text extracted - Length: ${result.value.length} characters`)
-        return result.value
-    } catch (error) {
-        console.error('❌ Word extraction error:', error)
-        throw new Error('Failed to extract text from Word document')
-    }
-}
-
 async function extractTextFromPowerPoint(filePath) {
+    let extractedText = '';
     try {
-        const data = await toJson(filePath)
-        let extractedText = ''
+        console.log(`🔌 Initializing PptxParser for: ${filePath}`);
+        const parser = new PptxParser(filePath); // Create a new parser instance
 
-        if (data && data.slides) {
-            data.slides.forEach((slide, index) => {
-                extractedText += `\n--- Slide ${index + 1} ---\n`
-                if (slide.content) {
-                    slide.content.forEach(content => {
-                        if (content.text) {
-                            extractedText += content.text + '\n'
-                        }
-                    })
-                }
-            })
+        console.log('🔄 Extracting text using node-pptx-parser...');
+        // extractText() returns an array of SlideTextContent objects, each with a 'text' array
+        const textContent = await parser.extractText();
+
+        if (textContent && textContent.length > 0) {
+            // Join all text from all slides and then join lines within each slide's text
+            extractedText = textContent.map(slide => slide.text.join('\n')).join('\n\n').trim();
+            console.log('✅ PPTX text extracted successfully (first 500 chars):', extractedText.substring(0, 500));
+        } else {
+            console.warn('⚠️ node-pptx-parser extracted no text from the PPTX file.');
         }
 
-        console.log(`✅ PowerPoint text extracted - Length: ${extractedText.length} characters`)
-        return extractedText || "No text found in PowerPoint file"
-    } catch (error) {
-        console.error('❌ PowerPoint extraction error:', error)
-        return "PowerPoint file uploaded successfully. Text extraction failed, but content is available."
+        if (extractedText.length === 0) {
+            console.warn('⚠️ PPTX extraction yielded empty content after processing.');
+        }
+
+    } catch (pptxError) {
+        console.error('❌ Error extracting text from PowerPoint with node-pptx-parser:', pptxError);
+        extractedText = "Error extracting text from PowerPoint."; // Indicate extraction failure
     }
+    return extractedText;
 }
 
 async function extractTextFromFile(filePath, mimetype) {
@@ -295,59 +293,129 @@ app.get("/signup", (req, res) => {
     res.render("signup")
 })
 
+// 🔄 UPDATED: signup route to show errors on the same page
 app.post("/signup", async (req, res) => {
     try {
-        const { userType, name, email, enrollment, password } = req.body
+        const { userType, name, email, enrollment, password } = req.body;
+        const errors = {};
 
         if (userType === 'teacher') {
-            const teacherData = { name, email, password }
-            await teacherCollection.insertMany([teacherData])
+            // Check if teacher email already exists
+            const existingTeacher = await teacherCollection.findOne({ email: email });
+            if (existingTeacher) {
+                errors.email = "User with this email already exists.";
+            }
+
+            if (Object.keys(errors).length > 0) {
+                // If errors, re-render the signup page with errors and old input
+                return res.render("signup", { errors: errors, userType, name, email, enrollment });
+            }
+
+            // If no errors, proceed with registration
+            const teacherData = { name, email, password };
+            await teacherCollection.insertMany([teacherData]);
             const newTeacher = await teacherCollection.findOne({ email: email });
             req.session.userId = newTeacher._id;
             req.session.userName = newTeacher.name;
             req.session.userType = userType;
-            res.redirect(`/homeTeacher?userName=${encodeURIComponent(newTeacher.name)}`);
-        } else {
-            const studentData = { name, enrollment, password }
-            await studentCollection.insertMany([studentData])
-            const newStudent = await studentCollection.findOne({ enrollment: enrollment });
+
+            // Save the session before redirecting to avoid race conditions
+            req.session.save((err) => {
+                if (err) {
+                    console.error("Error saving session:", err);
+                    return res.render("signup", { errors: { general: "Error during registration." } });
+                }
+                res.redirect(`/homeTeacher?userName=${encodeURIComponent(newTeacher.name)}`);
+            });
+
+        } else { // Student
+            const upperCaseEnrollment = enrollment.toUpperCase();
+            // Check if student enrollment number already exists
+            const existingStudent = await studentCollection.findOne({ enrollment: upperCaseEnrollment });
+            if (existingStudent) {
+                errors.enrollment = "User with this enrollment number already exists.";
+            }
+
+            if (Object.keys(errors).length > 0) {
+                // If errors, re-render the signup page with errors and old input
+                return res.render("signup", { errors: errors, userType, name, email, enrollment });
+            }
+
+            // If no errors, proceed with registration
+            const studentData = { name, enrollment: upperCaseEnrollment, password };
+            await studentCollection.insertMany([studentData]);
+            const newStudent = await studentCollection.findOne({ enrollment: upperCaseEnrollment });
             req.session.userId = newStudent._id;
             req.session.userName = newStudent.name;
             req.session.userType = userType;
-            res.redirect(`/homeStudent?userName=${encodeURIComponent(newStudent.name)}`);
+            
+            // Save the session before redirecting to avoid race conditions
+            req.session.save((err) => {
+                if (err) {
+                    console.error("Error saving session:", err);
+                    return res.render("signup", { errors: { general: "Error during registration." } });
+                }
+                res.redirect(`/homeStudent?userName=${encodeURIComponent(newStudent.name)}`);
+            });
         }
     } catch (error) {
-        console.error('❌ Signup error:', error)
-        res.send("Error during registration: " + error.message)
+        console.error('❌ Signup error:', error);
+        res.render("signup", { errors: { general: "An unexpected error occurred during registration. Please try again." } });
     }
-})
+});
 
+// 🔄 UPDATED: login route to show errors on the same page
 app.post("/login", async (req, res) => {
     try {
-        const { password, userType, email, enrollment } = req.body
-        let user
+        const { password, userType, email, enrollment } = req.body;
+        let user;
+        const errors = {};
+        const oldInput = { userType, email, enrollment };
 
         if (userType === 'teacher') {
-            user = await teacherCollection.findOne({ email: email })
-        } else {
-            user = await studentCollection.findOne({ enrollment: enrollment })
+            user = await teacherCollection.findOne({ email: email });
+            if (!user) {
+                errors.email = "No user found with this email.";
+            }
+        } else { // Student
+            const upperCaseEnrollment = enrollment ? enrollment.toUpperCase() : null;
+            user = await studentCollection.findOne({ enrollment: upperCaseEnrollment });
+            if (!user) {
+                errors.enrollment = "No user found with this enrollment number.";
+            }
         }
 
-        if (user && user.password === password) {
+        if (Object.keys(errors).length > 0) {
+            // Re-render login page with an error message
+            return res.render("login", { errors: errors, oldInput: oldInput });
+        }
+        
+        // If user is found, check the password
+        if (user.password === password) {
             req.session.userId = user._id;
             req.session.userName = user.name;
             req.session.userType = userType;
 
-            const redirectUrl = userType === 'teacher' ? '/homeTeacher' : '/homeStudent'
-            res.redirect(`${redirectUrl}?userName=${encodeURIComponent(user.name)}`)
+            // Save the session before redirecting to avoid a race condition
+            req.session.save((err) => {
+                if (err) {
+                    console.error("Error saving session:", err);
+                    return res.render("login", { errors: { general: "Login failed due to an internal error." }, oldInput: oldInput });
+                }
+                const redirectUrl = userType === 'teacher' ? '/homeTeacher' : '/homeStudent';
+                res.redirect(`${redirectUrl}?userName=${encodeURIComponent(user.name)}`);
+            });
+
         } else {
-            res.send("Wrong credentials")
+            // Password does not match
+            errors.password = "Wrong password.";
+            return res.render("login", { errors: errors, oldInput: oldInput });
         }
     } catch (error) {
-        console.error('❌ Login error:', error)
-        res.send("Login failed")
+        console.error('❌ Login error:', error);
+        res.render("login", { errors: { general: "An unexpected error occurred during login. Please try again." } });
     }
-})
+});
 
 app.get('/logout', (req, res) => {
     req.session.destroy(err => {
@@ -6071,6 +6139,16 @@ function formatTime(seconds) {
     } else {
         return `${minutes}m ${secs}s`;
     }
+}
+// Utility function to format numbers to two decimal places
+function formatToTwoDecimals(num) {
+    if (typeof num !== 'number') {
+        num = parseFloat(num);
+    }
+    if (isNaN(num)) {
+        return '0.00'; // Default for non-numeric or invalid numbers
+    }
+    return num.toFixed(2);
 }
 
 function formatPercentage(value, decimals = 1) {

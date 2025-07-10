@@ -1,4 +1,15 @@
-const mongoose = require("mongoose")
+const mongoose = require("mongoose");
+// Use the MONGODB_URI environment variable for a single connection
+// This URI will connect to your MongoDB Atlas cluster, and you can specify the default database name within the URI itself (e.g., /quizai_db)
+mongoose.connect(process.env.MONGODB_URI)
+.then(() => {
+    console.log("✅ Successfully connected to MongoDB Atlas");
+})
+.catch((error) => {
+    console.error("❌ Failed to connect to MongoDB Atlas:", error);
+    // You might want to exit the process if the database connection fails on startup
+    process.exit(1); 
+})
 
 // 🔄 UPDATED: Single QuizAI Database Connection
 const quizAIConnection = mongoose.createConnection("mongodb://localhost:27017/QuizAI");
@@ -345,7 +356,9 @@ const lectureSchema = new mongoose.Schema({
     }
 });
 
-// Quiz Schema with proper duration field
+
+// 🔄 ENSURE: Quiz Schema has proper duration field (your existing schema should already have this)
+
 const quizSchema = new mongoose.Schema({
     lectureId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -388,6 +401,8 @@ const quizSchema = new mongoose.Schema({
             enum: ['A', 'B', 'C', 'D'],
             required: true
         },
+        // Enhanced explanation fields
+
         explanations: {
             A: { type: String, default: "" },
             B: { type: String, default: "" }, 
@@ -626,12 +641,13 @@ lectureSchema.index({ professorId: 1, uploadDate: -1 });
 quizSchema.index({ lectureId: 1, generatedDate: -1 });
 quizResultSchema.index({ studentId: 1, submissionDate: -1 });
 
-// Class management indexes
-classSchema.index({ teacherId: 1, createdAt: -1 });
-classSchema.index({ isActive: 1, teacherId: 1 });
-classStudentSchema.index({ classId: 1, isActive: 1 });
-classStudentSchema.index({ studentId: 1, isActive: 1 });
-classStudentSchema.index({ classId: 1, studentId: 1 }, { unique: true });
+
+// 🆕 NEW: Class management indexes
+classSchema.index({ teacherId: 1, createdAt: -1 }); // Find teacher's classes
+classSchema.index({ isActive: 1, teacherId: 1 }); // Active classes for teacher
+classStudentSchema.index({ classId: 1, isActive: 1 }); // Students in a class
+classStudentSchema.index({ studentId: 1, isActive: 1 }); // Classes for a student
+classStudentSchema.index({ classId: 1, studentId: 1 }, { unique: true }); // Prevent duplicates
 
 // Enhanced indexes for class-based queries
 lectureSchema.index({ classId: 1, uploadDate: -1 });
@@ -673,13 +689,15 @@ quizResultSchema.index({
     submissionDate: -1 
 });
 
-// Explanation cache index
+// Create compound index for fast explanation lookups
+
 explanationCacheSchema.index({ 
     questionText: 1, 
     correctAnswer: 1, 
     wrongAnswer: 1,
     lectureId: 1 
 });
+
 
 // ==================== SCHEMA MIDDLEWARE ====================
 
@@ -877,14 +895,15 @@ quizResultSchema.virtual('securitySummary').get(function() {
 // ==================== CREATE COLLECTIONS ====================
 
 // User authentication collections
-const studentCollection = quizAIConnection.model("StudentCollection", studentSchema);
-const teacherCollection = quizAIConnection.model("TeacherCollection", teacherSchema);
+const studentCollection = mongoose.model("StudentCollection", studentSchema);
+const teacherCollection = mongoose.model("TeacherCollection", teacherSchema);
 
 // Lecture and quiz system collections
-const lectureCollection = quizAIConnection.model("LectureCollection", lectureSchema);
-const quizCollection = quizAIConnection.model("QuizCollection", quizSchema);
-const quizResultCollection = quizAIConnection.model("QuizResultCollection", quizResultSchema);
-const explanationCacheCollection = quizAIConnection.model("ExplanationCache", explanationCacheSchema);
+const lectureCollection = mongoose.model("LectureCollection", lectureSchema);
+const quizCollection = mongoose.model("QuizCollection", quizSchema);
+const quizResultCollection = mongoose.model("QuizResultCollection", quizResultSchema);
+const explanationCacheCollection = mongoose.model("ExplanationCache", explanationCacheSchema);
+
 
 // Class management collections
 const classCollection = quizAIConnection.model("ClassCollection", classSchema);
