@@ -980,7 +980,7 @@
         }
 
         
-        // Create quiz card HTML (UPDATED - No Retake)
+        // Create quiz card HTML (UPDATED - Redirect to Quiz Info Page)
         function createQuizCard(quiz) {
             const isCompleted = quiz.status === 'completed';
             
@@ -1264,13 +1264,17 @@
             `;
         }
 
-        // Quiz actions
+        // Quiz actions - UPDATED to redirect to quiz info page
+        // Quiz actions - UPDATED to redirect to quiz info page
         function takeQuiz(quizId, quizTitle) {
-            console.log(`🎯 Taking quiz: ${quizId} - ${quizTitle}`);
+            console.log(`🎯 Redirecting to quiz info: ${quizId} - ${quizTitle}`);
             
-            if (confirm(`Ready to take "${quizTitle}"?\n\nThe timer will start immediately.`)) {
-                window.location.href = `/take_quiz/${quizId}?classId=${classId}`;
+            // Redirect to quiz info page instead of directly to quiz
+            let quizInfoUrl = `/quiz-info/${quizId}`;
+            if (classId) {
+                quizInfoUrl += `?classId=${classId}`;
             }
+            window.location.href = quizInfoUrl;
         }
 
         // Error states
