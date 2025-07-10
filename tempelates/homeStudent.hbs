@@ -1058,12 +1058,6 @@
             }
         }
 
-        // View detailed quiz results
-        function viewQuizResults(resultId, quizTitle, classId) {
-            console.log(`📊 Viewing detailed results: ${resultId} - ${quizTitle} from class ${classId}`);
-            window.location.href = `/quiz-result/${resultId}/detailed?classId=${classId}`;
-        }
-
         // Calculate and display dashboard stats
         function updateDashboardStats(classes, overallStats) {
             if (overallStats) {
@@ -1112,13 +1106,18 @@
             window.location.href = `/student/class/${classId}`;
         }
 
-        // Take quiz function
+        // 🔄 UPDATED: takeQuiz function - NOW GOES TO QUIZ INFO FIRST!
         function takeQuiz(quizId, quizTitle, classId) {
-            console.log(`🎯 Taking quiz: ${quizId} - ${quizTitle} from class ${classId}`);
+            console.log(`📋 Going to quiz info first: ${quizId} - ${quizTitle} from class ${classId}`);
             
-            if (confirm(`Are you ready to take the quiz: "${quizTitle}"?\n\nOnce started, the quiz timer will begin immediately.`)) {
-                window.location.href = `/take_quiz/${quizId}?classId=${classId}`;
+            // Build quiz info URL with class context
+            let quizInfoUrl = `/quiz-info/${quizId}`;
+            if (classId) {
+                quizInfoUrl += `?classId=${classId}`;
             }
+            
+            console.log(`✅ Redirecting to quiz info page: ${quizInfoUrl}`);
+            window.location.href = quizInfoUrl;
         }
 
         // 🆕 NEW: Join Class Modal Functions
