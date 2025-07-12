@@ -1218,7 +1218,7 @@ app.get('/api/classes/:classId/overview', isAuthenticated, async (req, res) => {
 
 
 
-// 📈 Get detailed class analytics
+
 // 📈 Get detailed class analytics
 app.get('/api/classes/:classId/analytics', isAuthenticated, async (req, res) => {
     try {
@@ -3674,24 +3674,164 @@ app.get('/api/teacher/quiz/:quizId/full', isAuthenticated, async (req, res) => {
     }
 });
 
-// 📈 Get performance analytics for student in specific class
+// 📈 Get detailed class analytics for student class view
 app.get('/api/student/class/:classId/analytics', isAuthenticated, async (req, res) => {
     try {
-        // ... existing code ...
+        if (req.session.userType !== 'student') {
+            return res.status(403).json({ success: false, message: 'Access denied. Students only.' });
+        }
 
-        // 🔧 FIX: Round class average properly
-        const classAverage = allClassResults.length > 0 
-            ? parseFloat((allClassResults.reduce((sum, result) => sum + result.percentage, 0) / allClassResults.length).toFixed(1))
-            : 0;
+        const studentId = req.session.userId;
+        const classId = req.params.classId;
 
-        // 🔧 FIX: Round student average properly  
+        console.log('📊 Loading student class analytics:', {
+            studentId: studentId,
+            classId: classId,
+            student: req.session.userName
+        });
+
+        // Verify student enrollment
+        const enrollment = await classStudentCollection.findOne({
+            studentId: studentId,
+            classId: classId,
+            isActive: true
+        });
+
+        if (!enrollment) {
+            return res.status(403).json({
+                success: false,
+                message: 'You are not enrolled in this class.'
+            });
+        }
+
+        // Get student's results for this class
+        const studentResults = await quizResultCollection.find({
+            studentId: studentId,
+            classId: classId
+        })
+        .sort({ submissionDate: -1 })
+        .lean();
+
+        // Get all class results for comparison
+        const allClassResults = await quizResultCollection.find({
+            classId: classId
+        }).lean();
+
+        // Get class quizzes for quiz titles
+        const classQuizzes = await quizCollection.find({
+            classId: classId,
+            isActive: true
+        }).lean();
+
+        // Create quiz map for titles
+        const quizMap = {};
+        classQuizzes.forEach(quiz => {
+            quizMap[quiz._id.toString()] = quiz.lectureTitle;
+        });
+
+        // Calculate averages
         const studentAverage = studentResults.length > 0 
             ? parseFloat((studentResults.reduce((sum, result) => sum + result.percentage, 0) / studentResults.length).toFixed(1))
             : 0;
 
-        // ... rest of existing code ...
+        const classAverage = allClassResults.length > 0 
+            ? parseFloat((allClassResults.reduce((sum, result) => sum + result.percentage, 0) / allClassResults.length).toFixed(1))
+            : 0;
+
+        // Prepare chart data
+        const chartData = {
+            // Score trends chart
+            scoreTrends: {
+                labels: studentResults.slice(0, 10).reverse().map(result => {
+                    return new Date(result.submissionDate).toLocaleDateString();
+                }),
+                datasets: [{
+                    label: 'Your Scores',
+                    data: studentResults.slice(0, 10).reverse().map(result => result.percentage),
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: '#3b82f6',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 6
+                }, {
+                    label: 'Class Average',
+                    data: studentResults.slice(0, 10).reverse().map(() => classAverage),
+                    borderColor: '#64748b',
+                    backgroundColor: 'transparent',
+                    borderDash: [5, 5],
+                    tension: 0,
+                    pointRadius: 0
+                }]
+            },
+
+            // Performance breakdown pie chart
+            performanceBreakdown: {
+                labels: ['Excellent (90%+)', 'Good (70-89%)', 'Average (50-69%)', 'Needs Improvement (<50%)'],
+                datasets: [{
+                    data: [
+                        studentResults.filter(r => r.percentage >= 90).length,
+                        studentResults.filter(r => r.percentage >= 70 && r.percentage < 90).length,
+                        studentResults.filter(r => r.percentage >= 50 && r.percentage < 70).length,
+                        studentResults.filter(r => r.percentage < 50).length
+                    ],
+                    backgroundColor: [
+                        '#10b981', // Green for excellent
+                        '#3b82f6', // Blue for good
+                        '#f59e0b', // Yellow for average
+                        '#ef4444'  // Red for needs improvement
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+
+            // Time analysis bar chart
+            timeAnalysis: {
+                labels: studentResults.slice(0, 8).reverse().map(result => {
+                    const quizTitle = quizMap[result.quizId.toString()] || 'Quiz';
+                    return quizTitle.length > 15 ? quizTitle.substring(0, 15) + '...' : quizTitle;
+                }),
+                datasets: [{
+                    label: 'Time Taken (minutes)',
+                    data: studentResults.slice(0, 8).reverse().map(result => Math.round(result.timeTakenSeconds / 60)),
+                    backgroundColor: 'rgba(139, 92, 246, 0.6)',
+                    borderColor: '#8b5cf6',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            }
+        };
+
+        console.log(`📊 Analytics prepared for ${req.session.userName}:`, {
+            studentResultsCount: studentResults.length,
+            studentAverage: studentAverage,
+            classAverage: classAverage
+        });
+
+        res.json({
+            success: true,
+            data: {
+                chartData: chartData,
+                performanceMetrics: {
+                    totalQuizzes: studentResults.length,
+                    studentAverage: studentAverage,
+                    classAverage: classAverage,
+                    averageTime: studentResults.length > 0 
+                        ? Math.round(studentResults.reduce((sum, result) => sum + result.timeTakenSeconds, 0) / studentResults.length)
+                        : 0
+                }
+            }
+        });
+
     } catch (error) {
-        // ... error handling ...
+        console.error('❌ Error generating student class analytics:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to generate analytics: ' + error.message
+        });
     }
 });
 
