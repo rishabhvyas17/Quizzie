@@ -58,6 +58,20 @@
             50% { opacity: 0.7; }
         }
 
+
+
+        .shuffle-icon {
+            font-size: 1.2rem;
+            animation: shuffleRotate 2s ease-in-out infinite;
+        }
+
+        @keyframes shuffleRotate {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(90deg); }
+            50% { transform: rotate(180deg); }
+            75% { transform: rotate(270deg); }
+        }
+
         /* Main Content Area */
         .main-content {
             flex: 1;
@@ -66,6 +80,12 @@
             justify-content: center;
             align-items: center;
             padding-right: 280px; /* Space for navigation panel */
+            transition: padding-right 0.3s ease;
+        }
+
+        /* Main content when results are shown - centered */
+        .main-content.results-mode {
+            padding-right: 2rem; /* Remove extra padding when navigation panel is hidden */
         }
 
         /* Quiz Container */
@@ -94,6 +114,23 @@
         .question-container {
             margin-bottom: 2rem;
         }
+
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .question-number {
+            background: #3b82f6;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
 
         .question-text {
             font-size: 1.3rem;
@@ -239,6 +276,14 @@
             display: flex;
             flex-direction: column;
             max-height: 80vh;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        /* Hide navigation panel when results are shown */
+        .navigation-panel.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
         }
 
         /* Navigation Controls */
@@ -547,6 +592,9 @@
             background: white;
             border-radius: 20px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+            animation: slideUp 0.6s ease-out;
         }
 
         .result-score {
@@ -573,15 +621,26 @@
                 padding-right: 260px;
             }
 
+            .main-content.results-mode {
+                padding-right: 2rem;
+            }
+
             .navigation-panel {
                 width: 220px;
             }
+
         }
 
         @media (max-width: 768px) {
             .main-content {
                 padding-right: 0;
                 padding-bottom: 180px;
+                padding-top: 120px; /* More space for indicators */
+            }
+
+            .main-content.results-mode {
+                padding-bottom: 2rem;
+                padding-top: 2rem;
             }
 
             .navigation-panel {
@@ -606,6 +665,7 @@
                 padding: 0.4rem 1rem;
                 font-size: 1.2rem;
             }
+
 
             .question-grid {
                 max-height: 80px;
@@ -669,24 +729,31 @@
     </style>
 </head>
 <body class="quiz-secured">
+    <!-- Shuffle Indicator - Top Left -->
+
+
     <!-- Timer - Top Right -->
     <div class="timer-container">
         <div class="timer" id="timer">--:--</div>
     </div>
 
     <!-- Main Content -->
-    <main class="main-content">
+    <main class="main-content" id="mainContent">
         <!-- Loading State -->
         <div id="loadingContainer" class="loading-container">
             <div class="loading-spinner"></div>
-            <h3>Loading Quiz Questions...</h3>
-            <p>Please wait while we prepare your quiz.</p>
+            <h3>Loading & Shuffling Quiz Questions...</h3>
+            <p>Please wait while we prepare your personalized quiz.</p>
         </div>
 
         <!-- Quiz Container -->
         <div id="quizContainer" class="quiz-container" style="display: none;">
             <!-- Question -->
             <div class="question-container">
+                <div class="question-header">
+                    <div class="question-number" id="questionNumber">Question 1</div>
+
+                </div>
                 <div class="question-text" id="questionText">Loading question...</div>
             </div>
 
@@ -709,7 +776,7 @@
     </main>
 
     <!-- Right Navigation Panel -->
-    <div class="navigation-panel">
+    <div class="navigation-panel" id="navigationPanel">
         <!-- Navigation Controls -->
         <div class="nav-controls">
             <button class="nav-btn" id="prevBtn" onclick="previousQuestion()" disabled title="Previous Question">
@@ -780,8 +847,11 @@
         let mouseInsideWindow = true;
         let isWindowFocused = true;
 
-        // Quiz Data
-        let quizData = null;
+        // Quiz Data with Shuffling Support
+        let originalQuizData = null; // Store original quiz data
+        let quizData = null; // Shuffled quiz data
+        let questionMapping = []; // Maps shuffled index to original index
+        let optionMappings = []; // Maps shuffled options to original options for each question
         let currentQuestionIndex = 0;
         let studentAnswers = [];
         let visitedQuestions = []; // Track which questions have been viewed
@@ -804,6 +874,211 @@
         console.log('🏫 Enhanced class context:', classContext);
         console.log('🧭 Enhanced navigation context:', navigationContext);
         console.log('🛡️ Anti-cheating system initialized');
+
+        // ===== SHUFFLING UTILITY FUNCTIONS =====
+        
+        /**
+         * Fisher-Yates shuffle algorithm for randomizing arrays
+         * @param {Array} array - Array to shuffle
+         * @returns {Array} - Shuffled array
+         */
+        function shuffleArray(array) {
+            const shuffled = [...array]; // Create a copy to avoid mutating original
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        /**
+         * Create a unique seed based on student session for consistent shuffling
+         * @returns {number} - Pseudo-random seed
+         */
+        function createShuffleSeed() {
+            // Use quiz ID and timestamp to create a unique seed per quiz session
+            const seedString = `${quizId}-${Date.now()}-${Math.random()}`;
+            let hash = 0;
+            for (let i = 0; i < seedString.length; i++) {
+                const char = seedString.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; // Convert to 32-bit integer
+            }
+            return Math.abs(hash);
+        }
+
+        /**
+         * Seeded random number generator for consistent shuffling
+         * @param {number} seed - Seed for random generation
+         * @returns {function} - Random number generator function
+         */
+        function createSeededRandom(seed) {
+            return function() {
+                seed = (seed * 9301 + 49297) % 233280;
+                return seed / 233280;
+            };
+        }
+
+        /**
+         * Shuffle questions while maintaining original question mapping
+         * @param {Array} questions - Original questions array
+         * @returns {Object} - Shuffled questions and mapping
+         */
+        function shuffleQuestions(questions) {
+            console.log('🔀 Shuffling questions...');
+            
+            // Create array of indices
+            const indices = Array.from({ length: questions.length }, (_, i) => i);
+            
+            // Shuffle indices
+            const shuffledIndices = shuffleArray(indices);
+            
+            // Create shuffled questions array
+            const shuffledQuestions = shuffledIndices.map(originalIndex => ({
+                ...questions[originalIndex],
+                originalIndex: originalIndex // Keep track of original position
+            }));
+            
+            console.log('✅ Questions shuffled:', {
+                originalOrder: indices,
+                shuffledOrder: shuffledIndices,
+                totalQuestions: questions.length
+            });
+            
+            return {
+                questions: shuffledQuestions,
+                mapping: shuffledIndices
+            };
+        }
+
+        /**
+         * Shuffle options for a single question while preserving correct answer
+         * @param {Object} question - Question object with options
+         * @returns {Object} - Question with shuffled options and mapping
+         */
+        function shuffleQuestionOptions(question) {
+            const originalOptions = { ...question.options };
+            const originalCorrectAnswer = question.correct_answer;
+            
+            // Create option entries with original letters
+            const optionEntries = [
+                { letter: 'A', text: originalOptions.A },
+                { letter: 'B', text: originalOptions.B },
+                { letter: 'C', text: originalOptions.C },
+                { letter: 'D', text: originalOptions.D }
+            ];
+            
+            // Shuffle the option entries
+            const shuffledEntries = shuffleArray(optionEntries);
+            
+            // Create new options object with shuffled content
+            const shuffledOptions = {};
+            const optionMapping = {};
+            let newCorrectAnswer = null;
+            
+            shuffledEntries.forEach((entry, index) => {
+                const newLetter = ['A', 'B', 'C', 'D'][index];
+                shuffledOptions[newLetter] = entry.text;
+                optionMapping[newLetter] = entry.letter; // Map new letter to original letter
+                
+                // Update correct answer to new letter
+                if (entry.letter === originalCorrectAnswer) {
+                    newCorrectAnswer = newLetter;
+                }
+            });
+            
+            return {
+                question: {
+                    ...question,
+                    options: shuffledOptions,
+                    correct_answer: newCorrectAnswer,
+                    original_correct_answer: originalCorrectAnswer
+                },
+                optionMapping: optionMapping
+            };
+        }
+
+        /**
+         * Shuffle entire quiz including questions and options
+         * @param {Object} quizData - Original quiz data
+         * @returns {Object} - Completely shuffled quiz data with mappings
+         */
+        function shuffleEntireQuiz(originalData) {
+            console.log('🎲 Starting comprehensive quiz shuffle...');
+            
+            // Step 1: Shuffle questions
+            const questionShuffleResult = shuffleQuestions(originalData.questions);
+            const shuffledQuestions = questionShuffleResult.questions;
+            questionMapping = questionShuffleResult.mapping;
+            
+            // Step 2: Shuffle options for each question
+            const finalQuestions = [];
+            optionMappings = [];
+            
+            shuffledQuestions.forEach((question, index) => {
+                const optionShuffleResult = shuffleQuestionOptions(question);
+                finalQuestions.push(optionShuffleResult.question);
+                optionMappings.push(optionShuffleResult.optionMapping);
+                
+                console.log(`🔀 Question ${index + 1} shuffled:`, {
+                    originalIndex: question.originalIndex,
+                    originalCorrect: question.original_correct_answer,
+                    newCorrect: optionShuffleResult.question.correct_answer,
+                    optionMapping: optionShuffleResult.optionMapping
+                });
+            });
+            
+            // Create shuffled quiz data
+            const shuffledQuizData = {
+                ...originalData,
+                questions: finalQuestions,
+                shuffleInfo: {
+                    isShuffled: true,
+                    questionMapping: questionMapping,
+                    optionMappings: optionMappings,
+                    shuffleTimestamp: new Date().toISOString(),
+                    totalQuestions: finalQuestions.length
+                }
+            };
+            
+            console.log('✅ Complete quiz shuffle finished:', {
+                totalQuestions: shuffledQuizData.questions.length,
+                questionMapping: questionMapping,
+                optionMappingsCount: optionMappings.length
+            });
+            
+            return shuffledQuizData;
+        }
+
+        /**
+         * Convert shuffled student answer back to original question answer
+         * @param {number} shuffledQuestionIndex - Index in shuffled quiz
+         * @param {string} shuffledAnswer - Selected option letter (A, B, C, D)
+         * @returns {Object} - Original question index and answer
+         */
+        function convertToOriginalAnswer(shuffledQuestionIndex, shuffledAnswer) {
+            // Get original question index
+            const originalQuestionIndex = questionMapping[shuffledQuestionIndex];
+            
+            // Get option mapping for this question
+            const optionMapping = optionMappings[shuffledQuestionIndex];
+            
+            // Convert shuffled answer to original answer
+            const originalAnswer = optionMapping[shuffledAnswer];
+            
+            console.log(`🔄 Converting answer:`, {
+                shuffledQuestion: shuffledQuestionIndex,
+                originalQuestion: originalQuestionIndex,
+                shuffledAnswer: shuffledAnswer,
+                originalAnswer: originalAnswer,
+                mapping: optionMapping
+            });
+            
+            return {
+                originalQuestionIndex: originalQuestionIndex,
+                originalAnswer: originalAnswer
+            };
+        }
 
         // Enhanced initialization
         function initializeAntiCheating() {
@@ -1060,7 +1335,7 @@
 
         // Initialize quiz when page loads
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🎯 Initializing anti-cheating quiz with ID:', quizId);
+            console.log('🎯 Initializing shuffled anti-cheating quiz with ID:', quizId);
             
             // ROBUST CHECK: Ensure user came through proper quiz info flow
             const referrer = document.referrer;
@@ -1117,7 +1392,7 @@
                 return; // Stop initialization
             }
             
-            console.log('✅ PROPER QUIZ FLOW VERIFIED - Continuing with quiz initialization');
+            console.log('✅ PROPER QUIZ FLOW VERIFIED - Continuing with shuffled quiz initialization');
             
             // Clear the session storage flag now that we've used it
             sessionStorage.removeItem('quiz-info-visited-' + quizId);
@@ -1125,14 +1400,14 @@
             // Initialize anti-cheating system first
             initializeAntiCheating();
             
-            // Then load quiz data
+            // Then load and shuffle quiz data
             loadQuizData();
         });
 
-        // Load quiz duration first, then quiz data
+        // Load quiz duration first, then quiz data with shuffling
         async function loadQuizData() {
             try {
-                console.log('📡 Fetching quiz duration and data...');
+                console.log('📡 Fetching quiz duration and data for shuffling...');
                 
                 // First get the quiz duration
                 const durationResponse = await fetch(`/api/quiz/${quizId}/duration`);
@@ -1150,8 +1425,13 @@
                 const data = await response.json();
                 
                 if (data.success && data.quiz) {
-                    quizData = data.quiz;
-                    console.log('✅ Quiz loaded:', quizData.lectureTitle);
+                    // Store original quiz data
+                    originalQuizData = data.quiz;
+                    console.log('✅ Original quiz loaded:', originalQuizData.lectureTitle);
+                    
+                    // Apply comprehensive shuffling
+                    quizData = shuffleEntireQuiz(originalQuizData);
+                    console.log('🎲 Quiz shuffling completed successfully');
                     
                     initializeQuiz();
                 } else {
@@ -1164,9 +1444,9 @@
             }
         }
 
-        // Initialize quiz interface
+        // Initialize quiz interface with shuffle support
         function initializeQuiz() {
-            // Initialize student answers array
+            // Initialize student answers array for shuffled questions
             studentAnswers = new Array(quizData.totalQuestions).fill(null);
             // Initialize visited questions array
             visitedQuestions = new Array(quizData.totalQuestions).fill(false);
@@ -1184,7 +1464,14 @@
             // Create question navigation
             createQuestionNavigation();
             
-            console.log('🚀 Anti-cheating quiz initialized successfully with', QUIZ_TIME_LIMIT / 60, 'minutes duration');
+            console.log('🚀 Shuffled anti-cheating quiz initialized successfully:', {
+                duration: QUIZ_TIME_LIMIT / 60 + ' minutes',
+                totalQuestions: quizData.totalQuestions,
+                questionsShuffled: true,
+                optionsShuffled: true,
+                questionMapping: questionMapping.length,
+                optionMappings: optionMappings.length
+            });
         }
 
         // Create question navigation grid (Enhanced for 3 columns)
@@ -1193,14 +1480,14 @@
             grid.innerHTML = '';
             
             // Always use 3 columns layout
-            console.log('📋 Creating question navigation with 3 columns for', quizData.totalQuestions, 'questions');
+            console.log('📋 Creating question navigation with 3 columns for', quizData.totalQuestions, 'shuffled questions');
             
             for (let i = 0; i < quizData.totalQuestions; i++) {
                 const btn = document.createElement('button');
                 btn.className = 'question-nav-btn';
                 btn.textContent = i + 1;
                 btn.onclick = () => displayQuestion(i);
-                btn.title = `Question ${i + 1}`;
+                btn.title = `Question ${i + 1} (Shuffled)`;
                 grid.appendChild(btn);
             }
         }
@@ -1227,7 +1514,7 @@
             }
         }
 
-        // Display a specific question
+        // Display a specific question with shuffled content
         function displayQuestion(index) {
             if (!quizData || !quizData.questions[index]) {
                 console.error('❌ Invalid question index:', index);
@@ -1240,10 +1527,13 @@
             // Mark this question as visited
             visitedQuestions[index] = true;
 
+            // Update question number display
+            document.getElementById('questionNumber').textContent = `Question ${index + 1}`;
+
             // Update question text
             document.getElementById('questionText').textContent = question.question;
             
-            // Display options
+            // Display shuffled options
             const optionsContainer = document.getElementById('optionsContainer');
             optionsContainer.innerHTML = '';
             
@@ -1268,11 +1558,18 @@
             // Update navigation buttons
             updateNavigationButtons();
             updateQuestionNavigation();
+
+            console.log(`📄 Displaying shuffled question ${index + 1}:`, {
+                shuffledIndex: index,
+                originalIndex: question.originalIndex,
+                shuffledCorrect: question.correct_answer,
+                originalCorrect: question.original_correct_answer
+            });
         }
 
         // Enhanced select option with toned-down animation
         function selectOption(letter, event) {
-            console.log(`📝 Selecting option ${letter} for question ${currentQuestionIndex + 1}`);
+            console.log(`📝 Selecting option ${letter} for shuffled question ${currentQuestionIndex + 1}`);
             
             // Get the clicked option element
             const clickedOption = event.target.closest('.option');
@@ -1290,7 +1587,7 @@
                 clickedOption.classList.remove('click-flash');
                 clickedOption.classList.add('selected');
                 
-                // Store answer
+                // Store answer for shuffled question
                 studentAnswers[currentQuestionIndex] = letter;
                 
                 // Update question navigation
@@ -1380,18 +1677,20 @@
             }
         }
 
-        // Submit quiz function with anti-cheating context
+        // Submit quiz function with anti-cheating context and shuffling support
         async function submitQuiz() {
-            console.log('🔍 Enhanced quiz submission check:', {
+            console.log('🔍 Enhanced shuffled quiz submission check:', {
                 quizData: quizData,
+                originalQuizData: originalQuizData,
                 studentAnswers: studentAnswers,
                 quizId: quizId,
                 classContext: classContext,
                 quizDuration: QUIZ_TIME_LIMIT / 60, // in minutes
-                violationCount: violationCount // Include violation count
+                violationCount: violationCount, // Include violation count
+                shuffleInfo: quizData.shuffleInfo
             });
 
-            if (!quizData || !quizData.questions) {
+            if (!quizData || !quizData.questions || !originalQuizData) {
                 console.error('❌ Quiz data is missing!');
                 alert('Quiz data is missing. Please refresh and try again.');
                 return;
@@ -1403,17 +1702,7 @@
             // Check if all questions are answered
             const unansweredCount = studentAnswers.filter(answer => answer === null).length;
             
-            if (unansweredCount > 0 && violationCount === 0) {
-                // Only show confirmation if not auto-submitting due to violations
-                const confirmMessage = classContext.hasClass 
-                    ? `You have ${unansweredCount} unanswered questions.\n\nThis quiz is part of ${classContext.className} class and your results will be recorded for class analytics.\n\nAre you sure you want to submit?`
-                    : `You have ${unansweredCount} unanswered questions. Are you sure you want to submit?`;
-                    
-                if (!confirm(confirmMessage)) {
-                    isQuizSubmitted = false; // Allow further interaction
-                    return;
-                }
-            }
+
             
             // Stop timer
             if (timerInterval) {
@@ -1423,13 +1712,36 @@
             // Calculate time taken
             const timeTakenSeconds = Math.floor((Date.now() - startTime) / 1000);
             
-            // Prepare comprehensive submission data with violation info
+            // Convert shuffled answers back to original question format
+            console.log('🔄 Converting shuffled answers to original format...');
+            const originalFormatAnswers = [];
+            
+            studentAnswers.forEach((shuffledAnswer, shuffledIndex) => {
+                if (shuffledAnswer !== null) {
+                    const conversion = convertToOriginalAnswer(shuffledIndex, shuffledAnswer);
+                    
+                    originalFormatAnswers.push({
+                        questionIndex: conversion.originalQuestionIndex,
+                        question: originalQuizData.questions[conversion.originalQuestionIndex].question,
+                        selectedOption: conversion.originalAnswer,
+                        // Additional shuffle tracking for analytics
+                        shuffleData: {
+                            shuffledQuestionIndex: shuffledIndex,
+                            shuffledAnswer: shuffledAnswer,
+                            wasShuffled: true
+                        }
+                    });
+                }
+            });
+            
+            // Sort by original question index to maintain order
+            originalFormatAnswers.sort((a, b) => a.questionIndex - b.questionIndex);
+            
+            console.log('✅ Converted answers:', originalFormatAnswers);
+            
+            // Prepare comprehensive submission data with shuffle info
             const submissionData = {
-                studentAnswers: studentAnswers.map((answer, index) => ({
-                    questionIndex: index,
-                    question: quizData.questions[index].question,
-                    selectedOption: answer
-                })).filter(item => item.selectedOption !== null),
+                studentAnswers: originalFormatAnswers,
                 timeTakenSeconds: timeTakenSeconds,
                 classContext: classContext, // Enhanced class context
                 // Anti-cheating data
@@ -1438,6 +1750,14 @@
                     wasAutoSubmitted: violationCount >= MAX_VIOLATIONS,
                     gracePeriodsUsed: violationCount // Track how many times grace period was activated
                 },
+                // Shuffle data for analytics and verification
+                shuffleData: {
+                    wasShuffled: true,
+                    questionMapping: questionMapping,
+                    optionMappings: optionMappings,
+                    shuffleTimestamp: quizData.shuffleInfo.shuffleTimestamp,
+                    totalQuestionsShuffled: quizData.totalQuestions
+                },
                 // Additional navigation hints for backend
                 navigationHints: {
                     fromClassView: !!classContext.classId,
@@ -1445,7 +1765,7 @@
                 }
             };
             
-            console.log('📤 Submitting enhanced quiz with anti-cheating data:', submissionData);
+            console.log('📤 Submitting shuffled quiz with comprehensive data:', submissionData);
             
             // Show loading state
             showSubmissionLoading();
@@ -1462,14 +1782,22 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    console.log('✅ Quiz submitted successfully with anti-cheating data:', result);
+                    console.log('✅ Shuffled quiz submitted successfully:', result);
                     
-                    // Store comprehensive result data with violation info
+                    // Store comprehensive result data with shuffle and violation info
                     const enhancedResult = {
                         ...result,
-                        lectureId: quizData.lectureId || null,
+                        lectureId: quizData.lectureId || originalQuizData.lectureId,
                         classContext: classContext,
                         quizDurationMinutes: QUIZ_TIME_LIMIT / 60, // Store actual quiz duration
+                        // Include shuffle summary
+                        shuffleSummary: {
+                            wasShuffled: true,
+                            questionsShuffled: true,
+                            optionsShuffled: true,
+                            totalQuestions: quizData.totalQuestions,
+                            shuffleTimestamp: quizData.shuffleInfo.shuffleTimestamp
+                        },
                         // Include anti-cheating summary
                         antiCheatSummary: {
                             violationCount: violationCount,
@@ -1503,31 +1831,39 @@
             }
         }
 
-        // Show submission loading
+        // Show submission loading with shuffle context
         function showSubmissionLoading() {
             document.getElementById('quizContainer').style.display = 'none';
             document.getElementById('loadingContainer').style.display = 'block';
             
             let loadingText = classContext.hasClass 
-                ? `Submitting Your ${classContext.className} Quiz...`
-                : 'Submitting Your Quiz...';
+                ? `Submitting Your Shuffled ${classContext.className} Quiz...`
+                : 'Submitting Your Shuffled Quiz...';
                 
             // Add violation context to loading message
             if (violationCount > 0) {
                 loadingText = violationCount >= MAX_VIOLATIONS 
-                    ? 'Auto-Submitting Quiz Due to Security Violations...'
+                    ? 'Auto-Submitting Shuffled Quiz Due to Security Violations...'
                     : loadingText + ' (Security Violations Detected)';
             }
                 
             document.getElementById('loadingContainer').innerHTML = `
                 <div class="loading-spinner"></div>
                 <h3>${loadingText}</h3>
-                <p>Please wait while we process your answers and security data.</p>
+                <p>Processing answers, shuffle data, and security information...</p>
             `;
         }
 
-        // showResults function with anti-cheating summary
+        // showResults function with anti-cheating and shuffle summary
         function showResults(result) {
+            // Hide navigation panel when results are shown
+            const navigationPanel = document.getElementById('navigationPanel');
+            const mainContent = document.getElementById('mainContent');
+            
+            navigationPanel.classList.add('hidden');
+            mainContent.classList.add('results-mode');
+            
+            // Hide loading, show results
             document.getElementById('loadingContainer').style.display = 'none';
             document.getElementById('resultsContainer').style.display = 'block';
             
@@ -1560,13 +1896,13 @@
             if (classContext.hasClass) {
                 resultDetailsHTML += `
                     <p><strong>Class:</strong> ${classContext.className}</p>
-                    <p style="color: #3b82f6; font-weight: 500;">✅ Your result has been recorded for class performance tracking.</p>
+                    <p style="color: #3b82f6; font-weight: 500;">✅ Your result has been recorded for class analytics.</p>
                 `;
             }
             
             document.getElementById('resultDetails').innerHTML = resultDetailsHTML;
 
-            // Store comprehensive results data with anti-cheating info
+            // Store comprehensive results data with shuffle and anti-cheating info
             const detailedResults = {
                 quizId: quizId,
                 lectureId: result.lectureId || quizData.lectureId,
@@ -1579,6 +1915,8 @@
                 submissionDate: new Date().toISOString(),
                 questionDetails: result.questionDetails || prepareQuestionDetails(),
                 classContext: classContext,
+                // Shuffle data for results page
+                shuffleSummary: result.shuffleSummary,
                 // Anti-cheating data for results page
                 antiCheatSummary: result.antiCheatSummary,
                 // Enhanced navigation context for results page
@@ -1589,39 +1927,57 @@
                     steps: classContext.hasClass ? [
                         { label: 'Dashboard', url: '/homeStudent' },
                         { label: classContext.className, url: `/student/class/${classContext.classId}` },
-                        { label: 'Quiz Results', url: null }
+                        { label: 'Shuffled Quiz Results', url: null }
                     ] : [
                         { label: 'Dashboard', url: '/homeStudent' },
-                        { label: 'Quiz Results', url: null }
+                        { label: 'Shuffled Quiz Results', url: null }
                     ]
                 }
             };
 
             // Store comprehensive results in localStorage for the results page
             localStorage.setItem('quizResults', JSON.stringify(detailedResults));
-            console.log('📊 Enhanced results data stored with anti-cheating summary:', detailedResults);
+            console.log('📊 Enhanced shuffled results data stored:', detailedResults);
         }
 
-        // Prepare detailed question data
+        // Prepare detailed question data with shuffle consideration
         function prepareQuestionDetails() {
-            if (!quizData || !quizData.questions) {
+            if (!quizData || !quizData.questions || !originalQuizData) {
                 console.error('❌ Quiz data not available for detailed results');
                 return [];
             }
 
-            return studentAnswers.map((studentAnswer, index) => {
-                const question = quizData.questions[index];
-                if (!question) return null;
-
-                return {
-                    questionIndex: index,
-                    questionText: question.question,
-                    options: question.options,
-                    studentAnswer: studentAnswer,
-                    correctAnswer: question.correct_answer,
-                    isCorrect: studentAnswer === question.correct_answer
-                };
-            }).filter(item => item !== null);
+            // Map shuffled answers back to original questions for detailed view
+            const detailedResults = [];
+            
+            studentAnswers.forEach((shuffledAnswer, shuffledIndex) => {
+                if (shuffledAnswer !== null) {
+                    const shuffledQuestion = quizData.questions[shuffledIndex];
+                    const conversion = convertToOriginalAnswer(shuffledIndex, shuffledAnswer);
+                    const originalQuestion = originalQuizData.questions[conversion.originalQuestionIndex];
+                    
+                    detailedResults.push({
+                        questionIndex: conversion.originalQuestionIndex,
+                        questionText: originalQuestion.question,
+                        options: originalQuestion.options,
+                        studentAnswer: conversion.originalAnswer,
+                        correctAnswer: originalQuestion.correct_answer,
+                        isCorrect: conversion.originalAnswer === originalQuestion.correct_answer,
+                        // Shuffle metadata for detailed analysis
+                        shuffleMetadata: {
+                            shuffledIndex: shuffledIndex,
+                            shuffledAnswer: shuffledAnswer,
+                            shuffledOptions: shuffledQuestion.options,
+                            wasShuffled: true
+                        }
+                    });
+                }
+            });
+            
+            // Sort by original question index
+            detailedResults.sort((a, b) => a.questionIndex - b.questionIndex);
+            
+            return detailedResults;
         }
 
         // goToDashboard function with smart navigation
@@ -1637,7 +1993,8 @@
                     const params = new URLSearchParams({
                         classId: resultsData.classContext.classId,
                         className: resultsData.classContext.className,
-                        returnTo: 'class'
+                        returnTo: 'class',
+                        shuffled: 'true' // Indicate this was a shuffled quiz
                     });
                     resultsUrl += '?' + params.toString();
                 }
@@ -1671,14 +2028,14 @@
             `;
         }
 
-        // Page unload warning with anti-cheating context
+        // Page unload warning with anti-cheating and shuffle context
         window.addEventListener('beforeunload', function(e) {
             if (quizData && timerInterval && !isQuizSubmitted) {
                 const warningMessage = violationCount > 0 
-                    ? `WARNING: You have ${violationCount} security violations!\n\nLeaving now may result in additional violations and auto-submission.`
+                    ? `WARNING: You have ${violationCount} security violations!\n\nLeaving now may result in additional violations and auto-submission of your shuffled quiz.`
                     : classContext.hasClass 
-                        ? `Are you sure you want to leave?\n\nThis is a ${classContext.className} class quiz and your progress will be lost.`
-                        : 'Are you sure you want to leave? Your quiz progress will be lost.';
+                        ? `Are you sure you want to leave?\n\nThis is a shuffled ${classContext.className} class quiz and your progress will be lost.`
+                        : 'Are you sure you want to leave? Your shuffled quiz progress will be lost.';
                         
                 e.preventDefault();
                 e.returnValue = warningMessage;
@@ -1686,20 +2043,28 @@
             }
         });
 
-        // Console log for debugging
-        console.log('🎯 Enhanced takeQuiz.hbs loaded with anti-cheating system:', {
+        // Enhanced console log for debugging with shuffle info
+        console.log('🎯 Enhanced shuffled takeQuiz.hbs loaded:', {
             classContext: classContext,
             quizId: quizId,
+            // Shuffle features
+            questionShuffling: true,
+            optionShuffling: true,
+            shuffleMapping: true,
+            // Enhanced features
             enhancedNavigation: true,
             dynamicDuration: true,
             antiCheatingActive: true,
             maxViolations: MAX_VIOLATIONS,
             gracePeriod: GRACE_PERIOD / 1000 + ' seconds',
             detectionMethods: ['tab_switch', 'window_blur', 'task_switcher', 'windows_key', 'focus_loss'],
+            // UI features
             fullscreenMode: false,
             improvedUI: true,
             navigationPanel: '3-column grid, smaller buttons',
-            optionAnimation: 'enhanced click animations'
+            optionAnimation: 'enhanced click animations',
+            shuffleIndicators: true,
+            visualFeedback: 'shuffle badges and indicators'
         });
     </script>
 </body>
