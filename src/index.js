@@ -198,6 +198,35 @@ const upload = multer({
 
 // ==================== TEXT EXTRACTION FUNCTIONS ====================
 
+async function extractTextFromPDF(filePath) {
+    let extractedText = '';
+    try {
+        console.log(`🔌 Starting PDF text extraction for: ${filePath}`);
+        const dataBuffer = fs.readFileSync(filePath);
+        const data = await pdfParse(dataBuffer);
+        extractedText = data.text.trim();
+        console.log('✅ PDF text extracted successfully (first 500 chars):', extractedText.substring(0, 500));
+    } catch (pdfError) {
+        console.error('❌ Error extracting text from PDF:', pdfError);
+        extractedText = "Error extracting text from PDF."; // Indicate extraction failure
+    }
+    return extractedText;
+}
+
+async function extractTextFromWord(filePath) {
+    let extractedText = '';
+    try {
+        console.log(`🔌 Starting Word text extraction for: ${filePath}`);
+        const result = await mammoth.extractRawText({ path: filePath });
+        extractedText = result.value.trim(); // The raw text
+        console.log('✅ Word text extracted successfully (first 500 chars):', extractedText.substring(0, 500));
+    } catch (wordError) {
+        console.error('❌ Error extracting text from Word:', wordError);
+        extractedText = "Error extracting text from Word."; // Indicate extraction failure
+    }
+    return extractedText;
+}
+
 async function extractTextFromPowerPoint(filePath) {
     let extractedText = '';
     try {
@@ -243,7 +272,6 @@ async function extractTextFromFile(filePath, mimetype) {
             throw new Error('Unsupported file type')
     }
 }
-
 // ==================== UTILITY FUNCTIONS ====================
 
 function getFileType(mimetype) {
@@ -4964,7 +4992,7 @@ app.get('/debug/join-codes', isAuthenticated, async (req, res) => {
 
 // ==================== JOIN REQUEST MANAGEMENT ROUTES ====================
 
-// 🆕 NEW: Submit join request (student)
+// 🔄 UPDATED: Submit join request (student) - Handles reactivating inactive enrollments
 app.post('/api/classes/join-request', isAuthenticated, async (req, res) => {
     try {
         if (req.session.userType !== 'student') {
@@ -5013,35 +5041,92 @@ app.post('/api/classes/join-request', isAuthenticated, async (req, res) => {
             });
         }
 
-        // Double-check for existing enrollment
-        const existingEnrollment = await classStudentCollection.findOne({
+        // --- NEW/UPDATED: Comprehensive checks for existing enrollment or request ---
+
+        // 1. Check for ANY existing classStudentCollection entry (active or inactive)
+        const existingClassStudentEntry = await classStudentCollection.findOne({
             classId: codeDoc.classId,
-            studentId: studentId,
-            isActive: true
+            studentId: studentId
         });
 
-        if (existingEnrollment) {
-            return res.status(400).json({
-                success: false,
-                message: 'You are already enrolled in this class.'
-            });
+        if (existingClassStudentEntry) {
+            if (existingClassStudentEntry.isActive) {
+                console.log('⚠️ Student already actively enrolled in this class.');
+                return res.status(400).json({
+                    success: false,
+                    message: 'You are already enrolled in this class.'
+                });
+            } else {
+                // 🆕 NEW LOGIC: Reactivate inactive enrollment
+                console.log('🔄 Reactivating inactive enrollment for student:', studentName, 'in class:', codeDoc.className);
+                await classStudentCollection.findByIdAndUpdate(existingClassStudentEntry._id, {
+                    isActive: true,
+                    enrolledAt: new Date(), // Update enrollment date
+                    studentName: studentName, // Update name in case it changed
+                    studentEnrollment: student.enrollment // Update enrollment number
+                });
+
+                // Also update any pending/rejected join requests to 'approved' to clean up
+                await classJoinRequestCollection.updateMany(
+                    { classId: codeDoc.classId, studentId: studentId, status: { $in: ['pending', 'rejected'] } },
+                    {
+                        status: 'approved',
+                        processedAt: new Date(),
+                        // processedBy: 'system-reactivation' // ❌ REMOVE THIS LINE
+                    }
+                );
+
+                // Increment usage count for the join code
+                await classJoinCodeCollection.findByIdAndUpdate(codeDoc._id, {
+                    $inc: { usageCount: 1 }
+                });
+
+                // Update class student count
+                const totalActiveStudents = await classStudentCollection.countDocuments({
+                    classId: codeDoc.classId,
+                    isActive: true
+                });
+                await classCollection.findByIdAndUpdate(codeDoc.classId, {
+                    studentCount: totalActiveStudents,
+                    updatedAt: new Date()
+                });
+
+                return res.json({
+                    success: true,
+                    message: `You have successfully rejoined ${codeDoc.className}!`,
+                    classInfo: {
+                        className: codeDoc.className,
+                        classSubject: codeDoc.classSubject,
+                        teacherName: codeDoc.teacherName
+                    }
+                });
+            }
         }
 
-        // Double-check for existing pending request
-        const existingRequest = await classJoinRequestCollection.findOne({
+        // 2. Check if student has ANY existing join request (pending or rejected)
+        // This is now only for cases where there's no classStudentEntry at all
+        const existingJoinRequest = await classJoinRequestCollection.findOne({
             classId: codeDoc.classId,
-            studentId: studentId,
-            status: 'pending'
+            studentId: studentId
         });
 
-        if (existingRequest) {
-            return res.status(400).json({
-                success: false,
-                message: 'You already have a pending request for this class.'
-            });
+        if (existingJoinRequest) {
+            console.log('⚠️ Existing join request found (status:', existingJoinRequest.status, ')');
+            if (existingJoinRequest.status === 'pending') {
+                return res.status(400).json({
+                    success: false,
+                    message: 'You already have a pending request for this class. Please wait for the teacher\'s approval.'
+                });
+            } else if (existingJoinRequest.status === 'rejected') {
+                // If a previous request was rejected, delete it to allow a new one
+                console.log('🗑️ Deleting previous rejected request to allow new submission.');
+                await classJoinRequestCollection.deleteOne({ _id: existingJoinRequest._id });
+            }
         }
+        // --- END NEW/UPDATED CHECKS ---
 
-        // Create join request
+
+        // If no existing enrollment (active/inactive) and no pending/rejected request, create new join request
         const joinRequest = await classJoinRequestCollection.create({
             classId: codeDoc.classId,
             studentId: studentId,
@@ -5061,7 +5146,7 @@ app.post('/api/classes/join-request', isAuthenticated, async (req, res) => {
             $inc: { usageCount: 1 }
         });
 
-        console.log('✅ Join request created:', {
+        console.log('✅ New join request created:', {
             requestId: joinRequest._id,
             className: codeDoc.className,
             teacherName: codeDoc.teacherName
@@ -5080,6 +5165,13 @@ app.post('/api/classes/join-request', isAuthenticated, async (req, res) => {
 
     } catch (error) {
         console.error('❌ Error submitting join request:', error);
+        // Fallback for unexpected duplicate key errors (should be rare with new logic)
+        if (error.code === 11000) {
+            return res.status(400).json({
+                success: false,
+                message: 'A request for this class already exists or you are already enrolled (duplicate key error).'
+            });
+        }
         res.status(500).json({
             success: false,
             message: 'Failed to submit join request: ' + error.message
