@@ -345,7 +345,7 @@ const lectureSchema = new mongoose.Schema({
     }
 });
 
-// Quiz Schema with proper duration field
+// 🚨 UPDATED: Quiz Schema with Exam Session Mode
 const quizSchema = new mongoose.Schema({
     lectureId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -372,6 +372,54 @@ const quizSchema = new mongoose.Schema({
         type: String,
         required: false
     },
+    // 🚨 NEW: Exam Session Mode Fields
+    examSessionMode: {
+        type: Boolean,
+        default: false
+    },
+    examSessionDuration: {
+        type: Number, // Duration in minutes for the exam session
+        required: false,
+        min: 5,
+        max: 180 // Max 3 hours
+    },
+    examSessionStartTime: {
+        type: Date,
+        required: false
+    },
+    examSessionEndTime: {
+        type: Date,
+        required: false
+    },
+    examSessionActive: {
+        type: Boolean,
+        default: false
+    },
+    examSessionCreatedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'TeacherCollection',
+        required: false
+    },
+    examSessionParticipants: [{
+        studentId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'StudentCollection'
+        },
+        studentName: String,
+        joinedAt: {
+            type: Date,
+            default: Date.now
+        },
+        hasSubmitted: {
+            type: Boolean,
+            default: false
+        },
+        submittedAt: Date,
+        autoSubmitted: {
+            type: Boolean,
+            default: false
+        }
+    }],
     questions: [{
         question: {
             type: String,
@@ -430,7 +478,7 @@ const quizSchema = new mongoose.Schema({
     }
 });
 
-// Quiz Results Schema with anti-cheating metadata
+// Quiz Results Schema with anti-cheating metadata and exam session tracking
 const quizResultSchema = new mongoose.Schema({
     quizId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -498,6 +546,23 @@ const quizResultSchema = new mongoose.Schema({
         min: 0,
         max: 100
     },
+    // 🚨 NEW: Exam Session Metadata
+    examSessionData: {
+        wasExamSession: {
+            type: Boolean,
+            default: false
+        },
+        sessionStartTime: Date,
+        sessionEndTime: Date,
+        sessionDurationMinutes: Number,
+        joinedSessionAt: Date,
+        autoSubmittedBySession: {
+            type: Boolean,
+            default: false
+        },
+        sessionTimeRemaining: Number, // Seconds remaining when submitted
+        sessionParticipantCount: Number // How many students were in the session
+    },
     antiCheatMetadata: {
         violationCount: {
             type: Number,
@@ -521,7 +586,7 @@ const quizResultSchema = new mongoose.Schema({
         },
         submissionSource: {
             type: String,
-            enum: ['Manual', 'Auto-Submit', 'Timer-Submit'],
+            enum: ['Manual', 'Auto-Submit', 'Timer-Submit', 'Session-Auto-Submit'],
             default: 'Manual'
         },
         violationDetails: [{
@@ -637,6 +702,22 @@ classStudentSchema.index({ classId: 1, studentId: 1 }, { unique: true });
 lectureSchema.index({ classId: 1, uploadDate: -1 });
 quizSchema.index({ classId: 1, generatedDate: -1 });
 quizResultSchema.index({ classId: 1, submissionDate: -1 });
+
+// 🚨 NEW: Exam Session Indexes
+quizSchema.index({ examSessionActive: 1 }); // Find active exam sessions
+quizSchema.index({ examSessionEndTime: 1 }); // Cleanup expired sessions
+quizSchema.index({ classId: 1, examSessionActive: 1 }); // Active sessions in class
+quizSchema.index({ 'examSessionParticipants.studentId': 1 }); // Student participation
+
+// Anti-cheat and session tracking indexes
+quizResultSchema.index({ 
+    'examSessionData.wasExamSession': 1, 
+    submissionDate: -1 
+});
+quizResultSchema.index({ 
+    'examSessionData.sessionStartTime': 1,
+    'examSessionData.sessionEndTime': 1 
+});
 
 // 🆕 NEW: Join System Indexes for Performance
 classJoinCodeSchema.index({ joinCode: 1 }, { unique: true }); // Fast code lookup
@@ -806,6 +887,70 @@ quizResultSchema.pre('save', function(next) {
         next(error);
     }
 });
+
+// 🚨 NEW: Exam Session Methods
+quizSchema.methods.startExamSession = async function(durationMinutes, startedBy) {
+    this.examSessionMode = true;
+    this.examSessionDuration = durationMinutes;
+    this.examSessionStartTime = new Date();
+    this.examSessionEndTime = new Date(Date.now() + durationMinutes * 60 * 1000);
+    this.examSessionActive = true;
+    this.examSessionCreatedBy = startedBy;
+    this.examSessionParticipants = [];
+    return await this.save();
+};
+
+quizSchema.methods.addSessionParticipant = async function(studentId, studentName) {
+    const existingParticipant = this.examSessionParticipants.find(
+        p => p.studentId.toString() === studentId.toString()
+    );
+    
+    if (!existingParticipant) {
+        this.examSessionParticipants.push({
+            studentId,
+            studentName,
+            joinedAt: new Date(),
+            hasSubmitted: false
+        });
+        return await this.save();
+    }
+    return this;
+};
+
+quizSchema.methods.markParticipantSubmitted = async function(studentId, autoSubmitted = false) {
+    const participant = this.examSessionParticipants.find(
+        p => p.studentId.toString() === studentId.toString()
+    );
+    
+    if (participant) {
+        participant.hasSubmitted = true;
+        participant.submittedAt = new Date();
+        participant.autoSubmitted = autoSubmitted;
+        return await this.save();
+    }
+    return this;
+};
+
+quizSchema.methods.endExamSession = async function() {
+    this.examSessionActive = false;
+    return await this.save();
+};
+
+quizSchema.methods.getSessionTimeRemaining = function() {
+    if (!this.examSessionActive || !this.examSessionEndTime) {
+        return 0;
+    }
+    const now = new Date();
+    const remaining = Math.max(0, this.examSessionEndTime - now);
+    return Math.floor(remaining / 1000); // Return seconds
+};
+
+quizSchema.methods.isSessionExpired = function() {
+    if (!this.examSessionActive || !this.examSessionEndTime) {
+        return false;
+    }
+    return new Date() > this.examSessionEndTime;
+};
 
 // 🆕 NEW: Join Code Methods
 classJoinCodeSchema.methods.isExpired = function() {

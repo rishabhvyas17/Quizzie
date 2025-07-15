@@ -22,54 +22,71 @@
             display: flex;
         }
 
-        /* Timer - Top Right */
-        .timer-container {
-            position: fixed;
-            top: 2rem;
-            right: 2rem;
-            z-index: 1000;
-        }
-
+        /* Enhanced Timer - Top Right */
         .timer {
-            background: #3b82f6;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
             color: white;
-            padding: 0.5rem 1rem;
+            padding: 1rem 1.5rem;
             border-radius: 12px;
-            font-weight: bold;
-            font-size: 1.5rem;
             box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-            min-width: 120px;
+            z-index: 1000;
+            min-width: 200px;
             text-align: center;
         }
 
+        .timer-label {
+            font-size: 0.8rem;
+            opacity: 0.9;
+            margin-bottom: 0.25rem;
+        }
+
+        .timer-display {
+            font-family: 'Courier New', monospace;
+            font-size: 1.5rem;
+            font-weight: bold;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+        }
+
+        .timer-status {
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+
+        .timer.exam-mode {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            animation: pulse-exam 2s infinite;
+        }
+
+        @keyframes pulse-exam {
+            0% { box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
+            50% { box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6); }
+            100% { box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
+        }
+
         .timer.warning {
-            background: #f59e0b;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
             box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
         }
 
         .timer.danger {
-            background: #ef4444;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
             box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-            animation: pulse 1s infinite;
+            animation: pulse-danger 1s infinite;
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-
-
-
-        .shuffle-icon {
-            font-size: 1.2rem;
-            animation: shuffleRotate 2s ease-in-out infinite;
-        }
-
-        @keyframes shuffleRotate {
-            0%, 100% { transform: rotate(0deg); }
-            25% { transform: rotate(90deg); }
-            50% { transform: rotate(180deg); }
-            75% { transform: rotate(270deg); }
+        @keyframes pulse-danger {
+            0%, 100% { 
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% { 
+                opacity: 0.8;
+                transform: scale(1.02);
+            }
         }
 
         /* Main Content Area */
@@ -130,7 +147,6 @@
             font-weight: bold;
             font-size: 0.9rem;
         }
-
 
         .question-text {
             font-size: 1.3rem;
@@ -656,16 +672,16 @@
                 padding: 1rem;
             }
 
-            .timer-container {
+            .timer {
                 top: 1rem;
                 right: 1rem;
+                padding: 0.8rem 1.2rem;
+                min-width: 180px;
             }
 
-            .timer {
-                padding: 0.4rem 1rem;
-                font-size: 1.2rem;
+            .timer-display {
+                font-size: 1.3rem;
             }
-
 
             .question-grid {
                 max-height: 80px;
@@ -729,12 +745,13 @@
     </style>
 </head>
 <body class="quiz-secured">
-    <!-- Shuffle Indicator - Top Left -->
-
-
-    <!-- Timer - Top Right -->
-    <div class="timer-container">
-        <div class="timer" id="timer">--:--</div>
+    <!-- Enhanced Timer with Exam Mode Support -->
+    <div class="timer" id="quizTimer">
+        <div class="timer-content">
+            <div class="timer-label">Time Remaining</div>
+            <div class="timer-display" id="timerDisplay">Loading...</div>
+            <div class="timer-status" id="timerStatus">Preparing quiz...</div>
+        </div>
     </div>
 
     <!-- Main Content -->
@@ -752,7 +769,6 @@
             <div class="question-container">
                 <div class="question-header">
                     <div class="question-number" id="questionNumber">Question 1</div>
-
                 </div>
                 <div class="question-text" id="questionText">Loading question...</div>
             </div>
@@ -847,6 +863,12 @@
         let mouseInsideWindow = true;
         let isWindowFocused = true;
 
+        // Enhanced Timer System Variables
+        let examSessionTimer = null;
+        let isExamMode = false;
+        let timerInterval = null;
+        let startTime = Date.now();
+
         // Quiz Data with Shuffling Support
         let originalQuizData = null; // Store original quiz data
         let quizData = null; // Shuffled quiz data
@@ -855,8 +877,6 @@
         let currentQuestionIndex = 0;
         let studentAnswers = [];
         let visitedQuestions = []; // Track which questions have been viewed
-        let startTime = Date.now();
-        let timerInterval = null;
         const quizId = window.location.pathname.split('/').pop();
         let QUIZ_TIME_LIMIT = 30 * 60; // Default 30 minutes, will be updated from API
 
@@ -873,7 +893,164 @@
 
         console.log('🏫 Enhanced class context:', classContext);
         console.log('🧭 Enhanced navigation context:', navigationContext);
-        console.log('🛡️ Anti-cheating system initialized');
+        console.log('🛡️ Anti-cheating system with exam mode timer initialized');
+
+        // ===== ENHANCED EXAM TIMER FUNCTIONS =====
+
+        // Check exam session status when page loads
+        async function checkExamSessionStatus() {
+            try {
+                const response = await fetch(`/api/quiz/${quizId}/exam-status`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    isExamMode = result.examSessionActive;
+                    
+                    if (isExamMode) {
+                        document.getElementById('quizTimer').classList.add('exam-mode');
+                        document.getElementById('timerStatus').textContent = '🚨 EXAM MODE';
+                        
+                        if (result.remainingSeconds > 0) {
+                            QUIZ_TIME_LIMIT = result.remainingSeconds;
+                            startSynchronizedTimer(result.remainingSeconds);
+                        } else {
+                            document.getElementById('timerDisplay').textContent = 'ENDED';
+                            document.getElementById('timerStatus').textContent = 'Exam session ended';
+                            // Optionally redirect or disable quiz
+                            alert('⏰ Exam session has ended. You cannot take this quiz.');
+                            if (classContext.classId) {
+                                window.location.href = `/student/class/${classContext.classId}`;
+                            } else {
+                                window.location.href = '/homeStudent';
+                            }
+                        }
+                    } else {
+                        // Regular quiz mode
+                        startRegularTimer();
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Error checking exam status:', error);
+                startRegularTimer(); // Fallback to regular timer
+            }
+        }
+
+        // Start synchronized timer for exam mode with auto-submit
+        function startSynchronizedTimer(remainingSeconds) {
+            let timeLeft = remainingSeconds;
+            
+            examSessionTimer = setInterval(() => {
+                if (timeLeft <= 0) {
+                    // AUTO-SUBMIT WHEN EXAM TIME IS UP
+                    clearInterval(examSessionTimer);
+                    console.log('🚨 EXAM TIME UP - Auto-submitting quiz');
+                    
+                    // Update display
+                    document.getElementById('timerDisplay').textContent = '00:00';
+                    document.getElementById('timerStatus').textContent = 'Exam ended! Auto-submitting...';
+                    
+                    // Alert user
+                    alert('🚨 Exam time is up! Your quiz is being submitted automatically.');
+                    
+                    // Auto-submit the quiz
+                    window.autoSubmissionReason = 'exam_timer';
+                    isQuizSubmitted = true;
+                    submitQuiz();
+                    return;
+                }
+                
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                
+                document.getElementById('timerDisplay').textContent = 
+                    `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                
+                // Update status based on remaining time
+                if (timeLeft <= 60) {
+                    document.getElementById('timerStatus').textContent = '⚠️ FINAL MINUTE!';
+                    document.getElementById('quizTimer').classList.add('danger');
+                } else if (timeLeft <= 300) {
+                    document.getElementById('timerStatus').textContent = '⏰ 5 minutes left';
+                    document.getElementById('quizTimer').classList.add('warning');
+                } else {
+                    document.getElementById('timerStatus').textContent = '🚨 EXAM MODE';
+                }
+                
+                timeLeft--;
+            }, 1000);
+        }
+
+        // Start regular quiz timer with auto-submit
+        function startRegularTimer() {
+            document.getElementById('timerStatus').textContent = 'Regular Quiz';
+            startTime = Date.now();
+            
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const remaining = Math.max(0, QUIZ_TIME_LIMIT - elapsed);
+                
+                updateTimerDisplay(remaining);
+                
+                // AUTO-SUBMIT WHEN TIME IS UP
+                if (remaining <= 0) {
+                    clearInterval(timerInterval);
+                    console.log('⏰ TIME UP - Auto-submitting quiz');
+                    
+                    // Show immediate feedback
+                    document.getElementById('timerDisplay').textContent = '00:00';
+                    document.getElementById('timerStatus').textContent = 'Time up! Auto-submitting...';
+                    
+                    // Alert user
+                    alert('⏰ Time is up! Your quiz will be submitted automatically.');
+                    
+                    // Mark as auto-submitted and trigger submission
+                    window.autoSubmissionReason = 'time_expired';
+                    isQuizSubmitted = true;
+                    submitQuiz();
+                }
+            }, 1000);
+        }
+
+        // Enhanced timer display function
+        function updateTimerDisplay(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            const timeString = `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            
+            document.getElementById('timerDisplay').textContent = timeString;
+            
+            // Dynamic warning thresholds
+            const warningThreshold = Math.max(300, QUIZ_TIME_LIMIT * 0.25); // 25% of quiz time or 5 minutes
+            const dangerThreshold = Math.max(120, QUIZ_TIME_LIMIT * 0.1); // 10% of quiz time or 2 minutes
+            
+            // Change color based on remaining time
+            const timerElement = document.getElementById('quizTimer');
+            if (seconds <= dangerThreshold) {
+                timerElement.classList.add('danger');
+                document.getElementById('timerStatus').textContent = '🚨 FINAL MINUTES!';
+            } else if (seconds <= warningThreshold) {
+                timerElement.classList.add('warning');
+                document.getElementById('timerStatus').textContent = '⏰ Time running low';
+            } else {
+                document.getElementById('timerStatus').textContent = 'Regular Quiz';
+            }
+        }
+
+        // Auto-submit function for exam mode and time expiry
+        function autoSubmitQuiz(reason) {
+            console.log(`🚨 Auto-submitting quiz due to: ${reason}`);
+            
+            if (window.submitQuiz) {
+                // Mark as auto-submitted
+                window.autoSubmissionReason = reason;
+                window.submitQuiz(); // Call the existing submit function
+            } else {
+                console.error('Submit function not found');
+                // Fallback: force submit
+                isQuizSubmitted = true;
+                submitQuiz();
+            }
+        }
 
         // ===== SHUFFLING UTILITY FUNCTIONS =====
         
@@ -889,34 +1066,6 @@
                 [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
             }
             return shuffled;
-        }
-
-        /**
-         * Create a unique seed based on student session for consistent shuffling
-         * @returns {number} - Pseudo-random seed
-         */
-        function createShuffleSeed() {
-            // Use quiz ID and timestamp to create a unique seed per quiz session
-            const seedString = `${quizId}-${Date.now()}-${Math.random()}`;
-            let hash = 0;
-            for (let i = 0; i < seedString.length; i++) {
-                const char = seedString.charCodeAt(i);
-                hash = ((hash << 5) - hash) + char;
-                hash = hash & hash; // Convert to 32-bit integer
-            }
-            return Math.abs(hash);
-        }
-
-        /**
-         * Seeded random number generator for consistent shuffling
-         * @param {number} seed - Seed for random generation
-         * @returns {function} - Random number generator function
-         */
-        function createSeededRandom(seed) {
-            return function() {
-                seed = (seed * 9301 + 49297) % 233280;
-                return seed / 233280;
-            };
         }
 
         /**
@@ -1335,7 +1484,7 @@
 
         // Initialize quiz when page loads
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🎯 Initializing shuffled anti-cheating quiz with ID:', quizId);
+            console.log('🎯 Initializing enhanced shuffled anti-cheating quiz with exam mode timer, ID:', quizId);
             
             // ROBUST CHECK: Ensure user came through proper quiz info flow
             const referrer = document.referrer;
@@ -1392,7 +1541,7 @@
                 return; // Stop initialization
             }
             
-            console.log('✅ PROPER QUIZ FLOW VERIFIED - Continuing with shuffled quiz initialization');
+            console.log('✅ PROPER QUIZ FLOW VERIFIED - Continuing with enhanced shuffled quiz initialization');
             
             // Clear the session storage flag now that we've used it
             sessionStorage.removeItem('quiz-info-visited-' + quizId);
@@ -1444,7 +1593,7 @@
             }
         }
 
-        // Initialize quiz interface with shuffle support
+        // Initialize quiz interface with shuffle support and enhanced timer
         function initializeQuiz() {
             // Initialize student answers array for shuffled questions
             studentAnswers = new Array(quizData.totalQuestions).fill(null);
@@ -1455,8 +1604,8 @@
             document.getElementById('loadingContainer').style.display = 'none';
             document.getElementById('quizContainer').style.display = 'block';
             
-            // Start timer with dynamic duration
-            startTimer();
+            // Check exam session status and start appropriate timer
+            checkExamSessionStatus();
             
             // Display first question
             displayQuestion(0);
@@ -1464,13 +1613,15 @@
             // Create question navigation
             createQuestionNavigation();
             
-            console.log('🚀 Shuffled anti-cheating quiz initialized successfully:', {
+            console.log('🚀 Enhanced shuffled anti-cheating quiz with exam mode timer initialized successfully:', {
                 duration: QUIZ_TIME_LIMIT / 60 + ' minutes',
                 totalQuestions: quizData.totalQuestions,
                 questionsShuffled: true,
                 optionsShuffled: true,
                 questionMapping: questionMapping.length,
-                optionMappings: optionMappings.length
+                optionMappings: optionMappings.length,
+                examMode: isExamMode,
+                timerMode: isExamMode ? 'synchronized exam timer' : 'regular timer'
             });
         }
 
@@ -1636,58 +1787,16 @@
             }
         }
 
-        // Timer functions with dynamic duration
-        function startTimer() {
-            startTime = Date.now();
-            
-            timerInterval = setInterval(() => {
-                const elapsed = Math.floor((Date.now() - startTime) / 1000);
-                const remaining = Math.max(0, QUIZ_TIME_LIMIT - elapsed);
-                
-                updateTimerDisplay(remaining);
-                
-                if (remaining <= 0) {
-                    clearInterval(timerInterval);
-                    alert('⏰ Time is up! Your quiz will be submitted automatically.');
-                    isQuizSubmitted = true;
-                    submitQuiz();
-                }
-            }, 1000);
-        }
-
-        function updateTimerDisplay(seconds) {
-            const minutes = Math.floor(seconds / 60);
-            const secs = seconds % 60;
-            const timeString = `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-            
-            const timerElement = document.getElementById('timer');
-            timerElement.textContent = timeString;
-            
-            // Dynamic warning thresholds based on quiz duration
-            const warningThreshold = Math.max(300, QUIZ_TIME_LIMIT * 0.25); // 25% of quiz time or 5 minutes, whichever is larger
-            const dangerThreshold = Math.max(120, QUIZ_TIME_LIMIT * 0.1); // 10% of quiz time or 2 minutes, whichever is larger
-            
-            // Change color based on remaining time
-            if (seconds <= dangerThreshold) {
-                timerElement.className = 'timer danger';
-            } else if (seconds <= warningThreshold) {
-                timerElement.className = 'timer warning';
-            } else {
-                timerElement.className = 'timer';
-            }
-        }
-
-        // Submit quiz function with anti-cheating context and shuffling support
+        // FIXED Submit quiz function with proper originalFormatAnswers definition
         async function submitQuiz() {
-            console.log('🔍 Enhanced shuffled quiz submission check:', {
-                quizData: quizData,
-                originalQuizData: originalQuizData,
-                studentAnswers: studentAnswers,
-                quizId: quizId,
-                classContext: classContext,
-                quizDuration: QUIZ_TIME_LIMIT / 60, // in minutes
-                violationCount: violationCount, // Include violation count
-                shuffleInfo: quizData.shuffleInfo
+            // Check if this is an auto-submission
+            const isAutoSubmitted = !!window.autoSubmissionReason;
+            const autoReason = window.autoSubmissionReason || null;
+            
+            console.log('📤 Submitting quiz:', {
+                isAutoSubmitted: isAutoSubmitted,
+                reason: autoReason,
+                quizId: quizId
             });
 
             if (!quizData || !quizData.questions || !originalQuizData) {
@@ -1699,14 +1808,14 @@
             // Mark as submitted to prevent further violations
             isQuizSubmitted = true;
 
-            // Check if all questions are answered
-            const unansweredCount = studentAnswers.filter(answer => answer === null).length;
-            
-
-            
-            // Stop timer
+            // Stop ALL timers
             if (timerInterval) {
                 clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            if (examSessionTimer) {
+                clearInterval(examSessionTimer);
+                examSessionTimer = null;
             }
             
             // Calculate time taken
@@ -1739,16 +1848,29 @@
             
             console.log('✅ Converted answers:', originalFormatAnswers);
             
-            // Prepare comprehensive submission data with shuffle info
+            // Add auto-submission data to submissionData object
             const submissionData = {
                 studentAnswers: originalFormatAnswers,
                 timeTakenSeconds: timeTakenSeconds,
-                classContext: classContext, // Enhanced class context
+                classContext: classContext,
+                // Add auto-submission tracking
+                autoSubmissionData: {
+                    wasAutoSubmitted: isAutoSubmitted,
+                    autoSubmissionReason: autoReason,
+                    submissionTrigger: autoReason || 'manual'
+                },
                 // Anti-cheating data
                 antiCheatData: {
                     violationCount: violationCount,
-                    wasAutoSubmitted: violationCount >= MAX_VIOLATIONS,
-                    gracePeriodsUsed: violationCount // Track how many times grace period was activated
+                    wasAutoSubmitted: violationCount >= MAX_VIOLATIONS || !!window.autoSubmissionReason,
+                    gracePeriodsUsed: violationCount, // Track how many times grace period was activated
+                    autoSubmissionReason: window.autoSubmissionReason || null
+                },
+                // Exam mode data
+                examModeData: {
+                    wasExamMode: isExamMode,
+                    timerType: isExamMode ? 'synchronized' : 'regular',
+                    submissionTrigger: window.autoSubmissionReason || 'manual'
                 },
                 // Shuffle data for analytics and verification
                 shuffleData: {
@@ -1765,7 +1887,7 @@
                 }
             };
             
-            console.log('📤 Submitting shuffled quiz with comprehensive data:', submissionData);
+            console.log('📤 Submitting enhanced shuffled quiz with comprehensive data:', submissionData);
             
             // Show loading state
             showSubmissionLoading();
@@ -1782,9 +1904,9 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    console.log('✅ Shuffled quiz submitted successfully:', result);
+                    console.log('✅ Enhanced shuffled quiz submitted successfully:', result);
                     
-                    // Store comprehensive result data with shuffle and violation info
+                    // Store comprehensive result data with shuffle, exam mode and violation info
                     const enhancedResult = {
                         ...result,
                         lectureId: quizData.lectureId || originalQuizData.lectureId,
@@ -1801,9 +1923,16 @@
                         // Include anti-cheating summary
                         antiCheatSummary: {
                             violationCount: violationCount,
-                            wasAutoSubmitted: violationCount >= MAX_VIOLATIONS,
+                            wasAutoSubmitted: violationCount >= MAX_VIOLATIONS || !!window.autoSubmissionReason,
                             securityStatus: violationCount === 0 ? 'Clean' : 
-                                          violationCount === 1 ? 'Warning Issued' : 'Auto-Submitted'
+                                          violationCount === 1 ? 'Warning Issued' : 'Auto-Submitted',
+                            autoSubmissionReason: window.autoSubmissionReason || null
+                        },
+                        // Include exam mode summary
+                        examModeSummary: {
+                            wasExamMode: isExamMode,
+                            timerType: isExamMode ? 'Synchronized Exam Timer' : 'Regular Timer',
+                            submissionTrigger: window.autoSubmissionReason || 'Manual Submission'
                         },
                         // Enhanced navigation context from backend response
                         navigationContext: result.navigationContext || {
@@ -1831,30 +1960,36 @@
             }
         }
 
-        // Show submission loading with shuffle context
+        // Show submission loading with shuffle context and exam mode
         function showSubmissionLoading() {
             document.getElementById('quizContainer').style.display = 'none';
             document.getElementById('loadingContainer').style.display = 'block';
             
             let loadingText = classContext.hasClass 
-                ? `Submitting Your Shuffled ${classContext.className} Quiz...`
-                : 'Submitting Your Shuffled Quiz...';
+                ? `Submitting Your ${isExamMode ? 'Exam Mode ' : ''}Shuffled ${classContext.className} Quiz...`
+                : `Submitting Your ${isExamMode ? 'Exam Mode ' : ''}Shuffled Quiz...`;
                 
             // Add violation context to loading message
             if (violationCount > 0) {
                 loadingText = violationCount >= MAX_VIOLATIONS 
-                    ? 'Auto-Submitting Shuffled Quiz Due to Security Violations...'
+                    ? `Auto-Submitting ${isExamMode ? 'Exam Mode ' : ''}Shuffled Quiz Due to Security Violations...`
                     : loadingText + ' (Security Violations Detected)';
+            }
+            
+            // Add auto-submission context
+            if (window.autoSubmissionReason) {
+                const reasonText = window.autoSubmissionReason === 'exam_timer' ? 'Time Expired' : 'Security Violations';
+                loadingText = `Auto-Submitting ${isExamMode ? 'Exam Mode ' : ''}Quiz (${reasonText})...`;
             }
                 
             document.getElementById('loadingContainer').innerHTML = `
                 <div class="loading-spinner"></div>
                 <h3>${loadingText}</h3>
-                <p>Processing answers, shuffle data, and security information...</p>
+                <p>Processing answers, shuffle data, exam mode info, and security information...</p>
             `;
         }
 
-        // showResults function with anti-cheating and shuffle summary
+        // showResults function with anti-cheating, exam mode and shuffle summary
         function showResults(result) {
             // Hide navigation panel when results are shown
             const navigationPanel = document.getElementById('navigationPanel');
@@ -1879,6 +2014,20 @@
                 <p><strong>Percentage:</strong> ${percentage}%</p>
             `;
             
+            // Add exam mode summary
+            if (result.examModeSummary) {
+                const examSummary = result.examModeSummary;
+                const modeColor = examSummary.wasExamMode ? '#dc2626' : '#3b82f6';
+                
+                resultDetailsHTML += `
+                    <div style="margin-top: 1rem; padding: 1rem; background: #f8fafc; border-radius: 8px; border-left: 4px solid ${modeColor};">
+                        <p><strong>Quiz Mode:</strong> <span style="color: ${modeColor};">${examSummary.wasExamMode ? '🚨 EXAM MODE' : '📝 Regular Quiz'}</span></p>
+                        <p style="font-size: 0.85rem; color: #64748b;">Timer: ${examSummary.timerType}</p>
+                        <p style="font-size: 0.85rem; color: #64748b;">Submission: ${examSummary.submissionTrigger}</p>
+                    </div>
+                `;
+            }
+            
             // Add anti-cheating summary
             if (result.antiCheatSummary) {
                 const summary = result.antiCheatSummary;
@@ -1889,6 +2038,7 @@
                     <div style="margin-top: 1rem; padding: 1rem; background: #f8fafc; border-radius: 8px; border-left: 4px solid ${statusColor};">
                         <p><strong>Security Status:</strong> <span style="color: ${statusColor};">${summary.securityStatus}</span></p>
                         ${summary.violationCount > 0 ? `<p style="font-size: 0.85rem; color: #64748b;">Violations detected: ${summary.violationCount}</p>` : ''}
+                        ${summary.autoSubmissionReason ? `<p style="font-size: 0.85rem; color: #64748b;">Auto-submitted: ${summary.autoSubmissionReason === 'exam_timer' ? 'Time expired' : 'Security violations'}</p>` : ''}
                     </div>
                 `;
             }
@@ -1902,7 +2052,7 @@
             
             document.getElementById('resultDetails').innerHTML = resultDetailsHTML;
 
-            // Store comprehensive results data with shuffle and anti-cheating info
+            // Store comprehensive results data with shuffle, exam mode and anti-cheating info
             const detailedResults = {
                 quizId: quizId,
                 lectureId: result.lectureId || quizData.lectureId,
@@ -1919,6 +2069,8 @@
                 shuffleSummary: result.shuffleSummary,
                 // Anti-cheating data for results page
                 antiCheatSummary: result.antiCheatSummary,
+                // Exam mode data for results page
+                examModeSummary: result.examModeSummary,
                 // Enhanced navigation context for results page
                 navigationContext: result.navigationContext,
                 suggestedRedirect: result.suggestedRedirect,
@@ -1927,17 +2079,17 @@
                     steps: classContext.hasClass ? [
                         { label: 'Dashboard', url: '/homeStudent' },
                         { label: classContext.className, url: `/student/class/${classContext.classId}` },
-                        { label: 'Shuffled Quiz Results', url: null }
+                        { label: 'Enhanced Quiz Results', url: null }
                     ] : [
                         { label: 'Dashboard', url: '/homeStudent' },
-                        { label: 'Shuffled Quiz Results', url: null }
+                        { label: 'Enhanced Quiz Results', url: null }
                     ]
                 }
             };
 
             // Store comprehensive results in localStorage for the results page
             localStorage.setItem('quizResults', JSON.stringify(detailedResults));
-            console.log('📊 Enhanced shuffled results data stored:', detailedResults);
+            console.log('📊 Enhanced shuffled results data with exam mode stored:', detailedResults);
         }
 
         // Prepare detailed question data with shuffle consideration
@@ -1994,7 +2146,8 @@
                         classId: resultsData.classContext.classId,
                         className: resultsData.classContext.className,
                         returnTo: 'class',
-                        shuffled: 'true' // Indicate this was a shuffled quiz
+                        shuffled: 'true', // Indicate this was a shuffled quiz
+                        examMode: resultsData.examModeSummary?.wasExamMode ? 'true' : 'false'
                     });
                     resultsUrl += '?' + params.toString();
                 }
@@ -2028,14 +2181,15 @@
             `;
         }
 
-        // Page unload warning with anti-cheating and shuffle context
+        // Page unload warning with anti-cheating, exam mode and shuffle context
         window.addEventListener('beforeunload', function(e) {
-            if (quizData && timerInterval && !isQuizSubmitted) {
+            if (quizData && (timerInterval || examSessionTimer) && !isQuizSubmitted) {
+                const examModeText = isExamMode ? ' exam mode' : '';
                 const warningMessage = violationCount > 0 
-                    ? `WARNING: You have ${violationCount} security violations!\n\nLeaving now may result in additional violations and auto-submission of your shuffled quiz.`
+                    ? `WARNING: You have ${violationCount} security violations!\n\nLeaving now may result in additional violations and auto-submission of your${examModeText} shuffled quiz.`
                     : classContext.hasClass 
-                        ? `Are you sure you want to leave?\n\nThis is a shuffled ${classContext.className} class quiz and your progress will be lost.`
-                        : 'Are you sure you want to leave? Your shuffled quiz progress will be lost.';
+                        ? `Are you sure you want to leave?\n\nThis is a${examModeText} shuffled ${classContext.className} class quiz and your progress will be lost.`
+                        : `Are you sure you want to leave? Your${examModeText} shuffled quiz progress will be lost.`;
                         
                 e.preventDefault();
                 e.returnValue = warningMessage;
@@ -2043,10 +2197,15 @@
             }
         });
 
-        // Enhanced console log for debugging with shuffle info
-        console.log('🎯 Enhanced shuffled takeQuiz.hbs loaded:', {
+        // Enhanced console log for debugging with shuffle info and exam mode
+        console.log('🎯 Enhanced shuffled takeQuiz.hbs with exam mode timer loaded:', {
             classContext: classContext,
             quizId: quizId,
+            // Enhanced timer features
+            examModeSupport: true,
+            synchronizedTimer: true,
+            regularTimer: true,
+            autoSubmitOnTimeUp: true,
             // Shuffle features
             questionShuffling: true,
             optionShuffling: true,
@@ -2064,7 +2223,8 @@
             navigationPanel: '3-column grid, smaller buttons',
             optionAnimation: 'enhanced click animations',
             shuffleIndicators: true,
-            visualFeedback: 'shuffle badges and indicators'
+            examModeIndicators: true,
+            visualFeedback: 'shuffle badges, exam mode alerts, and enhanced status indicators'
         });
     </script>
 </body>
