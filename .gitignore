@@ -1,23 +1,22 @@
-# Environment variables
+
 .env
 
-# Dependencies
+
 node_modules/
 
-# Uploaded files
+
 uploads/
 
 
-# OS generated files
+
 .DS_Store
 Thumbs.db
 
-# IDE files
+
 .vscode/
 .idea/
 
-# Logs
+
 *.log
 .env
-.env
-.env
+
