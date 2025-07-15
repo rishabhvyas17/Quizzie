@@ -26,14 +26,46 @@ quizAIConnection.on('error', (error) => {
 
 // For Student
 const studentSchema = new mongoose.Schema({
+    // Keep 'name' for display/legacy if needed, but make it optional or derived
+    // If you want to strictly use firstName/lastName, you can remove 'name' here
+    // For now, let's keep it and make it optional, or set it via a pre-save hook.
     name: {
         type: String,
-        required: true
+        required: false // Make it not required, as we'll use firstName/lastName
     },
+    firstName: { // 🆕 NEW FIELD
+        type: String,
+        required: true, // Assuming first name is required for a student
+        trim: true
+    },
+    lastName: { // 🆕 NEW FIELD
+        type: String,
+        required: false, // Last name can be optional
+        trim: true
+    },
+    email: {
+        type: String,
+        unique: true,
+        sparse: true, // Allows null values but enforces uniqueness for non-null
+        trim: true,
+        lowercase: true,
+        match: [/.+@.+\..+/, 'Please fill a valid email address'] // Basic email regex validation
+    },
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
+    pendingEmail: String, // 🆕 NEW FIELD: Stores email pending verification
+    verificationToken: String,
+    verificationTokenExpires: Date,
+    resetPasswordToken: String, // 🆕 NEW FIELD
+    resetPasswordTokenExpires: Date, // 🆕 NEW FIELD
     enrollment: {
         type: String,
         required: true,
-        unique: true
+        unique: true,
+        trim: true,
+        uppercase: true
     },
     password: {
         type: String,
@@ -42,29 +74,91 @@ const studentSchema = new mongoose.Schema({
     createdAt: {
         type: Date,
         default: Date.now
+    },
+    updatedAt: {
+        type: Date,
+        default: Date.now
     }
-})
+});
+
+// Add a pre-save hook to update 'name' from 'firstName' and 'lastName'
+studentSchema.pre('save', function (next) {
+    if (this.isModified('firstName') || this.isModified('lastName') || (!this.firstName && this.name)) {
+        if (!this.firstName && this.name) {
+            const nameParts = this.name.split(' ').filter(part => part.trim() !== '');
+            this.firstName = nameParts[0] || '';
+            this.lastName = nameParts.slice(1).join(' ') || '';
+        }
+        this.name = `${this.firstName || ''} ${this.lastName || ''}`.trim();
+    }
+    this.updatedAt = Date.now();
+    next();
+});
 
 // For Teacher
 const teacherSchema = new mongoose.Schema({
+    // Keep 'name' for display/legacy if needed, but make it optional or derived
     name: {
         type: String,
-        required: true
+        required: false // Make it not required, as we'll use firstName/lastName
+    },
+    firstName: { // 🆕 NEW FIELD
+        type: String,
+        required: true, // Assuming first name is required for a teacher
+        trim: true
+    },
+    lastName: { // 🆕 NEW FIELD
+        type: String,
+        required: false, // Last name can be optional for teachers
+        trim: true
     },
     email: {
         type: String,
         required: true,
-        unique: true
+        unique: true,
+        trim: true,
+        lowercase: true,
+        match: [/.+@.+\..+/, 'Please fill a valid email address']
     },
     password: {
         type: String,
         required: true
     },
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
+    pendingEmail: String, // 🆕 NEW FIELD: Stores email pending verification
+    verificationToken: String,
+    verificationTokenExpires: Date,
+    resetPasswordToken: String, // 🆕 NEW FIELD
+    resetPasswordTokenExpires: Date, // 🆕 NEW FIELD
     createdAt: {
         type: Date,
         default: Date.now
+    },
+    updatedAt: {
+        type: Date,
+        default: Date.now
     }
-})
+});
+
+// Add a pre-save hook to update 'name' from 'firstName' and 'lastName'
+teacherSchema.pre('save', function (next) {
+    // If firstName or lastName are modified, or if they are new and name exists
+    if (this.isModified('firstName') || this.isModified('lastName') || (!this.firstName && this.name)) {
+        // If firstName is not set but name is, try to parse from name (for old data/signup)
+        if (!this.firstName && this.name) {
+            const nameParts = this.name.split(' ').filter(part => part.trim() !== '');
+            this.firstName = nameParts[0] || '';
+            this.lastName = nameParts.slice(1).join(' ') || '';
+        }
+        // Always update the 'name' field from 'firstName' and 'lastName'
+        this.name = `${this.firstName || ''} ${this.lastName || ''}`.trim();
+    }
+    this.updatedAt = Date.now(); // Update updatedAt on every save
+    next();
+});
 
 // ==================== EXISTING CLASS MANAGEMENT SCHEMAS ====================
 
