@@ -1,4 +1,15 @@
-const mongoose = require("mongoose")
+const mongoose = require("mongoose");
+// Use the MONGODB_URI environment variable for a single connection
+// This URI will connect to your MongoDB Atlas cluster, and you can specify the default database name within the URI itself (e.g., /quizai_db)
+mongoose.connect(process.env.MONGODB_URI)
+.then(() => {
+    console.log("✅ Successfully connected to MongoDB Atlas");
+})
+.catch((error) => {
+    console.error("❌ Failed to connect to MongoDB Atlas:", error);
+    // You might want to exit the process if the database connection fails on startup
+    process.exit(1); 
+})
 
 // 🔄 UPDATED: Single QuizAI Database Connection
 const quizAIConnection = mongoose.createConnection("mongodb://localhost:27017/QuizAI");
@@ -15,14 +26,46 @@ quizAIConnection.on('error', (error) => {
 
 // For Student
 const studentSchema = new mongoose.Schema({
+    // Keep 'name' for display/legacy if needed, but make it optional or derived
+    // If you want to strictly use firstName/lastName, you can remove 'name' here
+    // For now, let's keep it and make it optional, or set it via a pre-save hook.
     name: {
         type: String,
-        required: true
+        required: false // Make it not required, as we'll use firstName/lastName
     },
+    firstName: { // 🆕 NEW FIELD
+        type: String,
+        required: true, // Assuming first name is required for a student
+        trim: true
+    },
+    lastName: { // 🆕 NEW FIELD
+        type: String,
+        required: false, // Last name can be optional
+        trim: true
+    },
+    email: {
+        type: String,
+        unique: true,
+        sparse: true, // Allows null values but enforces uniqueness for non-null
+        trim: true,
+        lowercase: true,
+        match: [/.+@.+\..+/, 'Please fill a valid email address'] // Basic email regex validation
+    },
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
+    pendingEmail: String, // 🆕 NEW FIELD: Stores email pending verification
+    verificationToken: String,
+    verificationTokenExpires: Date,
+    resetPasswordToken: String, // 🆕 NEW FIELD
+    resetPasswordTokenExpires: Date, // 🆕 NEW FIELD
     enrollment: {
         type: String,
         required: true,
-        unique: true
+        unique: true,
+        trim: true,
+        uppercase: true
     },
     password: {
         type: String,
@@ -31,29 +74,91 @@ const studentSchema = new mongoose.Schema({
     createdAt: {
         type: Date,
         default: Date.now
+    },
+    updatedAt: {
+        type: Date,
+        default: Date.now
     }
-})
+});
+
+// Add a pre-save hook to update 'name' from 'firstName' and 'lastName'
+studentSchema.pre('save', function (next) {
+    if (this.isModified('firstName') || this.isModified('lastName') || (!this.firstName && this.name)) {
+        if (!this.firstName && this.name) {
+            const nameParts = this.name.split(' ').filter(part => part.trim() !== '');
+            this.firstName = nameParts[0] || '';
+            this.lastName = nameParts.slice(1).join(' ') || '';
+        }
+        this.name = `${this.firstName || ''} ${this.lastName || ''}`.trim();
+    }
+    this.updatedAt = Date.now();
+    next();
+});
 
 // For Teacher
 const teacherSchema = new mongoose.Schema({
+    // Keep 'name' for display/legacy if needed, but make it optional or derived
     name: {
         type: String,
-        required: true
+        required: false // Make it not required, as we'll use firstName/lastName
+    },
+    firstName: { // 🆕 NEW FIELD
+        type: String,
+        required: true, // Assuming first name is required for a teacher
+        trim: true
+    },
+    lastName: { // 🆕 NEW FIELD
+        type: String,
+        required: false, // Last name can be optional for teachers
+        trim: true
     },
     email: {
         type: String,
         required: true,
-        unique: true
+        unique: true,
+        trim: true,
+        lowercase: true,
+        match: [/.+@.+\..+/, 'Please fill a valid email address']
     },
     password: {
         type: String,
         required: true
     },
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
+    pendingEmail: String, // 🆕 NEW FIELD: Stores email pending verification
+    verificationToken: String,
+    verificationTokenExpires: Date,
+    resetPasswordToken: String, // 🆕 NEW FIELD
+    resetPasswordTokenExpires: Date, // 🆕 NEW FIELD
     createdAt: {
         type: Date,
         default: Date.now
+    },
+    updatedAt: {
+        type: Date,
+        default: Date.now
     }
-})
+});
+
+// Add a pre-save hook to update 'name' from 'firstName' and 'lastName'
+teacherSchema.pre('save', function (next) {
+    // If firstName or lastName are modified, or if they are new and name exists
+    if (this.isModified('firstName') || this.isModified('lastName') || (!this.firstName && this.name)) {
+        // If firstName is not set but name is, try to parse from name (for old data/signup)
+        if (!this.firstName && this.name) {
+            const nameParts = this.name.split(' ').filter(part => part.trim() !== '');
+            this.firstName = nameParts[0] || '';
+            this.lastName = nameParts.slice(1).join(' ') || '';
+        }
+        // Always update the 'name' field from 'firstName' and 'lastName'
+        this.name = `${this.firstName || ''} ${this.lastName || ''}`.trim();
+    }
+    this.updatedAt = Date.now(); // Update updatedAt on every save
+    next();
+});
 
 // ==================== EXISTING CLASS MANAGEMENT SCHEMAS ====================
 
@@ -345,7 +450,6 @@ const lectureSchema = new mongoose.Schema({
     }
 });
 
-// Quiz Schema with proper duration field
 const quizSchema = new mongoose.Schema({
     lectureId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -372,6 +476,54 @@ const quizSchema = new mongoose.Schema({
         type: String,
         required: false
     },
+    // 🚨 NEW: Exam Session Mode Fields
+    examSessionMode: {
+        type: Boolean,
+        default: false
+    },
+    examSessionDuration: {
+        type: Number, // Duration in minutes for the exam session
+        required: false,
+        min: 5,
+        max: 180 // Max 3 hours
+    },
+    examSessionStartTime: {
+        type: Date,
+        required: false
+    },
+    examSessionEndTime: {
+        type: Date,
+        required: false
+    },
+    examSessionActive: {
+        type: Boolean,
+        default: false
+    },
+    examSessionCreatedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'TeacherCollection',
+        required: false
+    },
+    examSessionParticipants: [{
+        studentId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'StudentCollection'
+        },
+        studentName: String,
+        joinedAt: {
+            type: Date,
+            default: Date.now
+        },
+        hasSubmitted: {
+            type: Boolean,
+            default: false
+        },
+        submittedAt: Date,
+        autoSubmitted: {
+            type: Boolean,
+            default: false
+        }
+    }],
     questions: [{
         question: {
             type: String,
@@ -388,6 +540,8 @@ const quizSchema = new mongoose.Schema({
             enum: ['A', 'B', 'C', 'D'],
             required: true
         },
+        // Enhanced explanation fields
+
         explanations: {
             A: { type: String, default: "" },
             B: { type: String, default: "" }, 
@@ -430,7 +584,7 @@ const quizSchema = new mongoose.Schema({
     }
 });
 
-// Quiz Results Schema with anti-cheating metadata
+// Quiz Results Schema with anti-cheating metadata and exam session tracking
 const quizResultSchema = new mongoose.Schema({
     quizId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -498,6 +652,23 @@ const quizResultSchema = new mongoose.Schema({
         min: 0,
         max: 100
     },
+    // 🚨 NEW: Exam Session Metadata
+    examSessionData: {
+        wasExamSession: {
+            type: Boolean,
+            default: false
+        },
+        sessionStartTime: Date,
+        sessionEndTime: Date,
+        sessionDurationMinutes: Number,
+        joinedSessionAt: Date,
+        autoSubmittedBySession: {
+            type: Boolean,
+            default: false
+        },
+        sessionTimeRemaining: Number, // Seconds remaining when submitted
+        sessionParticipantCount: Number // How many students were in the session
+    },
     antiCheatMetadata: {
         violationCount: {
             type: Number,
@@ -521,7 +692,7 @@ const quizResultSchema = new mongoose.Schema({
         },
         submissionSource: {
             type: String,
-            enum: ['Manual', 'Auto-Submit', 'Timer-Submit'],
+            enum: ['Manual', 'Auto-Submit', 'Timer-Submit', 'Session-Auto-Submit'],
             default: 'Manual'
         },
         violationDetails: [{
@@ -626,17 +797,34 @@ lectureSchema.index({ professorId: 1, uploadDate: -1 });
 quizSchema.index({ lectureId: 1, generatedDate: -1 });
 quizResultSchema.index({ studentId: 1, submissionDate: -1 });
 
-// Class management indexes
-classSchema.index({ teacherId: 1, createdAt: -1 });
-classSchema.index({ isActive: 1, teacherId: 1 });
-classStudentSchema.index({ classId: 1, isActive: 1 });
-classStudentSchema.index({ studentId: 1, isActive: 1 });
-classStudentSchema.index({ classId: 1, studentId: 1 }, { unique: true });
+
+// 🆕 NEW: Class management indexes
+classSchema.index({ teacherId: 1, createdAt: -1 }); // Find teacher's classes
+classSchema.index({ isActive: 1, teacherId: 1 }); // Active classes for teacher
+classStudentSchema.index({ classId: 1, isActive: 1 }); // Students in a class
+classStudentSchema.index({ studentId: 1, isActive: 1 }); // Classes for a student
+classStudentSchema.index({ classId: 1, studentId: 1 }, { unique: true }); // Prevent duplicates
 
 // Enhanced indexes for class-based queries
 lectureSchema.index({ classId: 1, uploadDate: -1 });
 quizSchema.index({ classId: 1, generatedDate: -1 });
 quizResultSchema.index({ classId: 1, submissionDate: -1 });
+
+// 🚨 NEW: Exam Session Indexes
+quizSchema.index({ examSessionActive: 1 }); // Find active exam sessions
+quizSchema.index({ examSessionEndTime: 1 }); // Cleanup expired sessions
+quizSchema.index({ classId: 1, examSessionActive: 1 }); // Active sessions in class
+quizSchema.index({ 'examSessionParticipants.studentId': 1 }); // Student participation
+
+// Anti-cheat and session tracking indexes
+quizResultSchema.index({ 
+    'examSessionData.wasExamSession': 1, 
+    submissionDate: -1 
+});
+quizResultSchema.index({ 
+    'examSessionData.sessionStartTime': 1,
+    'examSessionData.sessionEndTime': 1 
+});
 
 // 🆕 NEW: Join System Indexes for Performance
 classJoinCodeSchema.index({ joinCode: 1 }, { unique: true }); // Fast code lookup
@@ -673,13 +861,15 @@ quizResultSchema.index({
     submissionDate: -1 
 });
 
-// Explanation cache index
+// Create compound index for fast explanation lookups
+
 explanationCacheSchema.index({ 
     questionText: 1, 
     correctAnswer: 1, 
     wrongAnswer: 1,
     lectureId: 1 
 });
+
 
 // ==================== SCHEMA MIDDLEWARE ====================
 
@@ -807,6 +997,70 @@ quizResultSchema.pre('save', function(next) {
     }
 });
 
+// 🚨 NEW: Exam Session Methods
+quizSchema.methods.startExamSession = async function(durationMinutes, startedBy) {
+    this.examSessionMode = true;
+    this.examSessionDuration = durationMinutes;
+    this.examSessionStartTime = new Date();
+    this.examSessionEndTime = new Date(Date.now() + durationMinutes * 60 * 1000);
+    this.examSessionActive = true;
+    this.examSessionCreatedBy = startedBy;
+    this.examSessionParticipants = [];
+    return await this.save();
+};
+
+quizSchema.methods.addSessionParticipant = async function(studentId, studentName) {
+    const existingParticipant = this.examSessionParticipants.find(
+        p => p.studentId.toString() === studentId.toString()
+    );
+    
+    if (!existingParticipant) {
+        this.examSessionParticipants.push({
+            studentId,
+            studentName,
+            joinedAt: new Date(),
+            hasSubmitted: false
+        });
+        return await this.save();
+    }
+    return this;
+};
+
+quizSchema.methods.markParticipantSubmitted = async function(studentId, autoSubmitted = false) {
+    const participant = this.examSessionParticipants.find(
+        p => p.studentId.toString() === studentId.toString()
+    );
+    
+    if (participant) {
+        participant.hasSubmitted = true;
+        participant.submittedAt = new Date();
+        participant.autoSubmitted = autoSubmitted;
+        return await this.save();
+    }
+    return this;
+};
+
+quizSchema.methods.endExamSession = async function() {
+    this.examSessionActive = false;
+    return await this.save();
+};
+
+quizSchema.methods.getSessionTimeRemaining = function() {
+    if (!this.examSessionActive || !this.examSessionEndTime) {
+        return 0;
+    }
+    const now = new Date();
+    const remaining = Math.max(0, this.examSessionEndTime - now);
+    return Math.floor(remaining / 1000); // Return seconds
+};
+
+quizSchema.methods.isSessionExpired = function() {
+    if (!this.examSessionActive || !this.examSessionEndTime) {
+        return false;
+    }
+    return new Date() > this.examSessionEndTime;
+};
+
 // 🆕 NEW: Join Code Methods
 classJoinCodeSchema.methods.isExpired = function() {
     return new Date() > this.expiresAt;
@@ -877,14 +1131,15 @@ quizResultSchema.virtual('securitySummary').get(function() {
 // ==================== CREATE COLLECTIONS ====================
 
 // User authentication collections
-const studentCollection = quizAIConnection.model("StudentCollection", studentSchema);
-const teacherCollection = quizAIConnection.model("TeacherCollection", teacherSchema);
+const studentCollection = mongoose.model("StudentCollection", studentSchema);
+const teacherCollection = mongoose.model("TeacherCollection", teacherSchema);
 
 // Lecture and quiz system collections
-const lectureCollection = quizAIConnection.model("LectureCollection", lectureSchema);
-const quizCollection = quizAIConnection.model("QuizCollection", quizSchema);
-const quizResultCollection = quizAIConnection.model("QuizResultCollection", quizResultSchema);
-const explanationCacheCollection = quizAIConnection.model("ExplanationCache", explanationCacheSchema);
+const lectureCollection = mongoose.model("LectureCollection", lectureSchema);
+const quizCollection = mongoose.model("QuizCollection", quizSchema);
+const quizResultCollection = mongoose.model("QuizResultCollection", quizResultSchema);
+const explanationCacheCollection = mongoose.model("ExplanationCache", explanationCacheSchema);
+
 
 // Class management collections
 const classCollection = quizAIConnection.model("ClassCollection", classSchema);

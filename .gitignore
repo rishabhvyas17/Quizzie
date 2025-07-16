@@ -1,19 +1,22 @@
-# Dependencies
-node_modules/
 
-# Uploaded files
-uploads/
-
-# Environment variables
 .env
 
-# OS generated files
+
+node_modules/
+
+
+uploads/
+
+
+
 .DS_Store
 Thumbs.db
 
-# IDE files
+
 .vscode/
 .idea/
 
-# Logs
+
 *.log
+.env
+

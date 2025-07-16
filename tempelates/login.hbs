@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,7 +12,7 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -22,9 +23,9 @@
             justify-content: center;
             padding: 20px;
         }
-        
+
         .container {
-            background: rgba(255, 255, 255, 0.95);  
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px);
             border-radius: 20px;
             padding: 40px 30px;
@@ -34,7 +35,7 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             margin-bottom: 2rem;
         }
-        
+
         h1 {
             text-align: center;
             color: #1d1d1f;
@@ -43,7 +44,7 @@
             margin-bottom: 8px;
             letter-spacing: -0.5px;
         }
-        
+
         .subtitle {
             text-align: center;
             color: #6d6d70;
@@ -51,7 +52,7 @@
             margin-bottom: 30px;
             font-weight: 400;
         }
-        
+
         .toggle-container {
             display: flex;
             background: #d0d0db;
@@ -60,7 +61,7 @@
             margin-bottom: 25px;
             position: relative;
         }
-        
+
         .toggle-option {
             flex: 1;
             padding: 12px 20px;
@@ -74,18 +75,18 @@
             position: relative;
             z-index: 2;
         }
-        
+
         .toggle-option.active {
             background: #007aff;
             color: rgb(252, 250, 250);
             transform: scale(1.02);
             box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
         }
-        
+
         .form-group {
             margin-bottom: 20px;
         }
-        
+
         label {
             display: block;
             margin-bottom: 8px;
@@ -93,9 +94,11 @@
             font-size: 15px;
             font-weight: 500;
         }
-        
 
-        input[type="text"], input[type="password"] , input[type="email"]{
+
+        input[type="text"],
+        input[type="password"],
+        input[type="email"] {
 
             width: 100%;
             padding: 16px;
@@ -106,16 +109,18 @@
             transition: all 0.2s ease;
             -webkit-appearance: none;
         }
-        
 
-        input[type="text"]:focus, input[type="password"]:focus,input[type="email"]:focus {
+
+        input[type="text"]:focus,
+        input[type="password"]:focus,
+        input[type="email"]:focus {
 
             outline: none;
             border-color: #007aff;
             box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
             transform: translateY(-2px);
         }
-        
+
         button {
             width: 100%;
             padding: 16px;
@@ -129,50 +134,50 @@
             transition: all 0.2s ease;
             margin-top: 10px;
         }
-        
+
         button:hover {
             background: #0056b3;
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(0, 122, 255, 0.3);
         }
-        
+
         button:active {
             transform: translateY(0);
         }
-        
+
         .signup-link {
             text-align: center;
             margin-top: 25px;
             padding-top: 20px;
             border-top: 1px solid #f2f2f7;
         }
-        
+
         .signup-link p {
             color: #6d6d70;
             font-size: 15px;
         }
-        
+
         .signup-link a {
             color: #007aff;
             text-decoration: none;
             font-weight: 500;
             transition: color 0.2s ease;
         }
-        
+
         .signup-link a:hover {
             color: #0056b3;
         }
 
         /* Footer Styles */
         .footer {
-            
+
             backdrop-filter: blur(20px);
             border-radius: 12px;
             padding: 1rem 1.5rem;
             width: 100%;
             max-width: 460px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-           
+
             margin-top: auto;
         }
 
@@ -198,13 +203,57 @@
         .footer-link:hover {
             color: #a0bcff;
         }
-        
+
+        /* Add this CSS to your <style> block */
+
+        /* Style for individual error messages below inputs */
+        .error-message {
+            color: #e3342f;
+            /* A professional red */
+            font-size: 0.85rem;
+            margin-top: 5px;
+            margin-bottom: -10px;
+            /* Adjust to fit well with existing margin */
+            font-weight: 500;
+            opacity: 0.9;
+            transition: opacity 0.3s ease;
+        }
+
+        /* Style for the general error message box at the top of the form */
+        .general-error-box {
+            background-color: #fcebeb;
+            /* Light red background */
+            border: 1px solid #f29c9c;
+            color: #c53030;
+            /* Darker red text */
+            padding: 12px 20px;
+            margin-bottom: 25px;
+            border-radius: 12px;
+            font-weight: 600;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Optional: Add a subtle border to the input field with an error */
+        .form-group input:focus {
+            /* Keep your existing focus style */
+            outline: none;
+            border-color: #007aff;
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .form-group input.has-error {
+            border-color: #e3342f !important;
+            /* Force red border on error */
+        }
+
         @media (max-width: 480px) {
             .container {
                 margin: 20px;
                 padding: 30px 25px;
             }
-            
+
             h1 {
                 font-size: 24px;
             }
@@ -222,13 +271,14 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
+        <h1 style="font-size: 36px; margin-bottom: 25px; font-weight: 700; color: #007aff;">Quizzie</h1>
         <h1>Welcome Back</h1>
         <p class="subtitle">Sign in to your account</p>
-        
+
         <form action="/login" method="post">
-            <!-- Toggle for Student/Teacher -->
             <div class="toggle-container">
                 <div class="toggle-option active" onclick="selectUserType('student')">
                     Student
@@ -237,31 +287,46 @@
                     Teacher
                 </div>
             </div>
-            
-            <input type="hidden" name="userType" id="userType" value="student">
-            
+
+            <input type="hidden" name="userType" id="userType" value="{{oldInput.userType}}">
+
+
+            {{#if errors.general}}
+            <div class="general-error-box">
+                <p>{{errors.general}}</p>
+            </div>
+            {{/if}}
 
             <div class="form-group" id="user-identifier-group">
-                <!-- Default to Enrollment No. for Student -->
                 <label for="enrollment">Enrollment No.:</label>
-                <input type="text" style="text-transform:uppercase" name="enrollment" id="enrollment" required>
-
+                <input type="text" style="text-transform:uppercase" name="enrollment" id="enrollment"
+                    value="{{oldInput.enrollment}}" required>
+                {{#if errors.enrollment}}
+                <p class="error-message">{{errors.enrollment}}</p>
+                {{/if}}
             </div>
-            
+
             <div class="form-group">
                 <label for="password">Password:</label>
                 <input type="password" name="password" id="password" required>
-            </div>
-            
+                {{#if errors.password}}
+                <p class="error-message">{{errors.password}}</p>
+                {{/if}}
+            </div> 
+            <!-- NEW: Forgot Password Link -->
+        <div style="text-align: right; margin-bottom: 20px;">
+            <a href="/forgot-password" class="text-primary" style="font-size: 0.9rem; text-decoration: none; color: #3b82f6;">Forgot Password?</a>
+        </div>
+
+
             <button type="submit">Login</button>
         </form>
-        
+
         <div class="signup-link">
             <p>Don't have an account? <a href="/signup">Sign up here</a></p>
         </div>
     </div>
 
-    <!-- Footer -->
     <footer class="footer">
         <div class="footer-content">
             <div class="footer-copyright">
@@ -274,33 +339,59 @@
     </footer>
 
     <script>
-        function selectUserType(type) {
-            // Remove active class from all options
-            const options = document.querySelectorAll('.toggle-option');
-            options.forEach(option => option.classList.remove('active'));
-            
-            // Add active class to selected option
-            event.target.classList.add('active');
-            
-            // Update hidden input value
-            document.getElementById('userType').value = type;
+        // This function sets the correct user type, updates the UI, and the hidden input
+        function selectUserType(selectedType) {
+            // Find the toggle options
+            const studentOption = document.querySelector('.toggle-option[onclick*="\'student\'"]');
+            const teacherOption = document.querySelector('.toggle-option[onclick*="\'teacher\'"]');
 
-            
-            // Replace input field
-            const container = document.getElementById('user-identifier-group');
+            // Remove the 'active' class from both options
+            studentOption.classList.remove('active');
+            teacherOption.classList.remove('active');
 
-            if (type === 'student') {
-            container.innerHTML =`
-                <label for="enrollment">Enrollment No.:</label>
-                <input type="text" style="text-transform:uppercase" name="enrollment" id="enrollment" required>`;
-            } 
-            else {
-            container.innerHTML =`
-                <label for="email">Email:</label>
-                <input type="email" name="email" id="email" required>`;
+            // Add the 'active' class to the selected option
+            if (selectedType === 'student') {
+                studentOption.classList.add('active');
+            } else if (selectedType === 'teacher') {
+                teacherOption.classList.add('active');
             }
 
+            // Update the hidden input value to store the selected type
+            document.getElementById('userType').value = selectedType;
+
+            // Dynamically change the input field based on the user type
+            const container = document.getElementById('user-identifier-group');
+            if (selectedType === 'student') {
+                container.innerHTML = `
+                <label for="enrollment">Enrollment No.:</label>
+                <input type="text" style="text-transform:uppercase" name="enrollment" id="enrollment" value="{{oldInput.enrollment}}" required>
+                {{#if errors.enrollment}}
+                    <p class="error-message">{{errors.enrollment}}</p>
+                {{/if}}`;
+            } else { // 'teacher'
+                container.innerHTML = `
+                <label for="email">Email:</label>
+                <input type="email" name="email" id="email" value="{{oldInput.email}}" required>
+                {{#if errors.email}}
+                    <p class="error-message">{{errors.email}}</p>
+                {{/if}}`;
+            }
         }
+
+        // --- SCRIPT TO REMEMBER THE USER TYPE ON PAGE LOAD ---
+        // This script runs automatically when the page is loaded by the browser.
+        document.addEventListener('DOMContentLoaded', () => {
+            // We get the userType from the hidden input.
+            // The server will set its value, but it will be empty on a fresh page load.
+            const userTypeOnLoad = document.getElementById('userType').value;
+
+            // Use a fallback: if userTypeOnLoad is empty, use 'student' as the default.
+            const typeToSet = userTypeOnLoad || 'student';
+
+            // Call our function to set the UI to the correct state based on the value.
+            selectUserType(typeToSet);
+        });
     </script>
 </body>
+
 </html>
