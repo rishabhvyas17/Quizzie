@@ -11,36 +11,24 @@ mongoose.connect(process.env.MONGODB_URI)
     process.exit(1); 
 })
 
-// 🔄 UPDATED: Single QuizAI Database Connection
-const quizAIConnection = mongoose.createConnection("mongodb://localhost:27017/QuizAI");
-
-quizAIConnection.on('connected', () => {
-    console.log("✅ Connected to QuizAI database - All collections unified with Join System!");
-});
-
-quizAIConnection.on('error', (error) => {
-    console.log("❌ Failed to connect to QuizAI database:", error);
-});
 
 // ==================== EXISTING SCHEMAS ====================
 
 // For Student
 const studentSchema = new mongoose.Schema({
-    // Keep 'name' for display/legacy if needed, but make it optional or derived
-    // If you want to strictly use firstName/lastName, you can remove 'name' here
-    // For now, let's keep it and make it optional, or set it via a pre-save hook.
-    name: {
+    name: { // 🆕 MODIFIED: Make 'name' required
         type: String,
-        required: false // Make it not required, as we'll use firstName/lastName
-    },
-    firstName: { // 🆕 NEW FIELD
-        type: String,
-        required: true, // Assuming first name is required for a student
+        required: true, // Now required on the schema
         trim: true
     },
-    lastName: { // 🆕 NEW FIELD
+    firstName: { // 🆕 MODIFIED: Make 'firstName' NOT required
         type: String,
-        required: false, // Last name can be optional
+        required: false, // <--- CHANGE THIS TO false
+        trim: true
+    },
+    lastName: {
+        type: String,
+        required: false,
         trim: true
     },
     email: {
@@ -81,35 +69,40 @@ const studentSchema = new mongoose.Schema({
     }
 });
 
-// Add a pre-save hook to update 'name' from 'firstName' and 'lastName'
+// 🔄 UPDATED: studentSchema.pre('save') hook
 studentSchema.pre('save', function (next) {
-    if (this.isModified('firstName') || this.isModified('lastName') || (!this.firstName && this.name)) {
-        if (!this.firstName && this.name) {
-            const nameParts = this.name.split(' ').filter(part => part.trim() !== '');
-            this.firstName = nameParts[0] || '';
-            this.lastName = nameParts.slice(1).join(' ') || '';
-        }
+    // Ensure firstName and lastName are populated from 'name' if they are missing
+    // This is crucial for initial creation where only 'name' is provided from the form
+    if (this.isNew || (!this.firstName && this.name)) { // 'isNew' checks if it's a new document
+        const nameParts = this.name.trim().split(/\s+/);
+        this.firstName = nameParts[0] || '';
+        this.lastName = nameParts.slice(1).join(' ') || '';
+    }
+
+    // Always ensure 'name' is derived from 'firstName' and 'lastName'
+    // This handles cases where firstName/lastName might be updated directly
+    if (this.isModified('firstName') || this.isModified('lastName') || this.isNew) {
         this.name = `${this.firstName || ''} ${this.lastName || ''}`.trim();
     }
+    
     this.updatedAt = Date.now();
     next();
 });
-
 // For Teacher
 const teacherSchema = new mongoose.Schema({
-    // Keep 'name' for display/legacy if needed, but make it optional or derived
-    name: {
+    name: { // 🆕 MODIFIED: Make 'name' required
         type: String,
-        required: false // Make it not required, as we'll use firstName/lastName
-    },
-    firstName: { // 🆕 NEW FIELD
-        type: String,
-        required: true, // Assuming first name is required for a teacher
+        required: true, // Now required on the schema
         trim: true
     },
-    lastName: { // 🆕 NEW FIELD
+    firstName: { // 🆕 MODIFIED: Make 'firstName' NOT required
         type: String,
-        required: false, // Last name can be optional for teachers
+        required: false, // <--- CHANGE THIS TO false
+        trim: true
+    },
+    lastName: {
+        type: String,
+        required: false,
         trim: true
     },
     email: {
@@ -143,20 +136,23 @@ const teacherSchema = new mongoose.Schema({
     }
 });
 
-// Add a pre-save hook to update 'name' from 'firstName' and 'lastName'
+// 🔄 UPDATED: teacherSchema.pre('save') hook
 teacherSchema.pre('save', function (next) {
-    // If firstName or lastName are modified, or if they are new and name exists
-    if (this.isModified('firstName') || this.isModified('lastName') || (!this.firstName && this.name)) {
-        // If firstName is not set but name is, try to parse from name (for old data/signup)
-        if (!this.firstName && this.name) {
-            const nameParts = this.name.split(' ').filter(part => part.trim() !== '');
-            this.firstName = nameParts[0] || '';
-            this.lastName = nameParts.slice(1).join(' ') || '';
-        }
-        // Always update the 'name' field from 'firstName' and 'lastName'
+    // Ensure firstName and lastName are populated from 'name' if they are missing
+    // This is crucial for initial creation where only 'name' is provided from the form
+    if (this.isNew || (!this.firstName && this.name)) { // 'isNew' checks if it's a new document
+        const nameParts = this.name.trim().split(/\s+/);
+        this.firstName = nameParts[0] || '';
+        this.lastName = nameParts.slice(1).join(' ') || '';
+    }
+
+    // Always ensure 'name' is derived from 'firstName' and 'lastName'
+    // This handles cases where firstName/lastName might be updated directly
+    if (this.isModified('firstName') || this.isModified('lastName') || this.isNew) {
         this.name = `${this.firstName || ''} ${this.lastName || ''}`.trim();
     }
-    this.updatedAt = Date.now(); // Update updatedAt on every save
+    
+    this.updatedAt = Date.now();
     next();
 });
 
@@ -1000,12 +996,12 @@ const explanationCacheCollection = mongoose.model("ExplanationCache", explanatio
 
 
 // Class management collections
-const classCollection = quizAIConnection.model("ClassCollection", classSchema);
-const classStudentCollection = quizAIConnection.model("ClassStudentCollection", classStudentSchema);
+const classCollection = mongoose.model("ClassCollection", classSchema);
+const classStudentCollection = mongoose.model("ClassStudentCollection", classStudentSchema);
 
 // 🆕 NEW: Join System Collections
-const classJoinCodeCollection = quizAIConnection.model("ClassJoinCodeCollection", classJoinCodeSchema);
-const classJoinRequestCollection = quizAIConnection.model("ClassJoinRequestCollection", classJoinRequestSchema);
+const classJoinCodeCollection = mongoose.model("ClassJoinCodeCollection", classJoinCodeSchema);
+const classJoinRequestCollection = mongoose.model("ClassJoinRequestCollection", classJoinRequestSchema);
 
 // ==================== EXPORT ALL COLLECTIONS ====================
 

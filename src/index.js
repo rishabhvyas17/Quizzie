@@ -3,16 +3,6 @@
 // npm i express hbs mongoose multer pdf-parse mammoth node-pptx-parser @google/generative-ai dotenv nodemon express-session connect-mongo
 // Run with: nodemon src/index.js
 
-/* 
-    Deployment Essentials :- 
-
-    gcloud run deploy quizai-service \
-  --source . \
-  --region asia-east1 \
-  --allow-unauthenticated \
---set-env-vars 'GEMINI_API_KEY=AIzaSyDaD6ki59Xh7dX8f4CpRGzcucgdVpLd9Q8,MONGODB_URI=mongodb+srv://rishabhvyas:faCWMxbu0XPPVwSe@quizziedb.jdvsntc.mongodb.net/?retryWrites=true&w=majority&appName=QuizzieDB,SESSION_SECRET=xKj8mP9$vL2@nQ5!rT7&wE3*uI6%oA1^sD4+fG8-hB0~xC99'
-
-*/
 
 const express = require("express")
 const app = express()
@@ -57,7 +47,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
 
 // Configuration
-const PORT = process.env.PORT || 8080
+const PORT = process.env.PORT || 8080 ;
 const TEMP_UPLOAD_DIR = './temp_uploads'
 const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100MB
 const templatePath = path.join(__dirname, '../tempelates')
@@ -84,7 +74,7 @@ app.use(session({
     }),
     cookie: {
         maxAge: 1000 * 60 * 60 * 24 * 14, // 14 days in milliseconds
-        secure: false, // IMPORTANT: Set to true in production (requires HTTPS, which Render/GCP provide)
+        secure: process.env.NODE_ENV === 'production', // IMPORTANT: Set to true in production (requires HTTPS, which Render/GCP provide)
         httpOnly: true, // Prevents client-side JavaScript from accessing the cookie
         sameSite: 'lax' // Recommended for security: 'strict', 'lax', or 'none'. 'lax' is often a good balance.
     },
@@ -6881,7 +6871,7 @@ app.use((error, req, res, next) => {
     }
 
     next(error)
-})
+});
 
 // ==================== SERVER STARTUP ====================
 
