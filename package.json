@@ -1,17 +1,23 @@
 {
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node src/index.js"
+  },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "@sendinblue/client": "^3.3.1",
     "connect-mongo": "^5.1.0",
-    "dotenv": "^16.5.0",
+    "dotenv": "^16.6.1",
     "express": "^5.1.0",
     "express-session": "^1.18.1",
     "hbs": "^4.2.0",
     "mammoth": "^1.9.1",
     "mongoose": "^8.16.0",
     "multer": "^2.0.1",
+    "node-pptx-parser": "^1.0.1",
     "nodemon": "^3.1.10",
     "officeparser": "^5.1.1",
     "pdf-parse": "^1.1.1",
-    "pptx2json": "^0.0.10"
+    "sib-api-v3-sdk": "^8.5.0"
   }
 }

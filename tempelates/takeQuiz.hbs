@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{#if quiz.className}}{{quiz.className}} - {{/if}}{{quiz.lectureTitle}} - QuizzieI</title>
+    <title>{{#if quiz.className}}{{quiz.className}} - {{/if}}{{quiz.lectureTitle}} - Quizzie</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <style>
         * {
@@ -878,7 +878,7 @@
         let studentAnswers = [];
         let visitedQuestions = []; // Track which questions have been viewed
         const quizId = window.location.pathname.split('/').pop();
-        let QUIZ_TIME_LIMIT = 30 * 60; // Default 30 minutes, will be updated from API
+        let QUIZ_TIME_LIMIT = 15 * 60; // Default to 15 minutes in seconds
 
         // Enhanced Class context data from server
         const classContext = {

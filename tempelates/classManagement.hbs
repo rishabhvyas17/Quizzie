@@ -3674,6 +3674,7 @@ async function endExamSession(quizId) {
 }
 
 
+
         // 🆕 NEW: Adjust session duration for specific quiz
         function adjustQuizSessionDuration(quizId, change) {
             const valueElement = document.getElementById(`sessionDuration_${quizId}`);
@@ -4040,7 +4041,7 @@ async function endExamSession(quizId) {
         function updateAnalyticsStats(data) {
             if (data && data.classData) {
                 document.getElementById('totalStudents').textContent = data.classData.studentCount || 0;
-                document.getElementById('classAverage').textContent = formatPercentage(data.classData.averageScore || 0) + '%';
+                document.getElementById('classAverage').textContent = (parseFloat(data.classData.averageScore) || 0).toFixed(2) + '%';
                 document.getElementById('totalQuizzes').textContent = data.classData.quizCount || 0;
                 
                 const totalAttempts = analyticsData && analyticsData.totalQuizAttempts 
@@ -4075,7 +4076,7 @@ async function endExamSession(quizId) {
                             </div>
                         </div>
                         <div class="student-rank-score">
-                            <div class="student-score-main">${formatPercentage(student.averageScore)}% (${student.finalPoints}pts)</div>
+                            <div class="student-score-main">${(parseFloat(student.averageScore) || 0).toFixed(2)}% (${student.finalPoints}pts)</div>
                             <div class="student-score-sub">Score + Time + Participation</div>
                         </div>
                     </div>
@@ -4141,8 +4142,7 @@ async function endExamSession(quizId) {
                         <span style="font-weight: 500;">${activity.studentName}</span>
                         <div style="font-size: 0.8rem; color: #64748b;">${activity.submissionDate} • ${activity.timeTaken}</div>
                     </div>
-                    <div style="font-weight: bold; color: #3b82f6;">${formatPercentage(activity.score)}%</div>
-                </div>
+                    <div style="font-weight: bold; color: #3b82f6;">${(parseFloat(activity.score) || 0).toFixed(2)}%</div>
             `).join('');
 
             container.innerHTML = activitiesHTML;
@@ -4307,7 +4307,7 @@ async function endExamSession(quizId) {
                         <div style="color: #64748b;">Participants</div>
                     </div>
                     <div style="text-align: center; padding: 1rem; background: #f8fafc; border-radius: 8px;">
-                        <div style="font-size: 1.5rem; font-weight: bold; color: #10b981;">${formatPercentage(analytics.classAverage || 0)}%</div>
+                        <div style="font-size: 1.5rem; font-weight: bold; color: #10b981;">${(parseFloat(analytics.classAverage) || 0).toFixed(2)}%</div>
                         <div style="color: #64748b;">Average Score</div>
                     </div>
                     <div style="text-align: center; padding: 1rem; background: #f8fafc; border-radius: 8px;">
@@ -4333,9 +4333,9 @@ async function endExamSession(quizId) {
                                 <tr>
                                     <td>${quiz.quizTitle}</td>
                                     <td>${quiz.totalAttempts}</td>
-                                    <td><strong>${formatPercentage(quiz.averageScore)}%</strong></td>
-                                    <td>${formatPercentage(quiz.highestScore)}%</td>
-                                    <td>${formatPercentage(quiz.lowestScore)}%</td>
+                                    <td><strong>${(parseFloat(quiz.averageScore) || 0).toFixed(2)}%</strong></td>
+                                    <td>${(parseFloat(quiz.highestScore) || 0).toFixed(2)}%</td>
+                                    <td>${(parseFloat(quiz.lowestScore) || 0).toFixed(2)}%</td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -4414,7 +4414,7 @@ async function endExamSession(quizId) {
                             <div class="student-stat-label">Quizzes</div>
                         </div>
                         <div class="student-stat">
-                            <div class="student-stat-value">${formatPercentage(student.averageScore)}%</div>
+                            <div class="student-stat-value">${(parseFloat(student.averageScore) || 0).toFixed(2)}%</div>
                             <div class="student-stat-label">Average</div>
                         </div>
                     </div>

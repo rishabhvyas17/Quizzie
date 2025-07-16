@@ -1068,6 +1068,8 @@
             <nav>
                 <ul class="nav-links">
                     <li><a class="active">My Classes</a></li>
+                    <!-- NEW: Add My Profile Link -->
+                    <li><a href="/profileStudent">My Profile</a></li>
                 </ul>
             </nav>
             <div class="profile-section">
@@ -1333,7 +1335,7 @@
                             <span class="class-stat-label">Quizzes Taken</span>
                         </div>
                         <div class="class-stat">
-                            <span class="class-stat-value">${classItem.averageScore || 0}%</span>
+                            <span class="class-stat-value">${(parseFloat(classItem.averageScore) || 0).toFixed(2)}%</span>
                             <span class="class-stat-label">Average Score</span>
                         </div>
                         <div class="class-stat">
@@ -1417,7 +1419,7 @@
         function updateDashboardStats(classes, overallStats) {
             if (overallStats) {
                 document.getElementById('enrolledClassesCount').textContent = overallStats.totalClasses;
-                document.getElementById('overallAverage').textContent = (overallStats.overallAverage || 0) + '%';
+                document.getElementById('overallAverage').textContent = (parseFloat(overallStats.overallAverage) || 0).toFixed(2) + '%';
                 document.getElementById('totalQuizAttempts').textContent = overallStats.totalQuizAttempts;
                 document.getElementById('activeClassesCount').textContent = overallStats.activeClasses;
                 
@@ -1446,7 +1448,7 @@
                     }
                 });
                 
-                const overallAverage = totalQuizzes > 0 ? (totalScore / totalQuizzes).toFixed(1) : 0;
+                const overallAverage = totalQuizzes > 0 ? (totalScore / totalQuizzes).toFixed(2) : '0.00'; // Changed to .toFixed(2) and default string for consistency
                 
                 document.getElementById('enrolledClassesCount').textContent = totalClasses;
                 document.getElementById('overallAverage').textContent = overallAverage + '%';

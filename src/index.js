@@ -1,7 +1,18 @@
 // QuizAI Server - Express.js Application
 // Dependencies to install:
-// npm i express hbs mongoose multer pdf-parse mammoth pptx2json @google/generative-ai dotenv nodemon express-session
+// npm i express hbs mongoose multer pdf-parse mammoth node-pptx-parser @google/generative-ai dotenv nodemon express-session connect-mongo
 // Run with: nodemon src/index.js
+
+/* 
+    Deployment Essentials :- 
+
+    gcloud run deploy quizai-service \
+  --source . \
+  --region asia-east1 \
+  --allow-unauthenticated \
+--set-env-vars 'GEMINI_API_KEY=AIzaSyDaD6ki59Xh7dX8f4CpRGzcucgdVpLd9Q8,MONGODB_URI=mongodb+srv://rishabhvyas:faCWMxbu0XPPVwSe@quizziedb.jdvsntc.mongodb.net/?retryWrites=true&w=majority&appName=QuizzieDB,SESSION_SECRET=xKj8mP9$vL2@nQ5!rT7&wE3*uI6%oA1^sD4+fG8-hB0~xC99'
+
+*/
 
 const express = require("express")
 const app = express()
@@ -12,22 +23,27 @@ const fs = require("fs")
 const pdfParse = require("pdf-parse")
 const mammoth = require("mammoth")
 const session = require('express-session');
-
-
-
-// Fix for pptx2json import/usage
-const { toJson } = require("pptx2json")
-
+const MongoStore = require('connect-mongo'); // ADD THIS LINE for persistent sessions
 // Load environment variables from .env file
 require('dotenv').config()
+const crypto = require('crypto'); // NEW: For generating tokens
+// --- NEW: Import your email service and template renderer ---
+const { sendEmail } = require('./services/emailService');
+const { renderEmailTemplate } = require('./utils/templateRenderer');
+
+
+
+// Add the new import for node-pptx-parser
+const PptxParser = require("node-pptx-parser").default; // Note the .default for CommonJS
+
 
 // Import database collections
-const { 
-    studentCollection, 
-    teacherCollection, 
-    lectureCollection, 
-    quizCollection, 
-    quizResultCollection, 
+const {
+    studentCollection,
+    teacherCollection,
+    lectureCollection,
+    quizCollection,
+    quizResultCollection,
     explanationCacheCollection,
     classCollection,           // 🆕 NEW
     classStudentCollection,     // 🆕 NEW
@@ -41,61 +57,69 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
 
 // Configuration
-const PORT = 3000
+const PORT = process.env.PORT || 8080
 const TEMP_UPLOAD_DIR = './temp_uploads'
 const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100MB
 const templatePath = path.join(__dirname, '../tempelates')
+const VERIFICATION_TOKEN_EXPIRY = 24 * 60 * 60 * 1000;
+const PASSWORD_RESET_TOKEN_EXPIRY = 60 * 60 * 1000; // 1 hour // 🆕 NEW CONSTANT
 
 // Express configuration
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
-
 app.use(express.static(path.join(__dirname, '../public')))
-
 app.set("view engine", "hbs")
 app.set("views", templatePath)
 
-
-// Session configuration
+// Configure and use express-session middleware with MongoStore
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'a_very_secret_key_for_quizai',
-    resave: false,
-    saveUninitialized: false,
+    secret: process.env.SESSION_SECRET, // IMPORTANT: Ensure this env var is set in Render/GCP
+    resave: false, // Prevents session from being saved back to the session store on every request
+    saveUninitialized: false, // Prevents uninitialized sessions from being saved to the store
+    store: MongoStore.create({
+        mongoUrl: process.env.MONGODB_URI, // CRITICAL: Use your Atlas URI for session storage
+        ttl: 14 * 24 * 60 * 60, // Session will expire after 14 days (in seconds)
+        autoRemove: 'interval', // Auto-remove expired sessions
+        autoRemoveInterval: 10 // In minutes. MongoStore will clean up expired sessions every 10 minutes.
+    }),
     cookie: {
-        maxAge: 1000 * 60 * 60 * 24, // 1 day
-        httpOnly: true
-    }
+        maxAge: 1000 * 60 * 60 * 24 * 14, // 14 days in milliseconds
+        secure: false, // IMPORTANT: Set to true in production (requires HTTPS, which Render/GCP provide)
+        httpOnly: true, // Prevents client-side JavaScript from accessing the cookie
+        sameSite: 'lax' // Recommended for security: 'strict', 'lax', or 'none'. 'lax' is often a good balance.
+    },
+    proxy: true // IMPORTANT: Trust the reverse proxy (Cloud Run)
 }));
 
 // ==================== HANDLEBARS HELPERS REGISTRATION ====================
 // Register Handlebars helpers
-hbs.registerHelper('eq', function(a, b) {
+hbs.registerHelper('eq', function (a, b) {
     return a === b;
 });
 
-hbs.registerHelper('add', function(a, b) {
+hbs.registerHelper('add', function (a, b) {
     return a + b;
 });
 
-hbs.registerHelper('getScoreClass', function(percentage) {
+hbs.registerHelper('getScoreClass', function (percentage) {
     if (percentage >= 90) return 'excellent';
     if (percentage >= 70) return 'good';
     if (percentage >= 50) return 'average';
     return 'poor';
 });
 
-hbs.registerHelper('formatTime', function(seconds) {
+hbs.registerHelper('formatTime', function (seconds) {
     const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${minutes}m ${secs}s`;
 });
 
-hbs.registerHelper('json', function(context) {
+hbs.registerHelper('json', function (context) {
     return JSON.stringify(context);
 });
 
 // Enhanced ranking helper
-hbs.registerHelper('getRankClass', function(index) {
+hbs.registerHelper('getRankClass', function (index) {
     if (index === 0) return 'rank-1';
     if (index === 1) return 'rank-2';
     if (index === 2) return 'rank-3';
@@ -103,12 +127,12 @@ hbs.registerHelper('getRankClass', function(index) {
 });
 
 // Date formatting helper
-hbs.registerHelper('formatDate', function(date) {
+hbs.registerHelper('formatDate', function (date) {
     return new Date(date).toLocaleDateString();
 });
 
 // Percentage formatting helper
-hbs.registerHelper('toFixed', function(number, decimals) {
+hbs.registerHelper('toFixed', function (number, decimals) {
     return parseFloat(number).toFixed(decimals || 1);
 });
 
@@ -175,52 +199,61 @@ const upload = multer({
 // ==================== TEXT EXTRACTION FUNCTIONS ====================
 
 async function extractTextFromPDF(filePath) {
+    let extractedText = '';
     try {
-        const dataBuffer = fs.readFileSync(filePath)
-        const data = await pdfParse(dataBuffer)
-        console.log(`✅ PDF text extracted - Length: ${data.text.length} characters`)
-        return data.text
-    } catch (error) {
-        console.error('❌ PDF extraction error:', error)
-        throw new Error('Failed to extract text from PDF')
+        console.log(`🔌 Starting PDF text extraction for: ${filePath}`);
+        const dataBuffer = fs.readFileSync(filePath);
+        const data = await pdfParse(dataBuffer);
+        extractedText = data.text.trim();
+        console.log('✅ PDF text extracted successfully (first 500 chars):', extractedText.substring(0, 500));
+    } catch (pdfError) {
+        console.error('❌ Error extracting text from PDF:', pdfError);
+        extractedText = "Error extracting text from PDF."; // Indicate extraction failure
     }
+    return extractedText;
 }
 
 async function extractTextFromWord(filePath) {
+    let extractedText = '';
     try {
-        const result = await mammoth.extractRawText({ path: filePath })
-        console.log(`✅ Word text extracted - Length: ${result.value.length} characters`)
-        return result.value
-    } catch (error) {
-        console.error('❌ Word extraction error:', error)
-        throw new Error('Failed to extract text from Word document')
+        console.log(`🔌 Starting Word text extraction for: ${filePath}`);
+        const result = await mammoth.extractRawText({ path: filePath });
+        extractedText = result.value.trim(); // The raw text
+        console.log('✅ Word text extracted successfully (first 500 chars):', extractedText.substring(0, 500));
+    } catch (wordError) {
+        console.error('❌ Error extracting text from Word:', wordError);
+        extractedText = "Error extracting text from Word."; // Indicate extraction failure
     }
+    return extractedText;
 }
 
 async function extractTextFromPowerPoint(filePath) {
+    let extractedText = '';
     try {
-        const data = await toJson(filePath)
-        let extractedText = ''
+        console.log(`🔌 Initializing PptxParser for: ${filePath}`);
+        const parser = new PptxParser(filePath); // Create a new parser instance
 
-        if (data && data.slides) {
-            data.slides.forEach((slide, index) => {
-                extractedText += `\n--- Slide ${index + 1} ---\n`
-                if (slide.content) {
-                    slide.content.forEach(content => {
-                        if (content.text) {
-                            extractedText += content.text + '\n'
-                        }
-                    })
-                }
-            })
+        console.log('🔄 Extracting text using node-pptx-parser...');
+        // extractText() returns an array of SlideTextContent objects, each with a 'text' array
+        const textContent = await parser.extractText();
+
+        if (textContent && textContent.length > 0) {
+            // Join all text from all slides and then join lines within each slide's text
+            extractedText = textContent.map(slide => slide.text.join('\n')).join('\n\n').trim();
+            console.log('✅ PPTX text extracted successfully (first 500 chars):', extractedText.substring(0, 500));
+        } else {
+            console.warn('⚠️ node-pptx-parser extracted no text from the PPTX file.');
         }
 
-        console.log(`✅ PowerPoint text extracted - Length: ${extractedText.length} characters`)
-        return extractedText || "No text found in PowerPoint file"
-    } catch (error) {
-        console.error('❌ PowerPoint extraction error:', error)
-        return "PowerPoint file uploaded successfully. Text extraction failed, but content is available."
+        if (extractedText.length === 0) {
+            console.warn('⚠️ PPTX extraction yielded empty content after processing.');
+        }
+
+    } catch (pptxError) {
+        console.error('❌ Error extracting text from PowerPoint with node-pptx-parser:', pptxError);
+        extractedText = "Error extracting text from PowerPoint."; // Indicate extraction failure
     }
+    return extractedText;
 }
 
 async function extractTextFromFile(filePath, mimetype) {
@@ -239,7 +272,6 @@ async function extractTextFromFile(filePath, mimetype) {
             throw new Error('Unsupported file type')
     }
 }
-
 // ==================== UTILITY FUNCTIONS ====================
 
 function getFileType(mimetype) {
@@ -295,59 +327,129 @@ app.get("/signup", (req, res) => {
     res.render("signup")
 })
 
+// 🔄 UPDATED: signup route to show errors on the same page
 app.post("/signup", async (req, res) => {
     try {
-        const { userType, name, email, enrollment, password } = req.body
+        const { userType, name, email, enrollment, password } = req.body;
+        const errors = {};
 
         if (userType === 'teacher') {
-            const teacherData = { name, email, password }
-            await teacherCollection.insertMany([teacherData])
+            // Check if teacher email already exists
+            const existingTeacher = await teacherCollection.findOne({ email: email });
+            if (existingTeacher) {
+                errors.email = "User with this email already exists.";
+            }
+
+            if (Object.keys(errors).length > 0) {
+                // If errors, re-render the signup page with errors and old input
+                return res.render("signup", { errors: errors, userType, name, email, enrollment });
+            }
+
+            // If no errors, proceed with registration
+            const teacherData = { name, email, password };
+            await teacherCollection.insertMany([teacherData]);
             const newTeacher = await teacherCollection.findOne({ email: email });
             req.session.userId = newTeacher._id;
             req.session.userName = newTeacher.name;
             req.session.userType = userType;
-            res.redirect(`/homeTeacher?userName=${encodeURIComponent(newTeacher.name)}`);
-        } else {
-            const studentData = { name, enrollment, password }
-            await studentCollection.insertMany([studentData])
-            const newStudent = await studentCollection.findOne({ enrollment: enrollment });
+
+            // Save the session before redirecting to avoid race conditions
+            req.session.save((err) => {
+                if (err) {
+                    console.error("Error saving session:", err);
+                    return res.render("signup", { errors: { general: "Error during registration." } });
+                }
+                res.redirect(`/homeTeacher?userName=${encodeURIComponent(newTeacher.name)}`);
+            });
+
+        } else { // Student
+            const upperCaseEnrollment = enrollment.toUpperCase();
+            // Check if student enrollment number already exists
+            const existingStudent = await studentCollection.findOne({ enrollment: upperCaseEnrollment });
+            if (existingStudent) {
+                errors.enrollment = "User with this enrollment number already exists.";
+            }
+
+            if (Object.keys(errors).length > 0) {
+                // If errors, re-render the signup page with errors and old input
+                return res.render("signup", { errors: errors, userType, name, email, enrollment });
+            }
+
+            // If no errors, proceed with registration
+            const studentData = { name, enrollment: upperCaseEnrollment, password };
+            await studentCollection.insertMany([studentData]);
+            const newStudent = await studentCollection.findOne({ enrollment: upperCaseEnrollment });
             req.session.userId = newStudent._id;
             req.session.userName = newStudent.name;
             req.session.userType = userType;
-            res.redirect(`/homeStudent?userName=${encodeURIComponent(newStudent.name)}`);
+
+            // Save the session before redirecting to avoid race conditions
+            req.session.save((err) => {
+                if (err) {
+                    console.error("Error saving session:", err);
+                    return res.render("signup", { errors: { general: "Error during registration." } });
+                }
+                res.redirect(`/homeStudent?userName=${encodeURIComponent(newStudent.name)}`);
+            });
         }
     } catch (error) {
-        console.error('❌ Signup error:', error)
-        res.send("Error during registration: " + error.message)
+        console.error('❌ Signup error:', error);
+        res.render("signup", { errors: { general: "An unexpected error occurred during registration. Please try again." } });
     }
-})
+});
 
+// 🔄 UPDATED: login route to show errors on the same page
 app.post("/login", async (req, res) => {
     try {
-        const { password, userType, email, enrollment } = req.body
-        let user
+        const { password, userType, email, enrollment } = req.body;
+        let user;
+        const errors = {};
+        const oldInput = { userType, email, enrollment };
 
         if (userType === 'teacher') {
-            user = await teacherCollection.findOne({ email: email })
-        } else {
-            user = await studentCollection.findOne({ enrollment: enrollment })
+            user = await teacherCollection.findOne({ email: email });
+            if (!user) {
+                errors.email = "No user found with this email.";
+            }
+        } else { // Student
+            const upperCaseEnrollment = enrollment ? enrollment.toUpperCase() : null;
+            user = await studentCollection.findOne({ enrollment: upperCaseEnrollment });
+            if (!user) {
+                errors.enrollment = "No user found with this enrollment number.";
+            }
         }
 
-        if (user && user.password === password) {
+        if (Object.keys(errors).length > 0) {
+            // Re-render login page with an error message
+            return res.render("login", { errors: errors, oldInput: oldInput });
+        }
+
+        // If user is found, check the password
+        if (user.password === password) {
             req.session.userId = user._id;
             req.session.userName = user.name;
             req.session.userType = userType;
 
-            const redirectUrl = userType === 'teacher' ? '/homeTeacher' : '/homeStudent'
-            res.redirect(`${redirectUrl}?userName=${encodeURIComponent(user.name)}`)
+            // Save the session before redirecting to avoid a race condition
+            req.session.save((err) => {
+                if (err) {
+                    console.error("Error saving session:", err);
+                    return res.render("login", { errors: { general: "Login failed due to an internal error." }, oldInput: oldInput });
+                }
+                const redirectUrl = userType === 'teacher' ? '/homeTeacher' : '/homeStudent';
+                res.redirect(`${redirectUrl}?userName=${encodeURIComponent(user.name)}`);
+            });
+
         } else {
-            res.send("Wrong credentials")
+            // Password does not match
+            errors.password = "Wrong password.";
+            return res.render("login", { errors: errors, oldInput: oldInput });
         }
     } catch (error) {
-        console.error('❌ Login error:', error)
-        res.send("Login failed")
+        console.error('❌ Login error:', error);
+        res.render("login", { errors: { general: "An unexpected error occurred during login. Please try again." } });
     }
-})
+});
 
 app.get('/logout', (req, res) => {
     req.session.destroy(err => {
@@ -359,6 +461,176 @@ app.get('/logout', (req, res) => {
     });
 })
 
+// 🆕 NEW: GET route for Forgot Password page
+app.get('/forgot-password', (req, res) => {
+    res.render('forgotPassword', {
+        message: req.query.message,
+        error: req.query.error
+    });
+});
+
+// 🆕 NEW: POST route to handle Forgot Password email submission
+app.post('/forgot-password', async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            return res.redirect('/forgot-password?error=' + encodeURIComponent('Please enter your email address.'));
+        }
+
+        // Find user (student or teacher) by email
+        let user = await studentCollection.findOne({ email: email });
+        if (!user) {
+            user = await teacherCollection.findOne({ email: email });
+        }
+
+        // IMPORTANT: Always send a generic success message to prevent email enumeration
+        if (!user) {
+            console.log(`DEBUG: Password reset requested for non-existent email: ${email}`);
+            return res.redirect('/forgot-password?message=' + encodeURIComponent('If an account with that email exists, a password reset link has been sent.'));
+        }
+
+        // Generate reset token and expiry
+        user.resetPasswordToken = crypto.randomBytes(32).toString('hex');
+        user.resetPasswordTokenExpires = new Date(Date.now() + PASSWORD_RESET_TOKEN_EXPIRY);
+        await user.save();
+
+        const resetLink = `${process.env.BASE_URL}/reset-password/${user.resetPasswordToken}`;
+
+        const emailHtml = await renderEmailTemplate('resetPasswordEmail', {
+            username: user.firstName || user.name, // Use firstName if available, fallback to full name
+            resetLink: resetLink
+        });
+
+        const emailResult = await sendEmail({
+            to: user.email,
+            subject: 'Quizzie: Password Reset Request',
+            html: emailHtml,
+            text: `Hello ${user.firstName || user.name},\n\nYou have requested to reset your password for your Quizzie account. Please click the following link to set a new password: ${resetLink}\n\nThis link will expire in 1 hour.\n\nIf you did not request a password reset, please ignore this email.\n\nBest regards,\nThe Quizzie Team`
+        });
+
+        if (emailResult.success) {
+            return res.redirect('/forgot-password?message=' + encodeURIComponent('If an account with that email exists, a password reset link has been sent to your inbox.'));
+        } else {
+            console.error('❌ Error sending password reset email:', emailResult.message);
+            return res.redirect('/forgot-password?error=' + encodeURIComponent('Failed to send password reset email. Please try again later.'));
+        }
+
+    } catch (error) {
+        console.error('❌ Error in forgot password request:', error);
+        return res.redirect('/forgot-password?error=' + encodeURIComponent('An unexpected error occurred. Please try again.'));
+    }
+});
+
+// 🆕 NEW: GET route to render Reset Password page
+app.get('/reset-password/:token', async (req, res) => {
+    try {
+        const { token } = req.params;
+
+        // Find user (student or teacher) by token and check expiry
+        let user = await studentCollection.findOne({
+            resetPasswordToken: token,
+            resetPasswordTokenExpires: { $gt: Date.now() }
+        });
+        if (!user) {
+            user = await teacherCollection.findOne({
+                resetPasswordToken: token,
+                resetPasswordTokenExpires: { $gt: Date.now() }
+            });
+        }
+
+        if (!user) {
+            console.log('DEBUG: Invalid or expired password reset token provided.');
+            return res.render('resetPassword', {
+                error: 'The password reset link is invalid or has expired. Please request a new one.',
+                token: '' // Don't pass the invalid token back
+            });
+        }
+
+        res.render('resetPassword', {
+            token: token, // Pass the valid token to the hidden field in the form
+            message: req.query.message,
+            error: req.query.error
+        });
+
+    } catch (error) {
+        console.error('❌ Error rendering reset password page:', error);
+        return res.render('resetPassword', {
+            error: 'An unexpected error occurred. Please try again.',
+            token: ''
+        });
+    }
+});
+
+// 🔄 UPDATED: POST route to handle Reset Password submission (renders resetPassword.hbs)
+app.post('/reset-password/:token', async (req, res) => {
+    try {
+        const { token } = req.params;
+        const { newPassword, confirmNewPassword } = req.body;
+
+        // Find user (student or teacher) by token and check expiry
+        let user = await studentCollection.findOne({
+            resetPasswordToken: token,
+            resetPasswordTokenExpires: { $gt: Date.now() }
+        });
+        if (!user) {
+            user = await teacherCollection.findOne({
+                resetPasswordToken: token,
+                resetPasswordTokenExpires: { $gt: Date.now() }
+            });
+        }
+
+        if (!user) {
+            console.log('DEBUG: Invalid or expired password reset token during submission.');
+            // Render resetPassword.hbs with error
+            return res.render('resetPassword', {
+                success: false,
+                error: 'The password reset link is invalid or has expired. Please request a new one.',
+                token: '' // Don't pass the invalid token back
+            });
+        }
+
+        // Password validation
+        if (newPassword !== confirmNewPassword) {
+            return res.render('resetPassword', {
+                success: false,
+                error: 'Passwords do not match.',
+                token: token // Pass token back so user can retry on the same page
+            });
+        }
+        if (newPassword.length < 6) { // Basic strength check
+            return res.render('resetPassword', {
+                success: false,
+                error: 'Password must be at least 6 characters long.',
+                token: token // Pass token back so user can retry on the same page
+            });
+        }
+
+        // ⚠️ WARNING: TEMPORARILY SKIPPING PASSWORD HASHING FOR TESTING PURPOSES.
+        // This is a MAJOR security vulnerability and MUST be re-enabled for production.
+        user.password = newPassword; // Directly saving plain text password for testing
+
+        // Update password and clear token fields
+        user.resetPasswordToken = undefined;
+        user.resetPasswordTokenExpires = undefined;
+        await user.save();
+
+        console.log(`DEBUG: User ${user.email} password successfully reset (plain text for testing).`);
+        // Render resetPassword.hbs with success
+        return res.render('resetPassword', {
+            success: true,
+            message: 'Your password has been successfully reset! You can now log in with your new password.'
+        });
+
+    } catch (error) {
+        console.error('❌ Error resetting password:', error);
+        // Render resetPassword.hbs with generic error
+        return res.render('resetPassword', {
+            success: false,
+            error: 'An unexpected error occurred while resetting password. Please try again.',
+            token: req.params.token // Pass token back if possible, or clear if it caused the error
+        });
+    }
+});
 
 
 // 🆕 NEW: Smart dashboard redirect based on user type
@@ -440,41 +712,64 @@ app.get("/homeTeacher", isAuthenticated, async (req, res) => {
 
         const teacherId = req.session.userId;
 
+        const teacher = await teacherCollection.findById(teacherId).lean();
+        if (!teacher) {
+            return res.redirect('/login?error=Teacher profile not found. Please login again.');
+        }
+
+        // NEW: Determine if email is unverified and present for the alert
+        const showEmailVerificationAlert = teacher.email && !teacher.isVerified;
+
         // Get teacher's classes
-        const classes = await classCollection.find({ 
-            teacherId: teacherId, 
-            isActive: true 
+        const classes = await classCollection.find({
+            teacherId: teacherId,
+            isActive: true
         }).sort({ createdAt: -1 }).lean();
 
-        // Calculate overall stats
-        const stats = {
-            totalClasses: classes.length,
-            totalStudents: classes.reduce((sum, cls) => sum + (cls.studentCount || 0), 0),
-            totalLectures: classes.reduce((sum, cls) => sum + (cls.lectureCount || 0), 0),
-            totalQuizzes: classes.reduce((sum, cls) => sum + (cls.quizCount || 0), 0)
-        };
+        // Calculate overall stats (your existing logic)
+        let totalStudents = 0;
+        let totalLectures = 0;
+        let totalQuizzes = 0;
 
-        // Format classes for display
-        const formattedClasses = classes.map(classDoc => ({
-            id: classDoc._id,
-            name: classDoc.name,
-            subject: classDoc.subject,
-            description: classDoc.description,
-            studentCount: classDoc.studentCount || 0,
-            lectureCount: classDoc.lectureCount || 0,
-            quizCount: classDoc.quizCount || 0,
-            averageScore: classDoc.averageScore || 0,
-            createdDate: classDoc.createdAt ? classDoc.createdAt.toLocaleDateString() : 'N/A'
+        const formattedClasses = await Promise.all(classes.map(async (cls) => {
+            const studentsInClass = await classStudentCollection.countDocuments({ classId: cls._id, isActive: true });
+            const lecturesInClass = await lectureCollection.countDocuments({ classId: cls._id });
+            const quizzesInClass = await quizCollection.countDocuments({ classId: cls._id });
+
+            const quizResults = await quizResultCollection.find({ classId: cls._id }).lean();
+            const classTotalScore = quizResults.reduce((sum, result) => sum + result.percentage, 0);
+            const classAverageScore = quizResults.length > 0 ? (classTotalScore / quizResults.length) : 0;
+
+            totalStudents += studentsInClass;
+            totalLectures += lecturesInClass;
+            totalQuizzes += quizzesInClass;
+
+            return {
+                id: cls._id,
+                name: cls.name,
+                subject: cls.subject,
+                description: cls.description,
+                studentCount: studentsInClass,
+                lectureCount: lecturesInClass,
+                quizCount: quizzesInClass,
+                averageScore: parseFloat(classAverageScore.toFixed(1)),
+                createdDate: cls.createdAt ? cls.createdAt.toLocaleDateString() : 'N/A'
+            };
         }));
 
         res.render("homeTeacher", {
+            userName: req.session.userName || "Professor",
             userType: req.session.userType || "teacher",
-            userName: req.session.userName || "Teacher",
-            ...stats,
+            userEmail: teacher.email,
+            userEmailVerified: teacher.isVerified,
+            showEmailVerificationAlert: showEmailVerificationAlert, // NEW: Pass this boolean to the template
             classes: formattedClasses,
-            classCreated: req.query.classCreated === 'true',
-            uploadError: req.query.uploadError === 'true',
+            totalClasses: formattedClasses.length,
+            totalStudents: totalStudents,
+            totalLectures: totalLectures,
+            totalQuizzes: totalQuizzes,
             message: req.query.message,
+            uploadError: req.query.uploadError,
             createdClassName: req.query.className
         });
     } catch (error) {
@@ -488,11 +783,497 @@ app.get("/homeTeacher", isAuthenticated, async (req, res) => {
             totalQuizzes: 0,
             classes: [],
             uploadError: true,
-            message: 'Failed to load dashboard: ' + error.message
+            message: 'Failed to load dashboard: ' + error.message,
+            userEmail: '',
+            userEmailVerified: false,
+            showEmailVerificationAlert: false // Ensure this is false on error
         });
     }
 });
 
+// NEW: Get User Profile Page
+// 🔄 UPDATED: GET User Profile Page for Students
+// 🔄 UPDATED: GET User Profile Page for Students
+app.get('/profileStudent', isAuthenticated, async (req, res) => {
+    if (req.session.userType !== 'student') {
+        return res.status(403).redirect('/login?error=' + encodeURIComponent('Access denied. Only students can view this profile.'));
+    }
+
+    try {
+        // Fetch student with new firstName and lastName fields, AND enrollment
+        const student = await studentCollection.findById(req.session.userId)
+                                .select('name email isVerified firstName lastName enrollment') // 🆕 NEW: Added 'enrollment' here
+                                .lean();
+        if (!student) {
+            return res.redirect('/login?error=' + encodeURIComponent('Student profile not found. Please log in again.'));
+        }
+
+        // Use firstName and lastName for the profile header if available, fallback to name
+        const displayUserName = student.firstName ? `${student.firstName} ${student.lastName || ''}`.trim() : student.name;
+        const initials = displayUserName ? displayUserName.split(' ').map(n => n.charAt(0)).join('').toUpperCase().substring(0, 2) : '';
+
+        res.render('profileStudent', {
+            user: student, // Pass the entire student object including firstName, lastName, and enrollment
+            userName: displayUserName, // For header display (student's actual name)
+            userType: 'student',
+            initials: initials,
+            message: req.query.message,
+            error: req.query.error
+        });
+    } catch (error) {
+        console.error('❌ Error fetching student profile:', error);
+        res.redirect('/homeStudent?error=' + encodeURIComponent('Error fetching profile data.'));
+    }
+});
+
+// 🔄 UPDATED: POST route to update Student Profile (with pending email verification)
+app.post('/profileStudent', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'student') {
+            return res.status(403).redirect('/login?error=' + encodeURIComponent('Access denied. Only students can update this profile.'));
+        }
+
+        const userId = req.session.userId;
+        const { email, firstName, lastName } = req.body;
+
+        const student = await studentCollection.findById(userId);
+        if (!student) {
+            return res.redirect('/profileStudent?error=' + encodeURIComponent('Student not found for update. Please log in again.'));
+        }
+
+        console.log('DEBUG: Old student email:', student.email, 'New student email (submitted):', email);
+        console.log('DEBUG: Old student name:', student.firstName, student.lastName, 'New student name:', firstName, lastName);
+
+        let emailChangeRequested = false; // Flag for email change request
+        let nameChanged = false;
+
+        // --- Handle Email Change Logic ---
+        if (student.email !== email) {
+            if (!email || !/.+@.+\..+/.test(email)) {
+                return res.redirect('/profileStudent?error=' + encodeURIComponent('Please enter a valid email address format.'));
+            }
+
+            // Check if new email already exists for another user (student or teacher)
+            const existingStudentWithEmail = await studentCollection.findOne({ email: email, _id: { $ne: userId } });
+            const existingTeacherWithEmail = await teacherCollection.findOne({ email: email });
+
+            if (existingStudentWithEmail || existingTeacherWithEmail) {
+                console.log('DEBUG: New email already in use by another account.');
+                return res.redirect('/profileStudent?error=' + encodeURIComponent('This email is already registered to another account.'));
+            }
+            emailChangeRequested = true; // Email change requested, but not yet applied
+            console.log('DEBUG: Student email change requested. Old:', student.email, 'New:', email);
+        }
+
+        // --- Handle Name Change Logic ---
+        if (student.firstName !== firstName || student.lastName !== lastName) {
+            if (!firstName || firstName.trim() === '') {
+                return res.redirect('/profileStudent?error=' + encodeURIComponent('First name is required.'));
+            }
+            nameChanged = true;
+            console.log('DEBUG: Student name has changed.');
+        }
+
+        // --- Process Updates ---
+        if (emailChangeRequested) {
+            // Generate token for the PENDING email
+            const newVerificationToken = crypto.randomBytes(32).toString('hex');
+            const newVerificationTokenExpires = new Date(Date.now() + VERIFICATION_TOKEN_EXPIRY);
+            const verificationLink = `${process.env.BASE_URL}/verify-email/${newVerificationToken}`;
+
+            console.log('DEBUG: Attempting to send verification email for PENDING student email...');
+            console.log('DEBUG: Verification Link:', verificationLink);
+
+            const emailUserName = firstName || student.name;
+            const emailHtml = await renderEmailTemplate('verificationEmail', {
+                username: emailUserName,
+                verificationLink: verificationLink
+            });
+            console.log('DEBUG: Email HTML rendered.');
+
+            const emailResult = await sendEmail({
+                to: email, // Send to the PENDING email
+                subject: 'Please Verify Your New Email for Quizzie', // Updated subject
+                html: emailHtml,
+                text: `Hello ${emailUserName}! Please verify your new email for Quizzie by clicking: ${verificationLink}. This link expires in 24 hours.`
+            });
+
+            if (emailResult.success) {
+                // Store pendingEmail and token, but do NOT update 'email' field yet
+                student.pendingEmail = email; // Store the new email as pending
+                student.isVerified = false; // Mark as unverified (for the new pending email)
+                student.verificationToken = newVerificationToken;
+                student.verificationTokenExpires = newVerificationTokenExpires;
+                // Update name fields immediately if they changed
+                if (nameChanged) {
+                    student.firstName = firstName;
+                    student.lastName = lastName;
+                }
+                await student.save();
+                console.log('DEBUG: Student profile saved with pending email and new name (if changed).');
+                return res.redirect('/profileStudent?message=' + encodeURIComponent('A verification link has been sent to your new email address. Please click the link to confirm the change. Your profile name has been updated.'));
+            } else {
+                console.error('❌ Failed to send verification email for pending student email:', emailResult.message);
+                // Do NOT save pendingEmail or token if sending failed. Keep old email.
+                return res.redirect('/profileStudent?error=' + encodeURIComponent(`Failed to send verification email to new address: ${emailResult.message}. Your email has not been changed.`));
+            }
+        } else if (nameChanged) {
+            // If only name changed, update name and save
+            student.firstName = firstName;
+            student.lastName = lastName;
+            await student.save();
+            console.log('DEBUG: Only student name updated and saved.');
+            return res.redirect('/profileStudent?message=' + encodeURIComponent('Profile updated successfully!'));
+        } else {
+            console.log('DEBUG: No changes detected for student profile.');
+            return res.redirect('/profileStudent?message=' + encodeURIComponent('No changes detected in profile.'));
+        }
+
+    } catch (error) {
+        console.error('❌ Error updating student profile:', error);
+        res.redirect('/profileStudent?error=' + encodeURIComponent('An unexpected error occurred while updating profile: ' + error.message));
+    }
+});
+
+// Email Verification Route (for new registrations and profile updates)
+// 🔄 UPDATED: Email Verification Route (now renders emailVerificationSuccess.hbs)
+app.get('/verify-email/:token', async (req, res) => {
+    console.log('DEBUG: GET /verify-email/:token route hit');
+    try {
+        const { token } = req.params;
+        console.log('DEBUG: Verification token received:', token);
+
+        // Try to find user in studentCollection
+        let user = await studentCollection.findOne({
+            verificationToken: token,
+            verificationTokenExpires: { $gt: Date.now() }
+        });
+
+        // If not found in studentCollection, try teacherCollection
+        if (!user) {
+            user = await teacherCollection.findOne({
+                verificationToken: token,
+                verificationTokenExpires: { $gt: Date.now() }
+            });
+        }
+
+        if (!user) {
+            console.log('DEBUG: Invalid or expired verification link provided.');
+            return res.render('emailVerificationSuccess', {
+                success: false,
+                error: 'The verification link is invalid or has expired. Please try resending the verification email.'
+            });
+        }
+
+        // Check if this is a pending email verification
+        if (user.pendingEmail && user.verificationToken === token) {
+            // This is a pending email change, apply it now
+            user.email = user.pendingEmail; // CRITICAL: Update the main email field
+            user.pendingEmail = undefined; // Clear pending email
+            user.isVerified = true; // Mark as verified
+            user.verificationToken = undefined; // Clear token
+            user.verificationTokenExpires = undefined; // Clear expiry
+            await user.save();
+            console.log(`DEBUG: User ${user.email} (new) email successfully updated and verified.`);
+            return res.render('emailVerificationSuccess', {
+                success: true,
+                message: 'Your email address has been successfully updated and verified!'
+            });
+        }
+        // This handles initial registration verification
+        else if (!user.isVerified && !user.pendingEmail && user.verificationToken === token) {
+            user.isVerified = true;
+            user.verificationToken = undefined;
+            user.verificationTokenExpires = undefined;
+            await user.save();
+            console.log(`DEBUG: User ${user.email} (initial) email successfully verified.`);
+            return res.render('emailVerificationSuccess', {
+                success: true,
+                message: 'Your email has been successfully verified! You can now log in.'
+            });
+        }
+        // If already verified (and no pending email)
+        else if (user.isVerified) {
+            console.log(`DEBUG: User ${user.email} email already verified.`);
+            return res.render('emailVerificationSuccess', {
+                success: false, // Treat as a "failure" for this specific link click, as nothing changed
+                error: 'Your email address is already verified. No action needed.'
+            });
+        }
+        else {
+            // Fallback for any other unexpected token state
+            console.log('DEBUG: Unexpected verification state for token:', token);
+            return res.render('emailVerificationSuccess', {
+                success: false,
+                error: 'An unexpected error occurred during verification. Please try again.'
+            });
+        }
+
+    } catch (error) {
+        console.error('❌ Error verifying email:', error);
+        return res.render('emailVerificationSuccess', {
+            success: false,
+            error: 'An internal server error occurred during verification. Please try again later.'
+        });
+    }
+});
+
+// 🔄 UPDATED: POST route to update Teacher Profile (with pending email verification)
+app.post('/profileTeacher', isAuthenticated, async (req, res) => {
+    console.log('DEBUG: POST /profileTeacher route hit');
+    try {
+        if (req.session.userType !== 'teacher') {
+            return res.status(403).redirect('/login?error=' + encodeURIComponent('Access denied. Not a teacher account.'));
+        }
+
+        const { email, firstName, lastName } = req.body;
+        const teacherId = req.session.userId;
+
+        const teacher = await teacherCollection.findById(teacherId);
+        if (!teacher) {
+            return res.redirect('/profileTeacher?error=' + encodeURIComponent('Teacher not found. Please log in again.'));
+        }
+
+        console.log('DEBUG: Old teacher name:', teacher.firstName, teacher.lastName, 'New teacher name:', firstName, lastName);
+        console.log('DEBUG: Old teacher email:', teacher.email, 'New teacher email (submitted):', email);
+
+        let emailChangeRequested = false;
+        let nameChanged = false;
+
+        // --- Handle Email Change Logic ---
+        if (teacher.email !== email) {
+            if (!email || !/.+@.+\..+/.test(email)) {
+                return res.redirect('/profileTeacher?error=' + encodeURIComponent('Please enter a valid email address format.'));
+            }
+
+            const existingTeacherWithEmail = await teacherCollection.findOne({ email: email, _id: { $ne: teacherId } });
+            const existingStudentWithEmail = await studentCollection.findOne({ email: email });
+
+            if (existingTeacherWithEmail || existingStudentWithEmail) {
+                console.log('DEBUG: New email already in use by another account.');
+                return res.redirect('/profileTeacher?error=' + encodeURIComponent('This email is already registered to another account.'));
+            }
+            emailChangeRequested = true;
+            console.log('DEBUG: Teacher email change requested. Old:', teacher.email, 'New:', email);
+        }
+
+        // --- Handle Name Change Logic ---
+        if (teacher.firstName !== firstName || teacher.lastName !== lastName) {
+            if (!firstName || firstName.trim() === '') {
+                return res.redirect('/profileTeacher?error=' + encodeURIComponent('First name is required.'));
+            }
+            nameChanged = true;
+            console.log('DEBUG: Teacher name has changed.');
+        }
+
+        // --- Process Updates ---
+        if (emailChangeRequested) {
+            const newVerificationToken = crypto.randomBytes(32).toString('hex');
+            const newVerificationTokenExpires = new Date(Date.now() + VERIFICATION_TOKEN_EXPIRY);
+            const verificationLink = `${process.env.BASE_URL}/verify-email/${newVerificationToken}`;
+
+            console.log('DEBUG: Attempting to send verification email for PENDING teacher email...');
+            console.log('DEBUG: Verification Link:', verificationLink);
+
+            const emailUserName = firstName || teacher.name;
+            const emailHtml = await renderEmailTemplate('verificationEmail', {
+                username: emailUserName,
+                verificationLink: verificationLink
+            });
+            console.log('DEBUG: Email HTML rendered.');
+
+            const emailResult = await sendEmail({
+                to: email, // Send to the PENDING email
+                subject: 'Please Verify Your New Email for Quizzie', // Updated subject
+                html: emailHtml,
+                text: `Hello ${emailUserName}! Please verify your new email for Quizzie by clicking: ${verificationLink}. This link expires in 24 hours.`
+            });
+
+            if (emailResult.success) {
+                // Store pendingEmail and token, but do NOT update 'email' field yet
+                teacher.pendingEmail = email; // Store the new email as pending
+                teacher.isVerified = false; // Mark as unverified (for the new pending email)
+                teacher.verificationToken = newVerificationToken;
+                teacher.verificationTokenExpires = newVerificationTokenExpires;
+                // Update name fields immediately if they changed
+                if (nameChanged) {
+                    teacher.firstName = firstName;
+                    teacher.lastName = lastName;
+                }
+                await teacher.save();
+                console.log('DEBUG: Teacher profile saved with pending email and new name (if changed).');
+                return res.redirect('/profileTeacher?message=' + encodeURIComponent('A verification link has been sent to your new email address. Please click the link to confirm the change. Your profile name has been updated.'));
+            } else {
+                console.error('❌ Failed to send verification email for pending teacher email:', emailResult.message);
+                // Do NOT save pendingEmail or token if sending failed. Keep old email.
+                return res.redirect('/profileTeacher?error=' + encodeURIComponent(`Failed to send verification email to new address: ${emailResult.message}. Your email has not been changed.`));
+            }
+        } else if (nameChanged) {
+            // If only name changed, update name and save
+            teacher.firstName = firstName;
+            teacher.lastName = lastName;
+            await teacher.save();
+            console.log('DEBUG: Only teacher name updated and saved.');
+            return res.redirect('/profileTeacher?message=' + encodeURIComponent('Profile updated successfully!'));
+        } else {
+            console.log('DEBUG: No changes detected for teacher profile.');
+            return res.redirect('/profileTeacher?message=' + encodeURIComponent('No changes detected in profile.'));
+        }
+
+    } catch (error) {
+        console.error('❌ Error updating teacher profile:', error);
+        res.redirect('/profileTeacher?error=' + encodeURIComponent('An unexpected error occurred while updating profile: ' + error.message));
+    }
+});
+
+// ==================== TEACHER PROFILE ROUTES ====================
+
+// GET route for Teacher Profile page
+// 🔄 UPDATED: GET route for Teacher Profile page
+app.get('/profileTeacher', isAuthenticated, async (req, res) => {
+    console.log('DEBUG: GET /profileTeacher route hit');
+    try {
+        if (req.session.userType !== 'teacher') {
+            return res.status(403).redirect('/login?error=' + encodeURIComponent('Access denied. Not a teacher account.'));
+        }
+
+        // Fetch teacher with name, email, verification status, AND firstName, lastName
+        const teacher = await teacherCollection.findById(req.session.userId)
+                                .select('name email isVerified firstName lastName') // 🆕 NEW: Select firstName and lastName
+                                .lean();
+        if (!teacher) {
+            return res.redirect('/login?error=' + encodeURIComponent('Teacher profile not found. Please log in again.'));
+        }
+
+        // For teacher, userName is the full name from the DB (or derived from firstName/lastName)
+        const displayUserName = teacher.firstName ? `${teacher.firstName} ${teacher.lastName || ''}`.trim() : teacher.name;
+        const initials = displayUserName ? displayUserName.split(' ').map(n => n.charAt(0)).join('').toUpperCase().substring(0, 2) : '';
+
+        res.render('profileTeacher', {
+            user: teacher, // Pass the entire teacher object including firstName, lastName
+            userName: displayUserName, // For header display
+            userType: 'Professor', // Display role as Professor
+            initials: initials,
+            message: req.query.message,
+            error: req.query.error
+        });
+
+    } catch (error) {
+        console.error('❌ Error loading teacher profile:', error);
+        res.redirect('/homeTeacher?error=' + encodeURIComponent('Failed to load profile.'));
+    }
+});
+// POST route to update Teacher Profile
+// 🔄 UPDATED: POST route to update Teacher Profile
+app.post('/profileTeacher', isAuthenticated, async (req, res) => {
+    console.log('DEBUG: POST /profileTeacher route hit');
+    try {
+        if (req.session.userType !== 'teacher') {
+            return res.status(403).redirect('/login?error=' + encodeURIComponent('Access denied. Not a teacher account.'));
+        }
+
+        const { name, email, firstName, lastName } = req.body; // Destructure all possible name fields
+        const teacherId = req.session.userId;
+
+        const teacher = await teacherCollection.findById(teacherId);
+        if (!teacher) {
+            return res.redirect('/profileTeacher?error=' + encodeURIComponent('Teacher not found. Please log in again.'));
+        }
+
+        console.log('DEBUG: Old teacher name:', teacher.firstName, teacher.lastName, 'New teacher name:', firstName, lastName);
+        console.log('DEBUG: Old teacher email:', teacher.email, 'New teacher email:', email);
+
+        let emailChanged = false;
+        let nameChanged = false;
+        let oldEmail = teacher.email;
+
+        // --- Handle Email Change Logic ---
+        if (teacher.email !== email) {
+            if (!email || !/.+@.+\..+/.test(email)) {
+                return res.redirect('/profileTeacher?error=' + encodeURIComponent('Please enter a valid email address format.'));
+            }
+
+            const existingTeacherWithEmail = await teacherCollection.findOne({ email: email, _id: { $ne: teacherId } });
+            const existingStudentWithEmail = await studentCollection.findOne({ email: email });
+
+            if (existingTeacherWithEmail || existingStudentWithEmail) {
+                console.log('DEBUG: New email already in use by another account.');
+                return res.redirect('/profileTeacher?error=' + encodeURIComponent('This email is already registered to another account.'));
+            }
+            emailChanged = true;
+            console.log('DEBUG: Teacher email has changed. Old:', oldEmail, 'New:', email);
+        }
+
+        // --- Handle Name Change Logic ---
+        // Prioritize firstName/lastName from form. If only 'name' was submitted (e.g., old form),
+        // the pre-save hook will handle parsing it.
+        if (teacher.firstName !== firstName || teacher.lastName !== lastName) {
+            if (!firstName || firstName.trim() === '') {
+                return res.redirect('/profileTeacher?error=' + encodeURIComponent('First name is required.'));
+            }
+            nameChanged = true;
+            console.log('DEBUG: Teacher name has changed.');
+        }
+
+        // --- IMPORTANT SECURITY CHANGE: Only update email/verification AFTER successful send ---
+        if (emailChanged) {
+            const newVerificationToken = crypto.randomBytes(32).toString('hex');
+            const newVerificationTokenExpires = new Date(Date.now() + VERIFICATION_TOKEN_EXPIRY);
+            const verificationLink = `${process.env.BASE_URL}/verify-email/${newVerificationToken}`;
+
+            console.log('DEBUG: Attempting to send verification email for new teacher email...');
+            console.log('DEBUG: Verification Link:', verificationLink);
+
+            const emailUserName = firstName || teacher.name; // Use new first name, fallback to current full name
+            const emailHtml = await renderEmailTemplate('verificationEmail', {
+                username: emailUserName,
+                verificationLink: verificationLink
+            });
+            console.log('DEBUG: Email HTML rendered.');
+
+            const emailResult = await sendEmail({
+                to: email,
+                subject: 'Please Verify Your Updated Email for Quizzie',
+                html: emailHtml,
+                text: `Hello ${emailUserName}! Please verify your updated email for Quizzie by clicking: ${verificationLink}. This link expires in 24 hours.`
+            });
+
+            if (emailResult.success) {
+                // ONLY update and save the database if email sent successfully
+                teacher.email = email;
+                teacher.isVerified = false;
+                teacher.verificationToken = newVerificationToken;
+                teacher.verificationTokenExpires = newVerificationTokenExpires;
+                teacher.firstName = firstName; // Update firstName
+                teacher.lastName = lastName;   // Update lastName
+                // The 'name' field will be updated by the pre-save hook
+                await teacher.save();
+                console.log('DEBUG: Teacher email, name, and verification status saved after successful email send.');
+
+                return res.redirect('/profileTeacher?message=' + encodeURIComponent('Profile updated. A new verification email has been sent to your updated address.'));
+            } else {
+                console.error('❌ Failed to send new verification email after teacher profile update:', emailResult.message);
+                return res.redirect('/profileTeacher?error=' + encodeURIComponent(`Profile update failed: ${emailResult.message}. Please try again or contact support.`));
+            }
+        } else if (nameChanged) {
+            // If email didn't change, but name did, update name and save
+            teacher.firstName = firstName; // Update firstName
+            teacher.lastName = lastName;   // Update lastName
+            // The 'name' field will be updated by the pre-save hook
+            await teacher.save();
+            console.log('DEBUG: Only teacher name updated and saved.');
+            return res.redirect('/profileTeacher?message=' + encodeURIComponent('Profile updated successfully!'));
+        } else {
+            // If neither email nor name changed
+            console.log('DEBUG: No changes detected for teacher profile.');
+            return res.redirect('/profileTeacher?message=' + encodeURIComponent('No changes detected in profile.'));
+        }
+
+    } catch (error) {
+        console.error('❌ Error updating teacher profile:', error);
+        res.redirect('/profileTeacher?error=' + encodeURIComponent('An unexpected error occurred while updating profile: ' + error.message));
+    }
+});
 // ==================== CLASS CRUD ROUTES ====================
 
 // 📋 Get all classes for a teacher
@@ -503,14 +1284,14 @@ app.get('/api/classes', isAuthenticated, async (req, res) => {
         }
 
         const teacherId = req.session.userId;
-        
+
         // Get teacher's classes with computed stats
-        const classes = await classCollection.find({ 
-            teacherId: teacherId, 
-            isActive: true 
+        const classes = await classCollection.find({
+            teacherId: teacherId,
+            isActive: true
         })
-        .sort({ createdAt: -1 })
-        .lean();
+            .sort({ createdAt: -1 })
+            .lean();
 
         console.log(`📋 Found ${classes.length} classes for teacher ${req.session.userName}`);
 
@@ -803,8 +1584,8 @@ app.post('/api/classes/:classId/students', isAuthenticated, async (req, res) => 
 
         if (req.session.userType !== 'teacher') {
             console.log('❌ Access denied - not a teacher:', req.session.userType);
-            return res.status(403).json({ 
-                success: false, 
+            return res.status(403).json({
+                success: false,
                 message: 'Access denied. Teachers only.',
                 debug: {
                     userType: req.session.userType,
@@ -879,7 +1660,7 @@ app.post('/api/classes/:classId/students', isAuthenticated, async (req, res) => 
                 isActive: existingEnrollment.isActive,
                 enrollmentId: existingEnrollment._id
             });
-            
+
             if (existingEnrollment.isActive) {
                 return res.status(400).json({
                     success: false,
@@ -911,7 +1692,7 @@ app.post('/api/classes/:classId/students', isAuthenticated, async (req, res) => 
             classId: classId,
             isActive: true
         });
-        
+
         await classCollection.findByIdAndUpdate(classId, {
             studentCount: totalActiveStudents,
             updatedAt: new Date()
@@ -998,12 +1779,12 @@ app.get('/api/classes/:classId/students', isAuthenticated, async (req, res) => {
                 }).lean();
 
                 const totalQuizzes = studentResults.length;
-                const averageScore = totalQuizzes > 0 
+                const averageScore = totalQuizzes > 0
                     ? (studentResults.reduce((sum, result) => sum + result.percentage, 0) / totalQuizzes).toFixed(1)
                     : 0;
 
-                const lastActivity = totalQuizzes > 0 
-                    ? studentResults[studentResults.length - 1].submissionDate 
+                const lastActivity = totalQuizzes > 0
+                    ? studentResults[studentResults.length - 1].submissionDate
                     : enrollment.enrolledAt;
 
                 return {
@@ -1140,11 +1921,11 @@ app.get('/api/classes/:classId/overview', isAuthenticated, async (req, res) => {
         }).sort({ generatedDate: 1 }).lean(); // Sort by creation date
 
         const performanceTrend = quizzes.map(quiz => {
-            const quizResults = allResults.filter(result => 
+            const quizResults = allResults.filter(result =>
                 result.quizId.toString() === quiz._id.toString()
             );
-            
-            const averageScore = quizResults.length > 0 
+
+            const averageScore = quizResults.length > 0
                 ? quizResults.reduce((sum, result) => sum + result.percentage, 0) / quizResults.length
                 : 0;
 
@@ -1258,16 +2039,16 @@ app.get('/api/classes/:classId/analytics', isAuthenticated, async (req, res) => 
         const analytics = {
             totalParticipants: new Set(allResults.map(r => r.studentId.toString())).size,
             totalQuizAttempts: allResults.length,
-            classAverage: allResults.length > 0 
+            classAverage: allResults.length > 0
                 ? formatPercentage(allResults.reduce((sum, r) => sum + r.percentage, 0) / allResults.length) // 🔧 FIX
                 : 0,
-            highestScore: allResults.length > 0 
+            highestScore: allResults.length > 0
                 ? formatPercentage(Math.max(...allResults.map(r => r.percentage))) // 🔧 FIX
                 : 0,
-            lowestScore: allResults.length > 0 
+            lowestScore: allResults.length > 0
                 ? formatPercentage(Math.min(...allResults.map(r => r.percentage))) // 🔧 FIX
                 : 0,
-            
+
             // Performance distribution
             performanceDistribution: {
                 excellent: allResults.filter(r => r.percentage >= 90).length,
@@ -1283,13 +2064,13 @@ app.get('/api/classes/:classId/analytics', isAuthenticated, async (req, res) => 
                     quizId: quiz._id,
                     quizTitle: quiz.lectureTitle,
                     totalAttempts: quizResults.length,
-                    averageScore: quizResults.length > 0 
+                    averageScore: quizResults.length > 0
                         ? formatPercentage(quizResults.reduce((sum, r) => sum + r.percentage, 0) / quizResults.length) // 🔧 FIX
                         : 0,
-                    highestScore: quizResults.length > 0 
+                    highestScore: quizResults.length > 0
                         ? formatPercentage(Math.max(...quizResults.map(r => r.percentage))) // 🔧 FIX
                         : 0,
-                    lowestScore: quizResults.length > 0 
+                    lowestScore: quizResults.length > 0
                         ? formatPercentage(Math.min(...quizResults.map(r => r.percentage))) // 🔧 FIX
                         : 0
                 };
@@ -1484,7 +2265,7 @@ app.get('/lectures/:id/text', isAuthenticated, async (req, res) => {
         }
 
         if (req.session.userType === 'teacher' && !lecture.professorId.equals(req.session.userId)) {
-             return res.status(403).json({ success: false, message: 'Access denied. You do not own this lecture.' });
+            return res.status(403).json({ success: false, message: 'Access denied. You do not own this lecture.' });
         }
 
         res.json({
@@ -1797,10 +2578,12 @@ app.get('/api/exam/:quizId/status', isAuthenticated, async (req, res) => {
 app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
     try {
         const lectureId = req.params.id
+
         
         // ✅ ENHANCED: Extract and validate parameters including exam mode
         const { durationMinutes, questionCount, isExamMode, examDurationMinutes } = req.body;
         
+
         console.log('🎯 QUIZ GENERATION REQUEST:', {
             lectureId: lectureId,
             requestBody: req.body,
@@ -1810,20 +2593,22 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
             examDurationMinutes: examDurationMinutes,
             requestedBy: req.session.userName
         });
-        
+
         // ✅ ENHANCED: Better parameter validation
         let customDuration = 15; // Default
         let questionsToGenerate = 10; // Default
+
         let examMode = false;
         let examWindowDuration = 60; // Default 60 minutes
         
+
         if (durationMinutes !== undefined && durationMinutes !== null) {
             const parsedDuration = parseInt(durationMinutes);
             if (!isNaN(parsedDuration) && parsedDuration >= 2 && parsedDuration <= 60) {
                 customDuration = parsedDuration;
             }
         }
-        
+
         if (questionCount !== undefined && questionCount !== null) {
             const parsedQuestions = parseInt(questionCount);
             if (!isNaN(parsedQuestions) && parsedQuestions >= 5 && parsedQuestions <= 30) {
@@ -1841,14 +2626,14 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
                 }
             }
         }
-        
+
         console.log('✅ FINAL QUIZ SETTINGS:', {
             validDuration: customDuration,
             questionsToGenerate: questionsToGenerate,
             examMode: examMode,
             examWindowDuration: examWindowDuration
         });
-        
+
         const lecture = await lectureCollection.findById(lectureId)
 
         if (!lecture) {
@@ -1860,7 +2645,7 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
 
         // Check ownership
         if (req.session.userType === 'teacher' && !lecture.professorId.equals(req.session.userId)) {
-             return res.status(403).json({ success: false, message: 'Access denied. You can only generate quizzes for your own lectures.' });
+            return res.status(403).json({ success: false, message: 'Access denied. You can only generate quizzes for your own lectures.' });
         }
 
         // Check if quiz already exists
@@ -1894,9 +2679,9 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
                 quizGenerated: false,
                 quizGenerationError: 'Text too short for quiz generation'
             })
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Extracted text is too short or missing for quiz generation.' 
+            return res.status(400).json({
+                success: false,
+                message: 'Extracted text is too short or missing for quiz generation.'
             })
         }
 
@@ -1977,7 +2762,7 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
             ]
 
             console.log('📤 Sending ENHANCED request to Gemini API...')
-            
+
             const result = await model.generateContent({
                 contents: [{ role: "user", parts: [{ text: prompt }] }],
                 generationConfig,
@@ -1996,14 +2781,14 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
                 if (quizContent.startsWith('```json')) {
                     quizContent = quizContent.substring(7, quizContent.lastIndexOf('```')).trim()
                 }
-                
+
                 generatedQuiz = JSON.parse(quizContent)
-                
+
                 // ✅ ENHANCED: Strict validation
                 if (!Array.isArray(generatedQuiz)) {
                     throw new Error('Response is not an array')
                 }
-                
+
                 // ✅ VALIDATE: Check if we got the right number of questions
                 if (generatedQuiz.length !== questionsToGenerate) {
                     console.warn(`⚠️ AI generated ${generatedQuiz.length} questions, expected ${questionsToGenerate}`);
@@ -2013,11 +2798,11 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
                         console.log(`✂️ Trimmed to ${questionsToGenerate} questions`);
                     }
                 }
-                
+
                 if (generatedQuiz.length === 0) {
                     throw new Error('No questions generated')
                 }
-                
+
                 // Validate each question WITH explanations
                 generatedQuiz.forEach((q, index) => {
                     if (!q.question || !q.options || !q.correct_answer || !q.explanations || !q.correctAnswerExplanation) {
@@ -2026,7 +2811,7 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
                     if (!['A', 'B', 'C', 'D'].includes(q.correct_answer)) {
                         throw new Error(`Question ${index + 1} has invalid correct_answer`)
                     }
-                    
+
                     // Validate explanations exist for wrong answers
                     ['A', 'B', 'C', 'D'].forEach(option => {
                         if (option !== q.correct_answer && (!q.explanations[option] || q.explanations[option].trim() === '')) {
@@ -2034,10 +2819,10 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
                             q.explanations[option] = `This option is incorrect. The correct answer is ${q.correct_answer}. Please review the lecture material for more details.`;
                         }
                     });
-                    
+
                     q.explanations[q.correct_answer] = "";
                 })
-                
+
                 console.log('🎯 ENHANCED quiz validated:', {
                     totalQuestions: generatedQuiz.length,
                     requestedQuestions: questionsToGenerate,
@@ -2047,19 +2832,19 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
                     questionsGenerated: generatedQuiz.length,
                     isExamMode: examMode
                 });
-                
+
             } catch (parseError) {
                 console.error('❌ Failed to parse ENHANCED quiz JSON:', parseError)
-                
+
                 await lectureCollection.findByIdAndUpdate(lectureId, {
                     processingStatus: 'failed',
                     quizGenerated: false,
                     quizGenerationError: 'Enhanced AI response parsing failed: ' + parseError.message
                 })
-                
-                return res.status(500).json({ 
-                    success: false, 
-                    message: 'Failed to parse enhanced AI response. Please try again.' 
+
+                return res.status(500).json({
+                    success: false,
+                    message: 'Failed to parse enhanced AI response. Please try again.'
                 })
             }
 
@@ -2099,7 +2884,7 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
                     isExamMode: savedQuiz.isExamMode,
                     examDuration: savedQuiz.examDurationMinutes
                 });
-                
+
                 // Update lecture status
                 await lectureCollection.findByIdAndUpdate(lectureId, {
                     quizGenerated: true,
@@ -2136,19 +2921,19 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
                         examDuration: examWindowDuration
                     }
                 })
-                
+
             } catch (saveError) {
                 console.error('❌ Error saving ENHANCED quiz to MongoDB:', saveError)
-                
+
                 await lectureCollection.findByIdAndUpdate(lectureId, {
                     processingStatus: 'failed',
                     quizGenerated: false,
                     quizGenerationError: 'Enhanced database save error: ' + saveError.message
                 })
-                
-                return res.status(500).json({ 
-                    success: false, 
-                    message: 'Failed to save enhanced quiz to database: ' + saveError.message 
+
+                return res.status(500).json({
+                    success: false,
+                    message: 'Failed to save enhanced quiz to database: ' + saveError.message
                 })
             }
 
@@ -2162,21 +2947,21 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
             })
 
             if (apiError.message.includes('quota') || apiError.message.includes('limit')) {
-                return res.status(429).json({ 
-                    success: false, 
-                    message: 'API quota exceeded. Please try again later.' 
+                return res.status(429).json({
+                    success: false,
+                    message: 'API quota exceeded. Please try again later.'
                 })
             }
 
-            res.status(500).json({ 
-                success: false, 
-                message: 'Failed to generate enhanced quiz. Please check your API key and try again.' 
+            res.status(500).json({
+                success: false,
+                message: 'Failed to generate enhanced quiz. Please check your API key and try again.'
             })
         }
-    
+
     } catch (error) {
         console.error('❌ ENHANCED quiz generation error:', error)
-        
+
         if (req.params.id) {
             await lectureCollection.findByIdAndUpdate(req.params.id, {
                 processingStatus: 'failed',
@@ -2185,9 +2970,9 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
             })
         }
 
-        res.status(500).json({ 
-            success: false, 
-            message: 'Failed to generate enhanced quiz: ' + error.message 
+        res.status(500).json({
+            success: false,
+            message: 'Failed to generate enhanced quiz: ' + error.message
         })
     }
 });
@@ -2202,7 +2987,7 @@ app.get('/api/quiz/:quizId', isAuthenticated, async (req, res) => {
 
         const quizId = req.params.quizId;
         console.log('📡 QUIZ API - Loading quiz with duration:', quizId);
-        
+
         // ✅ CRITICAL: Select durationMinutes explicitly
         const quiz = await quizCollection.findById(quizId).select('questions totalQuestions lectureTitle durationMinutes classId').lean();
 
@@ -2212,7 +2997,7 @@ app.get('/api/quiz/:quizId', isAuthenticated, async (req, res) => {
 
         // ✅ CRITICAL: Get actual duration from database
         const actualDurationMinutes = quiz.durationMinutes || 15;
-        
+
         console.log('📡 QUIZ API - Retrieved quiz duration:', {
             quizId: quizId,
             databaseDuration: quiz.durationMinutes,
@@ -2257,15 +3042,15 @@ app.get('/api/quiz/:quizId/duration', isAuthenticated, async (req, res) => {
     try {
         const quizId = req.params.quizId;
         console.log('🕒 DURATION API - Request for quiz:', quizId);
-        
+
         // ✅ CRITICAL: Get duration from database
         const quiz = await quizCollection.findById(quizId).select('durationMinutes lectureTitle classId').lean();
-        
+
         if (!quiz) {
             console.error('❌ DURATION API - Quiz not found:', quizId);
-            return res.status(404).json({ 
-                success: false, 
-                message: 'Quiz not found.' 
+            return res.status(404).json({
+                success: false,
+                message: 'Quiz not found.'
             });
         }
 
@@ -2295,9 +3080,9 @@ app.get('/api/quiz/:quizId/duration', isAuthenticated, async (req, res) => {
 
     } catch (error) {
         console.error('❌ Error fetching quiz duration:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Failed to fetch quiz duration: ' + error.message 
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch quiz duration: ' + error.message
         });
     }
 });
@@ -2317,7 +3102,7 @@ app.post('/delete_lecture/:id', isAuthenticated, async (req, res) => {
         }
 
         if (req.session.userType === 'teacher' && !lecture.professorId.equals(req.session.userId)) {
-             return res.status(403).json({ success: false, message: 'Access denied. You can only delete your own lectures.' });
+            return res.status(403).json({ success: false, message: 'Access denied. You can only delete your own lectures.' });
         }
 
         // Delete associated quizzes first
@@ -2374,9 +3159,9 @@ app.get('/api/student/available-quizzes', isAuthenticated, async (req, res) => {
             classId: { $in: enrolledClassIds },
             isActive: true
         })
-        .select('lectureTitle totalQuestions classId generatedDate')
-        .sort({ generatedDate: -1 })
-        .lean();
+            .select('lectureTitle totalQuestions classId generatedDate')
+            .sort({ generatedDate: -1 })
+            .lean();
 
         // Get quizzes already taken by student
         const takenQuizIds = await quizResultCollection.find({
@@ -2503,8 +3288,10 @@ app.get('/take_quiz/:quizId', isAuthenticated, async (req, res) => {
             });
 
             if (!enrollment) {
+
                 const errorMessage = 'You are not enrolled in this class.';
                 const redirectUrl = `/homeStudent?message=${encodeURIComponent(errorMessage)}`;
+
                 return res.status(403).redirect(redirectUrl);
             }
 
@@ -2519,10 +3306,12 @@ app.get('/take_quiz/:quizId', isAuthenticated, async (req, res) => {
         });
 
         if (existingResult) {
+
             const message = `You have already completed: ${quiz.lectureTitle}`;
             const redirectUrl = classId ? 
                 `/student/class/${classId}?message=${encodeURIComponent(message)}` :
                 `/quiz-results?alreadyTaken=true&quizTitle=${encodeURIComponent(quiz.lectureTitle)}`;
+
             return res.redirect(redirectUrl);
         }
 
@@ -2547,9 +3336,11 @@ app.get('/take_quiz/:quizId', isAuthenticated, async (req, res) => {
                 classId: targetClassId,
                 className: classInfo?.name,
                 classSubject: classInfo?.subject,
+
                 isExamMode: quiz.isExamMode,
                 examStatus: quiz.examStatus,
                 breadcrumbPath: targetClassId ? 
+
                     [
                         { label: 'Dashboard', url: '/homeStudent' },
                         { label: classInfo?.name || 'Class', url: `/student/class/${targetClassId}` },
@@ -2576,7 +3367,7 @@ app.get('/api/quiz/:quizId', isAuthenticated, async (req, res) => {
 
         const quizId = req.params.quizId;
         console.log('📡 Loading quiz questions with duration info for:', quizId);
-        
+
         const quiz = await quizCollection.findById(quizId).select('questions totalQuestions lectureTitle durationMinutes classId').lean();
 
         if (!quiz) {
@@ -2591,7 +3382,7 @@ app.get('/api/quiz/:quizId', isAuthenticated, async (req, res) => {
 
         // 🆕 ENHANCED: Include duration information in response
         const durationMinutes = quiz.durationMinutes || 15;
-        
+
         console.log(`📡 Quiz loaded: "${quiz.lectureTitle}" - ${quiz.totalQuestions} questions, ${durationMinutes} minutes duration`);
 
         res.json({
@@ -2623,13 +3414,15 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
         }
 
         const quizId = req.params.quizId;
-        const { 
-            studentAnswers, 
-            timeTakenSeconds, 
+        const {
+            studentAnswers,
+            timeTakenSeconds,
             classContext,
+
             antiCheatData,
             navigationHints,
             examTimeRemaining // 🆕 NEW: Time remaining in exam window
+
         } = req.body;
 
         const studentId = req.session.userId;
@@ -2681,7 +3474,7 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
 
         // Rest of existing validation logic...
         const targetClassId = quiz.classId || (classContext && classContext.classId);
-        
+
         if (targetClassId) {
             const enrollment = await classStudentCollection.findOne({
                 studentId: studentId,
@@ -2690,9 +3483,9 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
             });
 
             if (!enrollment) {
-                return res.status(403).json({ 
-                    success: false, 
-                    message: 'You are not enrolled in the class for this quiz.' 
+                return res.status(403).json({
+                    success: false,
+                    message: 'You are not enrolled in the class for this quiz.'
                 });
             }
         }
@@ -2704,9 +3497,9 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
         });
 
         if (existingResult) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'You have already submitted this quiz.' 
+            return res.status(400).json({
+                success: false,
+                message: 'You have already submitted this quiz.'
             });
         }
 
@@ -2723,7 +3516,7 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
                 if (isCorrect) {
                     score++;
                 }
-                
+
                 detailedAnswers.push({
                     questionIndex: sAnswer.questionIndex,
                     question: sAnswer.question,
@@ -2781,10 +3574,12 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
                 violationCount: antiCheatData.violationCount || 0,
                 wasAutoSubmitted: antiCheatData.wasAutoSubmitted || false,
                 gracePeriodsUsed: antiCheatData.gracePeriodsUsed || 0,
+
                 securityStatus: antiCheatData.violationCount === 0 ? 'Clean' : 
                               antiCheatData.violationCount === 1 ? 'Warning' : 'Violation',
                 submissionSource: quiz.isExamMode && submissionType.includes('exam') ? 'Exam-Timer-Submit' : 
                                 antiCheatData.wasAutoSubmitted ? 'Auto-Submit' : 'Manual'
+
             } : {
                 violationCount: 0,
                 wasAutoSubmitted: false,
@@ -2795,6 +3590,7 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
         };
 
         const savedResult = await quizResultCollection.create(newQuizResult);
+
         
         // Enhanced logging with exam mode context
         const modeText = quiz.isExamMode ? 'exam' : 'quiz';
@@ -2803,6 +3599,7 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
             : 'clean submission';
             
         console.log(`✅ ${modeText} result saved for student ${studentName}: Score ${score}/${totalQuestions} (${securityStatus})`);
+
 
         // Get class information for response
         let classInfo = null;
@@ -2813,6 +3610,7 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
         // 🆕 ENHANCED: Prepare comprehensive response with exam mode context
         const enhancedResponse = {
             success: true,
+
             message: quiz.isExamMode ? 
                 (antiCheatData && antiCheatData.wasAutoSubmitted 
                     ? 'Exam auto-submitted and scored successfully!'
@@ -2820,13 +3618,13 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
                 (antiCheatData && antiCheatData.wasAutoSubmitted 
                     ? 'Quiz auto-submitted due to security violations and scored successfully!'
                     : 'Quiz submitted and scored successfully!'),
+
             score: score,
             totalQuestions: totalQuestions,
             percentage: percentage,
             timeTakenSeconds: timeTakenSeconds,
             quizResultId: savedResult._id,
-            
-            // Enhanced response with exam mode context
+
             lectureId: quiz.lectureId,
             classId: targetClassId,
             className: classInfo?.name,
@@ -2834,6 +3632,7 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
             quizTitle: quiz.lectureTitle,
             questionDetails: enhancedQuestionDetails,
             quizId: quizId,
+
             
             // 🆕 NEW: Exam mode response data
             wasExamMode: quiz.isExamMode,
@@ -2851,6 +3650,7 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
             },
             
             // Navigation context
+
             navigationContext: {
                 hasClass: !!targetClassId,
                 classId: targetClassId,
@@ -2860,8 +3660,10 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
                 dashboardUrl: '/homeStudent',
                 classUrl: targetClassId ? `/student/class/${targetClassId}` : null
             },
+
             
             // Suggested redirect
+
             suggestedRedirect: {
                 url: '/quiz-results',
                 context: 'results_page',
@@ -2942,7 +3744,7 @@ app.get('/api/quiz-result/:resultId/detailed', isAuthenticated, async (req, res)
 
         // Get the quiz result
         const quizResult = await quizResultCollection.findById(resultId).lean();
-        
+
         if (!quizResult) {
             return res.status(404).json({
                 success: false,
@@ -2960,7 +3762,7 @@ app.get('/api/quiz-result/:resultId/detailed', isAuthenticated, async (req, res)
 
         // Get the complete quiz data with questions and explanations
         const quiz = await quizCollection.findById(quizResult.quizId).lean();
-        
+
         if (!quiz) {
             return res.status(404).json({
                 success: false,
@@ -2981,13 +3783,13 @@ app.get('/api/quiz-result/:resultId/detailed', isAuthenticated, async (req, res)
         // Prepare detailed question results with explanations availability
         const detailedQuestions = quiz.questions.map((question, index) => {
             const studentAnswer = quizResult.answers[index];
-            const hasDetailedExplanations = !!(question.explanations && 
-                Object.keys(question.explanations).some(key => 
-                    key !== question.correct_answer && 
-                    question.explanations[key] && 
+            const hasDetailedExplanations = !!(question.explanations &&
+                Object.keys(question.explanations).some(key =>
+                    key !== question.correct_answer &&
+                    question.explanations[key] &&
                     question.explanations[key].trim() !== ''
                 ));
-            
+
             return {
                 questionIndex: index,
                 questionText: question.question,
@@ -3019,7 +3821,7 @@ app.get('/api/quiz-result/:resultId/detailed', isAuthenticated, async (req, res)
             const classResults = await quizResultCollection.find({
                 classId: quizResult.classId
             }).lean();
-            
+
             if (classResults.length > 1) {
                 const otherResults = classResults.filter(r => r.studentId.toString() !== studentId.toString());
                 if (otherResults.length > 0) {
@@ -3062,9 +3864,9 @@ app.get('/api/quiz-result/:resultId/detailed', isAuthenticated, async (req, res)
                     accuracyRate: parseFloat(accuracyRate),
                     averageTimePerQuestion: parseFloat(averageTimePerQuestion),
                     classAverage: classAverage ? parseFloat(classAverage) : null,
-                    performanceVsClass: classAverage ? 
-                        (quizResult.percentage > parseFloat(classAverage) ? 'above' : 
-                         quizResult.percentage < parseFloat(classAverage) ? 'below' : 'equal') : null,
+                    performanceVsClass: classAverage ?
+                        (quizResult.percentage > parseFloat(classAverage) ? 'above' :
+                            quizResult.percentage < parseFloat(classAverage) ? 'below' : 'equal') : null,
                     // 🆕 ENHANCED: Duration-based stats
                     timeEfficiencyPercentage: parseFloat(timeEfficiency.toFixed(1)),
                     averageTimeVsAllocated: `${Math.round((quizResult.timeTakenSeconds / quizDurationSeconds) * 100)}%`
@@ -3103,7 +3905,7 @@ app.get('/api/quiz/:quizId/rankings', isAuthenticated, async (req, res) => {
 
         // Get quiz info
         const quiz = await quizCollection.findById(quizId).select('lectureTitle classId').lean();
-        
+
         if (!quiz) {
             return res.status(404).json({
                 success: false,
@@ -3115,8 +3917,8 @@ app.get('/api/quiz/:quizId/rankings', isAuthenticated, async (req, res) => {
         const allResults = await quizResultCollection.find({
             quizId: quizId
         })
-        .select('studentId studentName score percentage timeTakenSeconds submissionDate')
-        .lean();
+            .select('studentId studentName score percentage timeTakenSeconds submissionDate')
+            .lean();
 
         if (allResults.length === 0) {
             return res.json({
@@ -3187,7 +3989,7 @@ app.get('/api/quiz-result/:resultId/stats', isAuthenticated, async (req, res) =>
 
         // Get the quiz result
         const quizResult = await quizResultCollection.findById(resultId).lean();
-        
+
         if (!quizResult) {
             return res.status(404).json({
                 success: false,
@@ -3216,18 +4018,18 @@ app.get('/api/quiz-result/:resultId/stats', isAuthenticated, async (req, res) =>
             // Basic quiz info
             quizTitle: quiz.lectureTitle,
             totalQuestions: quiz.totalQuestions,
-            
+
             // Student performance
             studentScore: quizResult.score,
             studentPercentage: quizResult.percentage,
             timeTaken: formatTime(quizResult.timeTakenSeconds),
             averageTimePerQuestion: (quizResult.timeTakenSeconds / quiz.totalQuestions).toFixed(1),
-            
+
             // Comparison statistics
             totalParticipants: allQuizResults.length,
-            averageScore: allQuizResults.length > 0 ? 
+            averageScore: allQuizResults.length > 0 ?
                 (allQuizResults.reduce((sum, r) => sum + r.percentage, 0) / allQuizResults.length).toFixed(1) : 0,
-            
+
             // Rankings
             betterThan: allQuizResults.filter(r => r.percentage < quizResult.percentage).length,
             rankPosition: allQuizResults
@@ -3270,7 +4072,7 @@ app.get('/quiz-result/:resultId/detailed', isAuthenticated, async (req, res) => 
 
         // Basic verification - get quiz result to check ownership
         const quizResult = await quizResultCollection.findById(resultId).select('studentId quizId classId').lean();
-        
+
         if (!quizResult) {
             return res.status(404).redirect('/homeStudent?message=Quiz result not found.');
         }
@@ -3282,11 +4084,11 @@ app.get('/quiz-result/:resultId/detailed', isAuthenticated, async (req, res) => 
 
         // Get quiz info for breadcrumbs
         const quiz = await quizCollection.findById(quizResult.quizId).select('lectureTitle').lean();
-        
+
         // Get class info if available
         let classInfo = null;
         const targetClassId = classId || quizResult.classId;
-        
+
         if (targetClassId) {
             classInfo = await classCollection.findById(targetClassId).select('name subject').lean();
         }
@@ -3331,7 +4133,7 @@ app.get('/api/student/navigation-context', isAuthenticated, async (req, res) => 
         }
 
         const studentId = req.session.userId;
-        
+
         // Get student's enrolled classes for navigation
         const enrollments = await classStudentCollection.find({
             studentId: studentId,
@@ -3400,9 +4202,9 @@ app.get('/api/student/class/:classId/recent-quiz', isAuthenticated, async (req, 
             classId: classId,
             isActive: true
         })
-        .select('lectureTitle totalQuestions generatedDate')
-        .sort({ generatedDate: -1 }) // Most recent first
-        .lean();
+            .select('lectureTitle totalQuestions generatedDate')
+            .sort({ generatedDate: -1 }) // Most recent first
+            .lean();
 
         if (!recentQuiz) {
             return res.json({
@@ -3534,11 +4336,13 @@ app.get('/api/teacher/class/:classId/quizzes', isAuthenticated, async (req, res)
             classId: classId,
             isActive: true
         })
+
         .select('lectureTitle totalQuestions durationMinutes generatedDate isActive lectureId examSessionActive examSessionStartTime examSessionEndTime examSessionDuration')
         .sort({ generatedDate: -1 })
         .lean();
 
         // Enhance quiz data with performance stats and exam session info
+
         const enhancedQuizzes = await Promise.all(
             quizzes.map(async (quiz) => {
                 const quizResults = await quizResultCollection.find({
@@ -3565,10 +4369,10 @@ app.get('/api/teacher/class/:classId/quizzes', isAuthenticated, async (req, res)
                     generatedDate: quiz.generatedDate,
                     isActive: quiz.isActive,
                     totalAttempts: quizResults.length,
-                    averageScore: quizResults.length > 0 
+                    averageScore: quizResults.length > 0
                         ? (quizResults.reduce((sum, r) => sum + r.percentage, 0) / quizResults.length).toFixed(1)
                         : 0,
-                    highestScore: quizResults.length > 0 
+                    highestScore: quizResults.length > 0
                         ? Math.max(...quizResults.map(r => r.percentage)).toFixed(1)
                         : 0,
                     // Exam session data
@@ -3579,6 +4383,8 @@ app.get('/api/teacher/class/:classId/quizzes', isAuthenticated, async (req, res)
                 };
             })
         );
+
+
 
         res.json({
             success: true,
@@ -3620,7 +4426,7 @@ app.get('/api/student/enrolled-classes', isAuthenticated, async (req, res) => {
         }
 
         const studentId = req.session.userId;
-        
+
         // Get classes the student is enrolled in
         const enrollments = await classStudentCollection.find({
             studentId: studentId,
@@ -3640,7 +4446,7 @@ app.get('/api/student/enrolled-classes', isAuthenticated, async (req, res) => {
             enrollments.map(async (enrollment) => {
                 // Get class details
                 const classDetails = await classCollection.findById(enrollment.classId).lean();
-                
+
                 if (!classDetails) {
                     return null; // Skip if class doesn't exist
                 }
@@ -3662,7 +4468,7 @@ app.get('/api/student/enrolled-classes', isAuthenticated, async (req, res) => {
 
                 // Calculate student's stats for this class
                 const quizzesTaken = studentResults.length;
-                const averageScore = quizzesTaken > 0 
+                const averageScore = quizzesTaken > 0
                     ? (studentResults.reduce((sum, result) => sum + result.percentage, 0) / quizzesTaken).toFixed(1)
                     : 0;
 
@@ -3697,9 +4503,9 @@ app.get('/api/student/enrolled-classes', isAuthenticated, async (req, res) => {
             overallStats: {
                 totalClasses: validClasses.length,
                 totalQuizAttempts: validClasses.reduce((sum, cls) => sum + cls.quizzesTaken, 0),
-                overallAverage: validClasses.length > 0 ? 
-                    (validClasses.reduce((sum, cls) => sum + cls.totalQuizScore, 0) / 
-                     validClasses.reduce((sum, cls) => sum + cls.quizzesTaken, 0)).toFixed(1) : 0,
+                overallAverage: validClasses.length > 0 ?
+                    (validClasses.reduce((sum, cls) => sum + cls.totalQuizScore, 0) /
+                        validClasses.reduce((sum, cls) => sum + cls.quizzesTaken, 0)).toFixed(1) : 0,
                 activeClasses: validClasses.filter(cls => cls.hasRecentActivity).length
             }
         });
@@ -3790,7 +4596,7 @@ app.get('/api/teacher/class/:classId/rankings', isAuthenticated, async (req, res
 
                 // Calculate average score
                 const averageScore = studentResults.reduce((sum, r) => sum + r.percentage, 0) / studentResults.length;
-                
+
                 // Calculate time efficiency for each result
                 const timeEfficiencies = studentResults.map(result => {
                     const quiz = classQuizzes.find(q => q._id.toString() === result.quizId.toString());
@@ -3798,13 +4604,13 @@ app.get('/api/teacher/class/:classId/rankings', isAuthenticated, async (req, res
                     return calculateTimeEfficiency(result.timeTakenSeconds, quizDurationSeconds);
                 });
 
-                const averageTimeEfficiency = timeEfficiencies.length > 0 
-                    ? timeEfficiencies.reduce((sum, eff) => sum + eff, 0) / timeEfficiencies.length 
+                const averageTimeEfficiency = timeEfficiencies.length > 0
+                    ? timeEfficiencies.reduce((sum, eff) => sum + eff, 0) / timeEfficiencies.length
                     : 0;
 
                 // 🆕 NEW: Calculate participation rate
-                const participationRate = totalQuizzesAvailable > 0 
-                    ? (studentResults.length / totalQuizzesAvailable) * 100 
+                const participationRate = totalQuizzesAvailable > 0
+                    ? (studentResults.length / totalQuizzesAvailable) * 100
                     : 0;
 
                 // 🆕 NEW: Calculate base points and participation-weighted final points
@@ -3921,11 +4727,11 @@ app.get('/api/student/class/:classId/overview', isAuthenticated, async (req, res
             classId: classId
         }).lean();
 
-        const averageScore = studentResults.length > 0 
+        const averageScore = studentResults.length > 0
             ? (studentResults.reduce((sum, result) => sum + result.percentage, 0) / studentResults.length).toFixed(1)
             : 0;
 
-        const completionRate = availableQuizzes > 0 
+        const completionRate = availableQuizzes > 0
             ? ((completedQuizzes / availableQuizzes) * 100).toFixed(1)
             : 0;
 
@@ -3990,8 +4796,8 @@ app.get('/api/student/class/:classId/all-quizzes', isAuthenticated, async (req, 
             classId: classId,
             isActive: true
         })
-        .sort({ generatedDate: -1 })
-        .lean();
+            .sort({ generatedDate: -1 })
+            .lean();
 
         // Get student's results for this class
         const studentResults = await quizResultCollection.find({
@@ -4076,7 +4882,7 @@ app.get('/api/teacher/quiz/:quizId/full', isAuthenticated, async (req, res) => {
 
         // Get quiz with full details including explanations
         const quiz = await quizCollection.findById(quizId).lean();
-        
+
         if (!quiz) {
             return res.status(404).json({
                 success: false,
@@ -4121,6 +4927,7 @@ app.get('/api/student/class/:classId/analytics', isAuthenticated, async (req, re
         if (req.session.userType !== 'student') {
             return res.status(403).json({ success: false, message: 'Access denied. Students only.' });
         }
+
 
         const studentId = req.session.userId;
         const classId = req.params.classId;
@@ -4172,6 +4979,7 @@ app.get('/api/student/class/:classId/analytics', isAuthenticated, async (req, re
 
         // Calculate averages
         const studentAverage = studentResults.length > 0 
+
             ? parseFloat((studentResults.reduce((sum, result) => sum + result.percentage, 0) / studentResults.length).toFixed(1))
             : 0;
 
@@ -4337,20 +5145,20 @@ app.get('/api/student/class/:classId/rankings', isAuthenticated, async (req, res
                 }
 
                 const averageScore = studentResults.reduce((sum, r) => sum + r.percentage, 0) / studentResults.length;
-                
+
                 const timeEfficiencies = studentResults.map(result => {
                     const quiz = classQuizzes.find(q => q._id.toString() === result.quizId.toString());
                     const quizDurationSeconds = quiz ? (quiz.durationMinutes || 15) * 60 : 900;
                     return calculateTimeEfficiency(result.timeTakenSeconds, quizDurationSeconds);
                 });
 
-                const averageTimeEfficiency = timeEfficiencies.length > 0 
-                    ? timeEfficiencies.reduce((sum, eff) => sum + eff, 0) / timeEfficiencies.length 
+                const averageTimeEfficiency = timeEfficiencies.length > 0
+                    ? timeEfficiencies.reduce((sum, eff) => sum + eff, 0) / timeEfficiencies.length
                     : 0;
 
                 // 🆕 NEW: Calculate participation rate and final points
-                const participationRate = totalQuizzesAvailable > 0 
-                    ? (studentResults.length / totalQuizzesAvailable) * 100 
+                const participationRate = totalQuizzesAvailable > 0
+                    ? (studentResults.length / totalQuizzesAvailable) * 100
                     : 0;
 
                 const finalPoints = calculateParticipationWeightedPoints(averageScore, averageTimeEfficiency, participationRate);
@@ -4433,25 +5241,25 @@ app.get('/api/student/class/:classId/performance', isAuthenticated, async (req, 
             studentId: studentId,
             classId: classId
         })
-        .sort({ submissionDate: -1 })
-        .lean();
+            .sort({ submissionDate: -1 })
+            .lean();
 
         // Get class average for comparison
         const allClassResults = await quizResultCollection.find({
             classId: classId
         }).lean();
 
-        const classAverage = allClassResults.length > 0 
+        const classAverage = allClassResults.length > 0
             ? (allClassResults.reduce((sum, result) => sum + result.percentage, 0) / allClassResults.length).toFixed(1)
             : 0;
 
         // Calculate student metrics
         const totalQuizzes = studentResults.length;
-        const studentAverage = totalQuizzes > 0 
+        const studentAverage = totalQuizzes > 0
             ? (studentResults.reduce((sum, result) => sum + result.percentage, 0) / totalQuizzes).toFixed(1)
             : 0;
 
-        const averageTime = totalQuizzes > 0 
+        const averageTime = totalQuizzes > 0
             ? Math.round(studentResults.reduce((sum, result) => sum + result.timeTakenSeconds, 0) / totalQuizzes)
             : 0;
 
@@ -4460,7 +5268,7 @@ app.get('/api/student/class/:classId/performance', isAuthenticated, async (req, 
         if (totalQuizzes >= 3) {
             const recent = studentResults.slice(0, 2).reduce((sum, r) => sum + r.percentage, 0) / 2;
             const previous = studentResults.slice(2, 4).reduce((sum, r) => sum + r.percentage, 0) / 2;
-            
+
             if (recent > previous + 5) trendIndicator = '↗️';
             else if (recent < previous - 5) trendIndicator = '↘️';
         }
@@ -4505,9 +5313,9 @@ app.get('/api/student/class/:classId/performance', isAuthenticated, async (req, 
 app.post('/api/classes/:classId/generate-join-code', isAuthenticated, async (req, res) => {
     try {
         if (req.session.userType !== 'teacher') {
-            return res.status(403).json({ 
-                success: false, 
-                message: 'Access denied. Teachers only.' 
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied. Teachers only.'
             });
         }
 
@@ -4536,18 +5344,18 @@ app.post('/api/classes/:classId/generate-join-code', isAuthenticated, async (req
 
         // Deactivate any existing active codes for this class
         await classJoinCodeCollection.updateMany(
-            { 
-                classId: classId, 
-                isActive: true 
+            {
+                classId: classId,
+                isActive: true
             },
-            { 
-                isActive: false 
+            {
+                isActive: false
             }
         );
 
         // Generate unique 6-digit code
         const joinCode = await classJoinCodeCollection.generateUniqueCode();
-        
+
         // Set expiry to 10 minutes from now
         const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
@@ -4596,9 +5404,9 @@ app.post('/api/classes/:classId/generate-join-code', isAuthenticated, async (req
 app.get('/api/classes/:classId/active-join-code', isAuthenticated, async (req, res) => {
     try {
         if (req.session.userType !== 'teacher') {
-            return res.status(403).json({ 
-                success: false, 
-                message: 'Access denied. Teachers only.' 
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied. Teachers only.'
             });
         }
 
@@ -4657,9 +5465,9 @@ app.get('/api/classes/:classId/active-join-code', isAuthenticated, async (req, r
 app.get('/api/classes/validate-join-code/:code', isAuthenticated, async (req, res) => {
     try {
         if (req.session.userType !== 'student') {
-            return res.status(403).json({ 
-                success: false, 
-                message: 'Access denied. Students only.' 
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied. Students only.'
             });
         }
 
@@ -4792,13 +5600,13 @@ app.get('/debug/join-codes', isAuthenticated, async (req, res) => {
 
 // ==================== JOIN REQUEST MANAGEMENT ROUTES ====================
 
-// 🆕 NEW: Submit join request (student)
+// 🔄 UPDATED: Submit join request (student) - Handles reactivating inactive enrollments
 app.post('/api/classes/join-request', isAuthenticated, async (req, res) => {
     try {
         if (req.session.userType !== 'student') {
-            return res.status(403).json({ 
-                success: false, 
-                message: 'Access denied. Students only.' 
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied. Students only.'
             });
         }
 
@@ -4841,35 +5649,92 @@ app.post('/api/classes/join-request', isAuthenticated, async (req, res) => {
             });
         }
 
-        // Double-check for existing enrollment
-        const existingEnrollment = await classStudentCollection.findOne({
+        // --- NEW/UPDATED: Comprehensive checks for existing enrollment or request ---
+
+        // 1. Check for ANY existing classStudentCollection entry (active or inactive)
+        const existingClassStudentEntry = await classStudentCollection.findOne({
             classId: codeDoc.classId,
-            studentId: studentId,
-            isActive: true
+            studentId: studentId
         });
 
-        if (existingEnrollment) {
-            return res.status(400).json({
-                success: false,
-                message: 'You are already enrolled in this class.'
-            });
+        if (existingClassStudentEntry) {
+            if (existingClassStudentEntry.isActive) {
+                console.log('⚠️ Student already actively enrolled in this class.');
+                return res.status(400).json({
+                    success: false,
+                    message: 'You are already enrolled in this class.'
+                });
+            } else {
+                // 🆕 NEW LOGIC: Reactivate inactive enrollment
+                console.log('🔄 Reactivating inactive enrollment for student:', studentName, 'in class:', codeDoc.className);
+                await classStudentCollection.findByIdAndUpdate(existingClassStudentEntry._id, {
+                    isActive: true,
+                    enrolledAt: new Date(), // Update enrollment date
+                    studentName: studentName, // Update name in case it changed
+                    studentEnrollment: student.enrollment // Update enrollment number
+                });
+
+                // Also update any pending/rejected join requests to 'approved' to clean up
+                await classJoinRequestCollection.updateMany(
+                    { classId: codeDoc.classId, studentId: studentId, status: { $in: ['pending', 'rejected'] } },
+                    {
+                        status: 'approved',
+                        processedAt: new Date(),
+                        // processedBy: 'system-reactivation' // ❌ REMOVE THIS LINE
+                    }
+                );
+
+                // Increment usage count for the join code
+                await classJoinCodeCollection.findByIdAndUpdate(codeDoc._id, {
+                    $inc: { usageCount: 1 }
+                });
+
+                // Update class student count
+                const totalActiveStudents = await classStudentCollection.countDocuments({
+                    classId: codeDoc.classId,
+                    isActive: true
+                });
+                await classCollection.findByIdAndUpdate(codeDoc.classId, {
+                    studentCount: totalActiveStudents,
+                    updatedAt: new Date()
+                });
+
+                return res.json({
+                    success: true,
+                    message: `You have successfully rejoined ${codeDoc.className}!`,
+                    classInfo: {
+                        className: codeDoc.className,
+                        classSubject: codeDoc.classSubject,
+                        teacherName: codeDoc.teacherName
+                    }
+                });
+            }
         }
 
-        // Double-check for existing pending request
-        const existingRequest = await classJoinRequestCollection.findOne({
+        // 2. Check if student has ANY existing join request (pending or rejected)
+        // This is now only for cases where there's no classStudentEntry at all
+        const existingJoinRequest = await classJoinRequestCollection.findOne({
             classId: codeDoc.classId,
-            studentId: studentId,
-            status: 'pending'
+            studentId: studentId
         });
 
-        if (existingRequest) {
-            return res.status(400).json({
-                success: false,
-                message: 'You already have a pending request for this class.'
-            });
+        if (existingJoinRequest) {
+            console.log('⚠️ Existing join request found (status:', existingJoinRequest.status, ')');
+            if (existingJoinRequest.status === 'pending') {
+                return res.status(400).json({
+                    success: false,
+                    message: 'You already have a pending request for this class. Please wait for the teacher\'s approval.'
+                });
+            } else if (existingJoinRequest.status === 'rejected') {
+                // If a previous request was rejected, delete it to allow a new one
+                console.log('🗑️ Deleting previous rejected request to allow new submission.');
+                await classJoinRequestCollection.deleteOne({ _id: existingJoinRequest._id });
+            }
         }
+        // --- END NEW/UPDATED CHECKS ---
 
-        // Create join request
+
+        // If no existing enrollment (active/inactive) and no pending/rejected request, create new join request
         const joinRequest = await classJoinRequestCollection.create({
             classId: codeDoc.classId,
             studentId: studentId,
@@ -4889,7 +5754,7 @@ app.post('/api/classes/join-request', isAuthenticated, async (req, res) => {
             $inc: { usageCount: 1 }
         });
 
-        console.log('✅ Join request created:', {
+        console.log('✅ New join request created:', {
             requestId: joinRequest._id,
             className: codeDoc.className,
             teacherName: codeDoc.teacherName
@@ -4908,6 +5773,13 @@ app.post('/api/classes/join-request', isAuthenticated, async (req, res) => {
 
     } catch (error) {
         console.error('❌ Error submitting join request:', error);
+        // Fallback for unexpected duplicate key errors (should be rare with new logic)
+        if (error.code === 11000) {
+            return res.status(400).json({
+                success: false,
+                message: 'A request for this class already exists or you are already enrolled (duplicate key error).'
+            });
+        }
         res.status(500).json({
             success: false,
             message: 'Failed to submit join request: ' + error.message
@@ -4919,9 +5791,9 @@ app.post('/api/classes/join-request', isAuthenticated, async (req, res) => {
 app.get('/api/classes/:classId/join-requests', isAuthenticated, async (req, res) => {
     try {
         if (req.session.userType !== 'teacher') {
-            return res.status(403).json({ 
-                success: false, 
-                message: 'Access denied. Teachers only.' 
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied. Teachers only.'
             });
         }
 
@@ -4980,9 +5852,9 @@ app.get('/api/classes/:classId/join-requests', isAuthenticated, async (req, res)
 app.post('/api/classes/:classId/join-requests/:requestId/:action', isAuthenticated, async (req, res) => {
     try {
         if (req.session.userType !== 'teacher') {
-            return res.status(403).json({ 
-                success: false, 
-                message: 'Access denied. Teachers only.' 
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied. Teachers only.'
             });
         }
 
@@ -5044,7 +5916,7 @@ app.post('/api/classes/:classId/join-requests/:requestId/:action', isAuthenticat
                 if (existingEnrollment.isActive) {
                     // Student is already actively enrolled
                     await joinRequest.approve(teacherId);
-                    
+
                     return res.status(400).json({
                         success: false,
                         message: 'Student is already enrolled in this class.'
@@ -5052,7 +5924,7 @@ app.post('/api/classes/:classId/join-requests/:requestId/:action', isAuthenticat
                 } else {
                     // 🔧 FIX: Reactivate existing inactive enrollment instead of creating new one
                     console.log('🔄 Reactivating existing inactive enrollment for student:', joinRequest.studentName);
-                    
+
                     await classStudentCollection.findByIdAndUpdate(existingEnrollment._id, {
                         isActive: true,
                         enrolledAt: new Date(), // Update enrollment date
@@ -5063,7 +5935,7 @@ app.post('/api/classes/:classId/join-requests/:requestId/:action', isAuthenticat
             } else {
                 // 🔧 No existing enrollment found, create new one
                 console.log('➕ Creating new enrollment for student:', joinRequest.studentName);
-                
+
                 await classStudentCollection.create({
                     classId: classId,
                     studentId: joinRequest.studentId,
@@ -5082,7 +5954,7 @@ app.post('/api/classes/:classId/join-requests/:requestId/:action', isAuthenticat
                 classId: classId,
                 isActive: true
             });
-            
+
             await classCollection.findByIdAndUpdate(classId, {
                 studentCount: totalActiveStudents,
                 updatedAt: new Date()
@@ -5105,7 +5977,7 @@ app.post('/api/classes/:classId/join-requests/:requestId/:action', isAuthenticat
         } else if (action === 'reject') {
             // Reject without asking for reason
             const defaultRejectionReason = 'Request rejected by teacher';
-            
+
             // Reject the request
             await joinRequest.reject(teacherId, defaultRejectionReason);
 
@@ -5136,9 +6008,9 @@ app.post('/api/classes/:classId/join-requests/:requestId/:action', isAuthenticat
 app.get('/api/student/join-request-status/:classId', isAuthenticated, async (req, res) => {
     try {
         if (req.session.userType !== 'student') {
-            return res.status(403).json({ 
-                success: false, 
-                message: 'Access denied. Students only.' 
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied. Students only.'
             });
         }
 
@@ -5249,9 +6121,9 @@ app.get('/api/student/class/:classId/quizzes', isAuthenticated, async (req, res)
             classId: classId,
             isActive: true
         })
-        .select('lectureTitle totalQuestions generatedDate')
-        .sort({ generatedDate: -1 })
-        .lean();
+            .select('lectureTitle totalQuestions generatedDate')
+            .sort({ generatedDate: -1 })
+            .lean();
 
         // Check which quizzes the student has already taken
         const takenQuizIds = await quizResultCollection.find({
@@ -5300,7 +6172,7 @@ app.get('/lecture_results/:lectureId', isAuthenticated, async (req, res) => {
         }
 
         const lectureId = req.params.lectureId;
-        
+
         // Get lecture details
         const lecture = await lectureCollection.findById(lectureId).lean();
         if (!lecture) {
@@ -5326,11 +6198,11 @@ app.get('/lecture_results/:lectureId', isAuthenticated, async (req, res) => {
         }
 
         // Get quiz results
-        const quizResults = await quizResultCollection.find({ 
-            lectureId: lectureId 
+        const quizResults = await quizResultCollection.find({
+            lectureId: lectureId
         })
-        .sort({ percentage: -1, timeTakenSeconds: 1 }) // Sort by score desc, then time asc
-        .lean();
+            .sort({ percentage: -1, timeTakenSeconds: 1 }) // Sort by score desc, then time asc
+            .lean();
 
         // Format results with rankings
         const formattedResults = quizResults.map((result, index) => ({
@@ -5386,13 +6258,13 @@ app.get('/api/student/performance-data', isAuthenticated, async (req, res) => {
 
         // 🔧 FIX: Calculate statistics with proper formatting
         const totalQuizzes = studentResults.length;
-        const averageScore = totalQuizzes > 0 
+        const averageScore = totalQuizzes > 0
             ? formatPercentage(studentResults.reduce((sum, result) => sum + result.percentage, 0) / totalQuizzes) // 🔧 FIX
             : 0;
 
         // 🔧 FIX: Calculate overall class average with proper formatting
         const allScores = allResults.map(r => r.percentage);
-        const classAverage = allScores.length > 0 
+        const classAverage = allScores.length > 0
             ? formatPercentage(allScores.reduce((sum, score) => sum + score, 0) / allScores.length) // 🔧 FIX
             : 0;
 
@@ -5454,19 +6326,19 @@ app.get('/api/student/performance-data', isAuthenticated, async (req, res) => {
 
 // Helper functions for safe calculations
 function safeNumber(value, defaultValue = 0) {
-  const num = Number(value);
-  return isNaN(num) || !isFinite(num) ? defaultValue : num;
+    const num = Number(value);
+    return isNaN(num) || !isFinite(num) ? defaultValue : num;
 }
 
 function safeToFixed(value, decimals = 2) {
-  const num = safeNumber(value, 0);
-  return num.toFixed(decimals);
+    const num = safeNumber(value, 0);
+    return num.toFixed(decimals);
 }
 
 function safePercentage(part, total) {
-  const p = safeNumber(part, 0);
-  const t = safeNumber(total, 1); // Avoid division by zero
-  return t === 0 ? 0 : (p / t) * 100;
+    const p = safeNumber(part, 0);
+    const t = safeNumber(total, 1); // Avoid division by zero
+    return t === 0 ? 0 : (p / t) * 100;
 }
 
 // 🎯 FIXED ANALYTICS ROUTE - USING YOUR COLLECTION NAMES
@@ -5520,7 +6392,7 @@ app.get('/api/teacher/class-analytics', requireAuth, async (req, res) => {
         // 🔧 FIX: Calculate average score with proper formatting
         let totalScore = 0;
         let validScores = 0;
-        
+
         results.forEach(result => {
             const score = safeNumber(result.percentage);
             if (score >= 0 && score <= 100) {
@@ -5547,10 +6419,10 @@ app.get('/api/teacher/class-analytics', requireAuth, async (req, res) => {
         Object.keys(quizPerformanceMap).forEach(quizId => {
             const quiz = quizMap[quizId];
             const scores = quizPerformanceMap[quizId];
-            
+
             if (quiz && scores.length > 0) {
                 const avgScore = formatPercentage(scores.reduce((a, b) => a + b, 0) / scores.length); // 🔧 FIX
-                
+
                 performanceDistribution.push({
                     quizId: quizId,
                     quizTitle: quiz.lectureTitle,
@@ -5588,7 +6460,7 @@ app.get('/api/teacher/class-analytics', requireAuth, async (req, res) => {
                 rank: index + 1,
                 studentId: student.studentId,
                 studentName: student.studentName,
-                averageScore: student.quizCount > 0 ? 
+                averageScore: student.quizCount > 0 ?
                     formatPercentage(student.totalScore / student.quizCount) : 0, // 🔧 FIX
                 totalQuizzes: student.quizCount,
                 averageTime: student.quizCount > 0 ? formatTime(student.totalTime / student.quizCount) : '0:00',
@@ -5695,9 +6567,9 @@ app.get('/api/teacher/student-analytics/:studentId', isAuthenticated, async (req
             }).lean();
 
             if (!classDoc) {
-                return res.status(403).json({ 
-                    success: false, 
-                    message: 'Class not found or access denied.' 
+                return res.status(403).json({
+                    success: false,
+                    message: 'Class not found or access denied.'
                 });
             }
 
@@ -5709,9 +6581,9 @@ app.get('/api/teacher/student-analytics/:studentId', isAuthenticated, async (req
             }).lean();
 
             if (!enrollment) {
-                return res.status(403).json({ 
-                    success: false, 
-                    message: 'Student is not enrolled in this class.' 
+                return res.status(403).json({
+                    success: false,
+                    message: 'Student is not enrolled in this class.'
                 });
             }
 
@@ -5737,9 +6609,9 @@ app.get('/api/teacher/student-analytics/:studentId', isAuthenticated, async (req
             }).lean();
 
             if (!studentEnrollment) {
-                return res.status(403).json({ 
-                    success: false, 
-                    message: 'You do not have access to this student\'s analytics.' 
+                return res.status(403).json({
+                    success: false,
+                    message: 'You do not have access to this student\'s analytics.'
                 });
             }
 
@@ -5773,7 +6645,7 @@ app.get('/api/teacher/student-analytics/:studentId', isAuthenticated, async (req
             studentResults.map(async (result) => {
                 const quiz = await quizCollection.findById(result.quizId).select('lectureTitle classId').lean();
                 const classInfo = quiz && quiz.classId ? await classCollection.findById(quiz.classId).select('name').lean() : null;
-                
+
                 return {
                     ...result,
                     quizTitle: quiz ? quiz.lectureTitle : 'Unknown Quiz',
@@ -5784,13 +6656,13 @@ app.get('/api/teacher/student-analytics/:studentId', isAuthenticated, async (req
 
         // Calculate statistics
         const totalQuizzes = studentResults.length;
-        const averageScore = totalQuizzes > 0 
+        const averageScore = totalQuizzes > 0
             ? (studentResults.reduce((sum, result) => sum + result.percentage, 0) / totalQuizzes).toFixed(1)
             : 0;
 
         // Calculate class average (filtered by same criteria)
         const classScores = allClassResults.map(r => r.percentage);
-        const classAverage = classScores.length > 0 
+        const classAverage = classScores.length > 0
             ? (classScores.reduce((sum, score) => sum + score, 0) / classScores.length).toFixed(1)
             : 0;
 
@@ -5799,13 +6671,13 @@ app.get('/api/teacher/student-analytics/:studentId', isAuthenticated, async (req
         if (studentResults.length >= 6) {
             const recent3 = studentResults.slice(0, 3).reduce((sum, r) => sum + r.percentage, 0) / 3;
             const previous3 = studentResults.slice(3, 6).reduce((sum, r) => sum + r.percentage, 0) / 3;
-            
+
             if (recent3 > previous3 + 5) trendIndicator = '↗️';
             else if (recent3 < previous3 - 5) trendIndicator = '↘️';
         }
 
         // Calculate average time
-        const averageTime = totalQuizzes > 0 
+        const averageTime = totalQuizzes > 0
             ? Math.floor(studentResults.reduce((sum, result) => sum + result.timeTakenSeconds, 0) / totalQuizzes / 60)
             : 0;
 
@@ -5813,7 +6685,7 @@ app.get('/api/teacher/student-analytics/:studentId', isAuthenticated, async (req
         const participationData = {
             attempted: totalQuizzes,
             totalAvailable: totalAvailableQuizzes,
-            participationRate: totalAvailableQuizzes > 0 
+            participationRate: totalAvailableQuizzes > 0
                 ? ((totalQuizzes / totalAvailableQuizzes) * 100).toFixed(1)
                 : 0
         };
@@ -5886,9 +6758,9 @@ app.get('/api/teacher/student-analytics/:studentId', isAuthenticated, async (req
 
     } catch (error) {
         console.error('❌ Error fetching student analytics:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Failed to load student analytics.' 
+        res.status(500).json({
+            success: false,
+            message: 'Failed to load student analytics.'
         });
     }
 });
@@ -7056,18 +7928,18 @@ app.get('/api/student/class/:classId/rankings', isAuthenticated, async (req, res
 
                 // Calculate average score
                 const averageScore = studentResults.reduce((sum, r) => sum + r.percentage, 0) / studentResults.length;
-                
+
                 // 🔧 STEP 2: Calculate time efficiency for each result
                 const timeEfficiencies = studentResults.map(result => {
                     // Find the quiz duration
                     const quiz = classQuizzes.find(q => q._id.toString() === result.quizId.toString());
                     const quizDurationSeconds = quiz ? (quiz.durationMinutes || 15) * 60 : 900; // Default 15 min
-                    
+
                     return calculateTimeEfficiency(result.timeTakenSeconds, quizDurationSeconds);
                 });
 
-                const averageTimeEfficiency = timeEfficiencies.length > 0 
-                    ? timeEfficiencies.reduce((sum, eff) => sum + eff, 0) / timeEfficiencies.length 
+                const averageTimeEfficiency = timeEfficiencies.length > 0
+                    ? timeEfficiencies.reduce((sum, eff) => sum + eff, 0) / timeEfficiencies.length
                     : 0;
 
                 // 🔧 STEP 2: Calculate ranking points using NEW FORMULA
@@ -7169,7 +8041,7 @@ app.get('/api/classes/:classId/last-quiz-rankings', isAuthenticated, async (req,
 
         // Get the quiz details
         const quiz = await quizCollection.findById(latestResult.quizId).lean();
-        
+
         if (!quiz) {
             return res.json({
                 success: true,
@@ -7189,14 +8061,14 @@ app.get('/api/classes/:classId/last-quiz-rankings', isAuthenticated, async (req,
 
         // 🔧 STEP 3: Calculate rankings using the new points formula for that quiz
         const quizDurationSeconds = (quiz.durationMinutes || 15) * 60;
-        
+
         const rankings = quizResults.map(result => {
             // Calculate time efficiency for this specific quiz
             const timeEfficiency = calculateTimeEfficiency(result.timeTakenSeconds, quizDurationSeconds);
-            
+
             // Calculate points using new formula
             const points = calculateRankingPoints(result.percentage, timeEfficiency);
-            
+
             return {
                 studentId: result.studentId,
                 studentName: result.studentName,
@@ -7207,11 +8079,11 @@ app.get('/api/classes/:classId/last-quiz-rankings', isAuthenticated, async (req,
                 submissionDate: result.submissionDate
             };
         })
-        .sort((a, b) => b.points - a.points) // Sort by points descending
-        .map((student, index) => ({
-            ...student,
-            rank: index + 1
-        }));
+            .sort((a, b) => b.points - a.points) // Sort by points descending
+            .map((student, index) => ({
+                ...student,
+                rank: index + 1
+            }));
 
         console.log(`🎯 Last quiz rankings loaded: ${quiz.lectureTitle} with ${rankings.length} participants`);
 
@@ -7268,12 +8140,12 @@ app.post('/api/explanation/get', isAuthenticated, async (req, res) => {
         // Get the detailed explanation for the wrong answer
         if (question.explanations && question.explanations[wrongAnswer] && question.explanations[wrongAnswer].trim() !== '') {
             explanation = question.explanations[wrongAnswer];
-            
+
             // Also include context about the correct answer
             if (question.correctAnswerExplanation && question.correctAnswerExplanation.trim() !== '') {
                 explanation += `\n\n💡 **Why ${question.correct_answer} is correct:** ${question.correctAnswerExplanation}`;
             }
-            
+
             console.log('✅ Retrieved detailed explanation for wrong answer:', wrongAnswer);
         } else {
             // Fallback explanation if detailed ones aren't available
@@ -7283,7 +8155,7 @@ app.post('/api/explanation/get', isAuthenticated, async (req, res) => {
             } else {
                 explanation = `The correct answer is ${question.correct_answer}) ${question.options[question.correct_answer]}. Please review the lecture material for detailed understanding.`;
             }
-            
+
             console.log('⚠️ Using fallback explanation - detailed explanation not found');
         }
 
@@ -7310,9 +8182,9 @@ app.post('/api/explanation/get', isAuthenticated, async (req, res) => {
 
     } catch (error) {
         console.error('❌ Error retrieving enhanced explanation:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Failed to retrieve explanation: ' + error.message 
+        res.status(500).json({
+            success: false,
+            message: 'Failed to retrieve explanation: ' + error.message
         });
     }
 });
@@ -7322,17 +8194,17 @@ app.get('/api/quiz/:quizId/explanations-status', isAuthenticated, async (req, re
     try {
         const quizId = req.params.quizId;
         const quiz = await quizCollection.findById(quizId).select('questions generatedDate').lean();
-        
+
         if (!quiz) {
             return res.status(404).json({ success: false, message: 'Quiz not found.' });
         }
 
         // Check if questions have enhanced explanations
-        const questionsWithExplanations = quiz.questions.filter(q => 
+        const questionsWithExplanations = quiz.questions.filter(q =>
             q.explanations && Object.keys(q.explanations).some(key => q.explanations[key] && q.explanations[key].trim() !== '')
         ).length;
 
-        const questionsWithCorrectExplanations = quiz.questions.filter(q => 
+        const questionsWithCorrectExplanations = quiz.questions.filter(q =>
             q.correctAnswerExplanation && q.correctAnswerExplanation.trim() !== ''
         ).length;
 
@@ -7353,17 +8225,17 @@ app.get('/api/quiz/:quizId/explanations-status', isAuthenticated, async (req, re
                 totalQuestions: quiz.questions.length,
                 questionsWithExplanations: questionsWithExplanations,
                 questionsWithCorrectExplanations: questionsWithCorrectExplanations,
-                enhancementLevel: questionsWithExplanations === quiz.questions.length ? 'full' : 
-                                questionsWithExplanations > 0 ? 'partial' : 'none'
+                enhancementLevel: questionsWithExplanations === quiz.questions.length ? 'full' :
+                    questionsWithExplanations > 0 ? 'partial' : 'none'
             },
             generatedDate: quiz.generatedDate
         });
 
     } catch (error) {
         console.error('❌ Error checking explanation status:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Failed to check explanation status: ' + error.message 
+        res.status(500).json({
+            success: false,
+            message: 'Failed to check explanation status: ' + error.message
         });
     }
 });
@@ -7375,22 +8247,22 @@ app.get('/debug/quiz/:quizId', isAuthenticated, async (req, res) => {
     try {
         const quizId = req.params.quizId;
         console.log('🔍 DEBUG: Checking quiz explanations for:', quizId);
-        
+
         const quiz = await quizCollection.findById(quizId).lean();
-        
+
         if (!quiz) {
             return res.json({ error: 'Quiz not found' });
         }
 
         // Check the structure of the first question
         const firstQuestion = quiz.questions[0];
-        
+
         const debugInfo = {
             quizId: quiz._id,
             lectureTitle: quiz.lectureTitle,
             totalQuestions: quiz.questions.length,
             generatedDate: quiz.generatedDate,
-            
+
             // Check first question structure
             firstQuestionStructure: {
                 hasQuestion: !!firstQuestion.question,
@@ -7398,23 +8270,23 @@ app.get('/debug/quiz/:quizId', isAuthenticated, async (req, res) => {
                 hasCorrectAnswer: !!firstQuestion.correct_answer,
                 hasExplanations: !!firstQuestion.explanations,
                 hasCorrectExplanation: !!firstQuestion.correctAnswerExplanation,
-                
+
                 // Show actual explanation data
                 explanationsData: firstQuestion.explanations || 'NOT FOUND',
                 correctExplanationData: firstQuestion.correctAnswerExplanation || 'NOT FOUND'
             },
-            
+
             // Check all questions for explanations
-            questionsWithExplanations: quiz.questions.filter(q => 
+            questionsWithExplanations: quiz.questions.filter(q =>
                 q.explanations && Object.keys(q.explanations).length > 0
             ).length,
-            
-            questionsWithCorrectExplanations: quiz.questions.filter(q => 
+
+            questionsWithCorrectExplanations: quiz.questions.filter(q =>
                 q.correctAnswerExplanation && q.correctAnswerExplanation.trim() !== ''
             ).length,
-            
+
             // Sample of explanations from first question
-            sampleExplanations: firstQuestion.explanations ? 
+            sampleExplanations: firstQuestion.explanations ?
                 Object.entries(firstQuestion.explanations).map(([key, value]) => ({
                     option: key,
                     explanation: value ? value.substring(0, 100) + '...' : 'EMPTY'
@@ -7422,11 +8294,11 @@ app.get('/debug/quiz/:quizId', isAuthenticated, async (req, res) => {
         };
 
         console.log('📊 DEBUG Results:', debugInfo);
-        
+
         res.json({
             success: true,
             debugInfo: debugInfo,
-            recommendation: debugInfo.questionsWithExplanations === 0 ? 
+            recommendation: debugInfo.questionsWithExplanations === 0 ?
                 'ISSUE FOUND: No questions have explanations. You need to generate a NEW quiz with the enhanced system.' :
                 'Explanations found! Check the explanation retrieval route.'
         });
@@ -7441,7 +8313,7 @@ app.get('/debug/quiz/:quizId', isAuthenticated, async (req, res) => {
 app.get('/debug/quiz/:quizId/question/:questionIndex', isAuthenticated, async (req, res) => {
     try {
         const { quizId, questionIndex } = req.params;
-        
+
         const quiz = await quizCollection.findById(quizId).lean();
         if (!quiz) {
             return res.json({ error: 'Quiz not found' });
@@ -7462,13 +8334,13 @@ app.get('/debug/quiz/:quizId/question/:questionIndex', isAuthenticated, async (r
                 explanations: question.explanations || 'NOT FOUND',
                 hasCorrectExplanation: !!question.correctAnswerExplanation,
                 correctExplanation: question.correctAnswerExplanation || 'NOT FOUND',
-                
+
                 // Test each wrong answer explanation
                 explanationTests: ['A', 'B', 'C', 'D'].map(option => ({
                     option: option,
                     isCorrectAnswer: option === question.correct_answer,
                     hasExplanation: !!(question.explanations && question.explanations[option]),
-                    explanationText: question.explanations && question.explanations[option] ? 
+                    explanationText: question.explanations && question.explanations[option] ?
                         question.explanations[option] : 'NO EXPLANATION'
                 }))
             }
@@ -7520,13 +8392,13 @@ app.get('/quiz-results', isAuthenticated, (req, res) => {
 async function cleanupOldQuizResults() {
     try {
         const fifteenDaysAgo = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000);
-        
+
         const deleteResult = await quizResultCollection.deleteMany({
             submissionDate: { $lt: fifteenDaysAgo }
         });
-        
+
         console.log(`🗑️ Cleaned up ${deleteResult.deletedCount} old quiz results (older than 15 days)`);
-        
+
     } catch (error) {
         console.error('❌ Error during cleanup:', error);
     }
@@ -7536,15 +8408,15 @@ async function cleanupOldQuizResults() {
 async function cleanupOldExplanations() {
     try {
         const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-        
+
         // Delete explanations that haven't been used in 30 days and have usage count of 1
         const deleteResult = await explanationCacheCollection.deleteMany({
             generatedDate: { $lt: thirtyDaysAgo },
             usageCount: 1
         });
-        
+
         console.log(`🗑️ Cleaned up ${deleteResult.deletedCount} unused explanations`);
-        
+
     } catch (error) {
         console.error('❌ Error during explanation cleanup:', error);
     }
@@ -7596,16 +8468,26 @@ setInterval(cleanupOldExplanations, 16 * 24 * 60 * 60 * 1000); // Every 16 days
 // 🆕 ENHANCED: Helper function for formatting time with better accuracy
 function formatTime(seconds) {
     if (typeof seconds !== 'number' || isNaN(seconds) || seconds < 0) return '0:00';
-    
+
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = Math.floor(seconds % 60);
-    
+
     if (hours > 0) {
         return `${hours}h ${minutes}m ${secs}s`;
     } else {
         return `${minutes}m ${secs}s`;
     }
+}
+// Utility function to format numbers to two decimal places
+function formatToTwoDecimals(num) {
+    if (typeof num !== 'number') {
+        num = parseFloat(num);
+    }
+    if (isNaN(num)) {
+        return '0.00'; // Default for non-numeric or invalid numbers
+    }
+    return num.toFixed(2);
 }
 
 function formatPercentage(value, decimals = 1) {
@@ -7616,11 +8498,11 @@ function formatPercentage(value, decimals = 1) {
 // 🆕 NEW: Helper function to calculate time efficiency
 function calculateTimeEfficiency(timeTakenSeconds, quizDurationSeconds) {
     if (!timeTakenSeconds || !quizDurationSeconds || quizDurationSeconds <= 0) return 0;
-    
+
     // Calculate efficiency: faster completion = higher efficiency
     // But don't penalize too much for using more time
     const timeRatio = timeTakenSeconds / quizDurationSeconds;
-    
+
     if (timeRatio <= 0.5) {
         // Very fast completion - 100% efficiency
         return 100;
@@ -7645,9 +8527,9 @@ function calculateQuizStats(results, quizDurationMinutes = 15) {
             slowestCompletion: 0
         };
     }
-    
+
     const quizDurationSeconds = quizDurationMinutes * 60;
-    
+
     const stats = {
         totalAttempts: results.length,
         averageScore: (results.reduce((sum, r) => sum + r.percentage, 0) / results.length).toFixed(1),
@@ -7656,14 +8538,14 @@ function calculateQuizStats(results, quizDurationMinutes = 15) {
         slowestCompletion: Math.max(...results.map(r => r.timeTakenSeconds))
     };
 
-    
-    
+
+
     // Calculate average efficiency
-    const efficiencies = results.map(r => 
+    const efficiencies = results.map(r =>
         calculateTimeEfficiency(r.timeTakenSeconds, quizDurationSeconds)
     );
     stats.averageEfficiency = (efficiencies.reduce((sum, eff) => sum + eff, 0) / efficiencies.length).toFixed(1);
-    
+
     return stats;
 }
 
@@ -7694,29 +8576,29 @@ async function validateQuizAccess(quizId, studentId, req) {
     try {
         // Get quiz details including duration
         const quiz = await quizCollection.findById(quizId).select('durationMinutes classId lectureTitle isActive').lean();
-        
+
         if (!quiz) {
             return { valid: false, message: 'Quiz not found.' };
         }
-        
+
         if (!quiz.isActive) {
             return { valid: false, message: 'This quiz is no longer active.' };
         }
-        
+
         // Check if student already took this quiz
         const existingResult = await quizResultCollection.findOne({
             quizId: quizId,
             studentId: studentId
         });
-        
+
         if (existingResult) {
-            return { 
-                valid: false, 
+            return {
+                valid: false,
                 message: 'You have already completed this quiz.',
                 resultId: existingResult._id
             };
         }
-        
+
         // Check class enrollment if quiz belongs to a class
         if (quiz.classId) {
             const enrollment = await classStudentCollection.findOne({
@@ -7724,15 +8606,15 @@ async function validateQuizAccess(quizId, studentId, req) {
                 classId: quiz.classId,
                 isActive: true
             });
-            
+
             if (!enrollment) {
-                return { 
-                    valid: false, 
-                    message: 'You are not enrolled in the class for this quiz.' 
+                return {
+                    valid: false,
+                    message: 'You are not enrolled in the class for this quiz.'
                 };
             }
         }
-        
+
         return {
             valid: true,
             quiz: {
@@ -7741,7 +8623,7 @@ async function validateQuizAccess(quizId, studentId, req) {
                 durationSeconds: (quiz.durationMinutes || 15) * 60
             }
         };
-        
+
     } catch (error) {
         console.error('❌ Error validating quiz access:', error);
         return { valid: false, message: 'Error validating quiz access.' };
@@ -7752,7 +8634,7 @@ async function validateQuizAccess(quizId, studentId, req) {
 function validateQuestionCount(questionCount) {
     const count = parseInt(questionCount);
     if (isNaN(count)) return 10; // Default fallback
-    
+
     return Math.max(5, Math.min(30, count)); // Clamp between 5-30 questions
 }
 
@@ -7761,7 +8643,7 @@ function validateQuestionCount(questionCount) {
 function validateQuizDuration(durationMinutes) {
     const duration = parseInt(durationMinutes);
     if (isNaN(duration)) return 15; // Default fallback
-    
+
     return Math.max(2, Math.min(60, duration)); // Clamp between 2-60 minutes
 }
 
@@ -7770,23 +8652,23 @@ async function updateQuizMetadata(quizId, newResult) {
     try {
         // Get all results for this quiz
         const allResults = await quizResultCollection.find({ quizId: quizId }).lean();
-        
+
         if (allResults.length === 0) return;
-        
+
         // Calculate updated stats
         const totalAttempts = allResults.length;
         const averageScore = allResults.reduce((sum, r) => sum + r.percentage, 0) / totalAttempts;
         const highestScore = Math.max(...allResults.map(r => r.percentage));
-        
+
         // Update quiz with new stats
         await quizCollection.findByIdAndUpdate(quizId, {
             totalAttempts: totalAttempts,
             averageScore: parseFloat(averageScore.toFixed(1)),
             highestScore: parseFloat(highestScore.toFixed(1))
         });
-        
+
         console.log(`📊 Quiz metadata updated: ${totalAttempts} attempts, avg: ${averageScore.toFixed(1)}%`);
-        
+
     } catch (error) {
         console.error('❌ Error updating quiz metadata:', error);
     }
@@ -7796,12 +8678,12 @@ async function updateQuizMetadata(quizId, newResult) {
 async function getQuizClassContext(quizId) {
     try {
         const quiz = await quizCollection.findById(quizId).select('classId className lectureTitle').lean();
-        
+
         if (!quiz) return null;
-        
+
         if (quiz.classId) {
             const classInfo = await classCollection.findById(quiz.classId).select('name subject teacherId').lean();
-            
+
             return {
                 hasClass: true,
                 classId: quiz.classId,
@@ -7810,12 +8692,12 @@ async function getQuizClassContext(quizId) {
                 quizTitle: quiz.lectureTitle
             };
         }
-        
+
         return {
             hasClass: false,
             quizTitle: quiz.lectureTitle
         };
-        
+
     } catch (error) {
         console.error('❌ Error getting quiz class context:', error);
         return null;
@@ -7825,7 +8707,7 @@ async function getQuizClassContext(quizId) {
 // 🆕 NEW: Enhanced error response helper with duration context
 function sendQuizError(res, message, statusCode = 400, context = {}) {
     console.error('❌ Quiz Error:', message, context);
-    
+
     return res.status(statusCode).json({
         success: false,
         message: message,
@@ -7840,38 +8722,38 @@ async function migrateOldQuizResults() {
         const resultsWithoutDuration = await quizResultCollection.find({
             quizDurationMinutes: { $exists: false }
         }).lean();
-        
+
         if (resultsWithoutDuration.length === 0) {
             console.log('✅ All quiz results already have duration information');
             return;
         }
-        
+
         console.log(`🔄 Migrating ${resultsWithoutDuration.length} old quiz results...`);
-        
+
         for (const result of resultsWithoutDuration) {
             try {
                 // Get the quiz duration
                 const quiz = await quizCollection.findById(result.quizId).select('durationMinutes').lean();
                 const durationMinutes = quiz ? (quiz.durationMinutes || 15) : 15;
                 const durationSeconds = durationMinutes * 60;
-                
+
                 // Calculate time efficiency
                 const timeEfficiency = calculateTimeEfficiency(result.timeTakenSeconds, durationSeconds);
-                
+
                 // Update the result
                 await quizResultCollection.findByIdAndUpdate(result._id, {
                     quizDurationMinutes: durationMinutes,
                     quizDurationSeconds: durationSeconds,
                     timeEfficiency: timeEfficiency
                 });
-                
+
             } catch (error) {
                 console.error(`❌ Error migrating result ${result._id}:`, error);
             }
         }
-        
+
         console.log('✅ Migration completed');
-        
+
     } catch (error) {
         console.error('❌ Error during migration:', error);
     }
@@ -7903,7 +8785,7 @@ function formatPercentage(value, decimals = 1) {
     const num = parseFloat(value) || 0;
     return parseFloat(num.toFixed(decimals));
 }
- 
+
 //  Time efficiency calculation function
 function calculateTimeEfficiency(timeTakenSeconds, quizDurationSeconds) {
     if (!timeTakenSeconds || !quizDurationSeconds || quizDurationSeconds <= 0) return 0;
@@ -7923,72 +8805,72 @@ function calculateRankingPoints(averageScore, timeEfficiency) {
 function calculateParticipationWeightedPoints(averageScore, timeEfficiency, participationRate) {
     // Base points from performance
     const basePoints = calculateRankingPoints(averageScore, timeEfficiency);
-    
+
     // Participation multiplier: 30% base + 70% based on participation
     // This ensures even low participation gets some points, but rewards high participation
     const participationMultiplier = 0.3 + (0.7 * (participationRate / 100));
-    
+
     const finalPoints = basePoints * participationMultiplier;
-    
+
     console.log(`📊 Points calculation: Base=${basePoints.toFixed(1)}, Participation=${participationRate.toFixed(1)}%, Multiplier=${participationMultiplier.toFixed(2)}, Final=${finalPoints.toFixed(1)}`);
-    
+
     return parseFloat(finalPoints.toFixed(1));
 }
 
 // 🛠️ HELPER FUNCTIONS (Add these at the bottom of your index.js file)
 
 function getEmptyAnalyticsData() {
-  return {
-    overallStats: {
-      totalStudents: 0,
-      totalQuizzes: 0,
-      classAverage: '0.0',
-      totalResults: 0
-    },
-    performanceDistribution: [],
-    engagementLevels: {
-      highlyActive: 0,
-      moderatelyActive: 0,
-      lowActivity: 0,
-      inactive: 0
-    },
-    insights: {
-      classHealthScore: {
-        engagement: '0.0',
-        performance: '0.0',
-        participation: '0.0'
-      },
-      topPerformers: [],
-      studentsNeedingAttention: [],
-      mostChallengingQuiz: null,
-      bestPerformingQuiz: null
-    },
-    rankedStudents: [],
-    recentActivity: [],
-    quizPerformance: [],
-    chartMetadata: {
-      performanceChart: {
-        title: '📊 Student Performance Distribution by Quiz',
-        subtitle: 'No data available yet',
-        colors: {
-          excellent: '#10b981',
-          good: '#3b82f6',
-          average: '#f59e0b',
-          needsHelp: '#ef4444'
+    return {
+        overallStats: {
+            totalStudents: 0,
+            totalQuizzes: 0,
+            classAverage: '0.0',
+            totalResults: 0
+        },
+        performanceDistribution: [],
+        engagementLevels: {
+            highlyActive: 0,
+            moderatelyActive: 0,
+            lowActivity: 0,
+            inactive: 0
+        },
+        insights: {
+            classHealthScore: {
+                engagement: '0.0',
+                performance: '0.0',
+                participation: '0.0'
+            },
+            topPerformers: [],
+            studentsNeedingAttention: [],
+            mostChallengingQuiz: null,
+            bestPerformingQuiz: null
+        },
+        rankedStudents: [],
+        recentActivity: [],
+        quizPerformance: [],
+        chartMetadata: {
+            performanceChart: {
+                title: '📊 Student Performance Distribution by Quiz',
+                subtitle: 'No data available yet',
+                colors: {
+                    excellent: '#10b981',
+                    good: '#3b82f6',
+                    average: '#f59e0b',
+                    needsHelp: '#ef4444'
+                }
+            },
+            engagementChart: {
+                title: '👥 Student Engagement Levels',
+                subtitle: 'No data available yet',
+                colors: {
+                    highlyActive: '#10b981',
+                    moderatelyActive: '#3b82f6',
+                    lowActivity: '#f59e0b',
+                    inactive: '#ef4444'
+                }
+            }
         }
-      },
-      engagementChart: {
-        title: '👥 Student Engagement Levels',
-        subtitle: 'No data available yet',
-        colors: {
-          highlyActive: '#10b981',
-          moderatelyActive: '#3b82f6',
-          lowActivity: '#f59e0b',
-          inactive: '#ef4444'
-        }
-      }
-    }
-  };
+    };
 }
 
 // Export helper functions (add to your existing exports if any)
@@ -8009,10 +8891,10 @@ module.exports = {
 };
 
 function formatTime(seconds) {
-  const totalSeconds = safeNumber(seconds, 0);
-  const minutes = Math.floor(totalSeconds / 60);
-  const remainingSeconds = Math.floor(totalSeconds % 60);
-  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    const totalSeconds = safeNumber(seconds, 0);
+    const minutes = Math.floor(totalSeconds / 60);
+    const remainingSeconds = Math.floor(totalSeconds % 60);
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 }
 
 // 🆕 NEW: Quiz Info Page Route
@@ -8074,10 +8956,10 @@ app.get('/quiz-info/:quizId', isAuthenticated, async (req, res) => {
 
         if (existingResult) {
             const message = `You have already completed: ${quiz.lectureTitle}`;
-            const redirectUrl = targetClassId 
+            const redirectUrl = targetClassId
                 ? `/student/class/${targetClassId}?message=${encodeURIComponent(message)}`
                 : `/quiz-results?alreadyTaken=true&quizTitle=${encodeURIComponent(quiz.lectureTitle)}`;
-            
+
             return res.redirect(redirectUrl);
         }
 

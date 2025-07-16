@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Verification - Quizzie</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif; /* Using Inter font */
+            background-color: #f8fafc;
+            color: #334155;
+            line-height: 1.6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .card {
+            max-width: 550px;
+            width: 90%;
+            padding: 40px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            animation: fadeIn 0.8s ease-out;
+            border: 1px solid #e2e8f0;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .icon-container {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 25px;
+            font-size: 3rem;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .icon-success {
+            background: linear-gradient(135deg, #10b981, #059669); /* Green gradient */
+        }
+        .icon-error {
+            background: linear-gradient(135deg, #ef4444, #dc2626); /* Red gradient */
+        }
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 15px;
+        }
+        p {
+            font-size: 1.1rem;
+            color: #4b5563;
+            margin-bottom: 30px;
+        }
+        .btn {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.05rem;
+            text-decoration: none;
+            display: inline-block;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.3);
+        }
+        .btn:active {
+            transform: translateY(0);
+        }
+        .btn-secondary {
+            background: #64748b;
+            margin-left: 15px;
+            box-shadow: 0 4px 15px rgba(100, 116, 139, 0.2);
+        }
+        .btn-secondary:hover {
+            background: #475569;
+            box-shadow: 0 6px 20px rgba(100, 116, 139, 0.3);
+        }
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            .card {
+                padding: 30px 20px;
+            }
+            h1 {
+                font-size: 2rem;
+            }
+            p {
+                font-size: 1rem;
+            }
+            .btn {
+                padding: 12px 25px;
+                font-size: 1rem;
+                display: block; /* Stack buttons on small screens */
+                margin: 10px auto;
+            }
+            .btn-secondary {
+                margin-left: 0;
+            }
+        }
+    </style>
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="card">
+        {{#if success}}
+            <div class="icon-container icon-success">
+                <span>&#10003;</span> <!-- Checkmark icon -->
+            </div>
+            <h1>Verification Successful!</h1>
+            <p>{{message}}</p>
+            <a href="/login" class="btn">Go to Login Page</a>
+        {{else}}
+            <div class="icon-container icon-error">
+                <span>&#10006;</span> <!-- X mark icon -->
+            </div>
+            <h1>Verification Failed</h1>
+            <p>{{error}}</p>
+            <a href="/login" class="btn">Go to Login Page</a>
+            <a href="/forgot-password" class="btn btn-secondary">Resend Link / Try Again</a>
+        {{/if}}
+    </div>
+</body>
+</html>
