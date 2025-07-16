@@ -1999,7 +1999,7 @@ app.get('/api/classes/:classId/overview', isAuthenticated, async (req, res) => {
 
 
 
-// 📈 Get detailed class analytics
+
 // 📈 Get detailed class analytics
 app.get('/api/classes/:classId/analytics', isAuthenticated, async (req, res) => {
     try {
@@ -2288,21 +2288,309 @@ app.get('/lectures/:id/text', isAuthenticated, async (req, res) => {
 
 // ==================== ENHANCED QUIZ GENERATION ROUTE ====================
 
-// 3. UPDATED: Server-side route with enhanced debugging (add this to index.js)
+app.post('/api/exam/:quizId/start', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'teacher') {
+            return res.status(403).json({ 
+                success: false, 
+                message: 'Access denied. Teachers only.' 
+            });
+        }
+
+        const quizId = req.params.quizId;
+        const teacherId = req.session.userId;
+
+        console.log('🚀 Starting exam:', {
+            quizId: quizId,
+            teacherId: teacherId,
+            teacherName: req.session.userName
+        });
+
+        // Get the quiz and verify ownership
+        const quiz = await quizCollection.findById(quizId);
+        
+        if (!quiz) {
+            return res.status(404).json({
+                success: false,
+                message: 'Quiz not found.'
+            });
+        }
+
+        // Verify teacher owns this quiz
+        if (!quiz.createdBy.equals(teacherId)) {
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied. You can only start your own exams.'
+            });
+        }
+
+        // Check if quiz is in exam mode
+        if (!quiz.isExamMode) {
+            return res.status(400).json({
+                success: false,
+                message: 'This quiz is not configured as an exam.'
+            });
+        }
+
+        // Check if exam is already active
+        if (quiz.examStatus === 'active') {
+            return res.status(400).json({
+                success: false,
+                message: 'This exam is already active.'
+            });
+        }
+
+        // Check if exam has already ended
+        if (quiz.examStatus === 'ended') {
+            return res.status(400).json({
+                success: false,
+                message: 'This exam has already ended.'
+            });
+        }
+
+        // Start the exam
+        const updatedQuiz = await quiz.startExam(teacherId);
+        
+        console.log('✅ Exam started successfully:', {
+            quizId: quizId,
+            examStartTime: updatedQuiz.examStartTime,
+            examEndTime: updatedQuiz.examEndTime,
+            examDuration: updatedQuiz.examDurationMinutes
+        });
+
+        res.json({
+            success: true,
+            message: 'Exam started successfully!',
+            examStartTime: updatedQuiz.examStartTime.toISOString(),
+            examEndTime: updatedQuiz.examEndTime.toISOString(),
+            examDurationMinutes: updatedQuiz.examDurationMinutes,
+            examStatus: updatedQuiz.examStatus
+        });
+
+    } catch (error) {
+        console.error('❌ Error starting exam:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to start exam: ' + error.message
+        });
+    }
+});
+
+// 🆕 NEW: End Exam Route
+app.post('/api/exam/:quizId/end', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'teacher') {
+            return res.status(403).json({ 
+                success: false, 
+                message: 'Access denied. Teachers only.' 
+            });
+        }
+
+        const quizId = req.params.quizId;
+        const teacherId = req.session.userId;
+
+        console.log('🛑 Ending exam:', {
+            quizId: quizId,
+            teacherId: teacherId,
+            teacherName: req.session.userName
+        });
+
+        // Get the quiz and verify ownership
+        const quiz = await quizCollection.findById(quizId);
+        
+        if (!quiz) {
+            return res.status(404).json({
+                success: false,
+                message: 'Quiz not found.'
+            });
+        }
+
+        // Verify teacher owns this quiz
+        if (!quiz.createdBy.equals(teacherId)) {
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied. You can only end your own exams.'
+            });
+        }
+
+        // Check if quiz is in exam mode
+        if (!quiz.isExamMode) {
+            return res.status(400).json({
+                success: false,
+                message: 'This quiz is not configured as an exam.'
+            });
+        }
+
+        // Check if exam is currently active
+        if (quiz.examStatus !== 'active') {
+            return res.status(400).json({
+                success: false,
+                message: 'This exam is not currently active.'
+            });
+        }
+
+        // End the exam
+        const updatedQuiz = await quiz.endExam();
+        
+        console.log('✅ Exam ended successfully:', {
+            quizId: quizId,
+            examEndedAt: new Date(),
+            examStatus: updatedQuiz.examStatus
+        });
+
+        res.json({
+            success: true,
+            message: 'Exam ended successfully!',
+            examStatus: updatedQuiz.examStatus,
+            endedAt: new Date().toISOString()
+        });
+
+    } catch (error) {
+        console.error('❌ Error ending exam:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to end exam: ' + error.message
+        });
+    }
+});
+
+// 🆕 NEW: Check Exam Status Route (for students)
+app.get('/api/exam/:quizId/status', isAuthenticated, async (req, res) => {
+    try {
+        const quizId = req.params.quizId;
+        
+        console.log('🔍 Checking exam status:', {
+            quizId: quizId,
+            userType: req.session.userType,
+            userId: req.session.userId
+        });
+
+        // Get the quiz
+        const quiz = await quizCollection.findById(quizId).select(
+            'isExamMode examStatus examStartTime examEndTime examDurationMinutes lectureTitle classId isActive'
+        );
+        
+        if (!quiz) {
+            return res.status(404).json({
+                success: false,
+                message: 'Quiz not found.'
+            });
+        }
+
+        // Check if quiz is active
+        if (!quiz.isActive) {
+            return res.status(400).json({
+                success: false,
+                message: 'This quiz is no longer active.'
+            });
+        }
+
+        // If it's not an exam, return normal quiz status
+        if (!quiz.isExamMode) {
+            return res.json({
+                success: true,
+                isExamMode: false,
+                canTakeQuiz: true,
+                quizTitle: quiz.lectureTitle,
+                classId: quiz.classId
+            });
+        }
+
+        // Check exam status
+        const now = new Date();
+        let canTakeQuiz = false;
+        let timeRemaining = 0;
+        let statusMessage = '';
+
+        switch (quiz.examStatus) {
+            case 'scheduled':
+                canTakeQuiz = false;
+                statusMessage = 'Exam has not started yet. Please wait for your teacher to start the exam.';
+                break;
+                
+            case 'active':
+                if (quiz.examEndTime && now <= quiz.examEndTime) {
+                    canTakeQuiz = true;
+                    timeRemaining = Math.max(0, Math.floor((quiz.examEndTime - now) / 1000));
+                    statusMessage = `Exam is active. Time remaining: ${formatExamTime(timeRemaining)}`;
+                } else {
+                    // Exam has expired, auto-end it
+                    await quiz.endExam();
+                    canTakeQuiz = false;
+                    statusMessage = 'Exam time has expired.';
+                }
+                break;
+                
+            case 'ended':
+                canTakeQuiz = false;
+                statusMessage = 'This exam has ended.';
+                break;
+                
+            default:
+                canTakeQuiz = false;
+                statusMessage = 'Exam status unknown.';
+        }
+
+        // If student and quiz is active, check if they already took it
+        if (req.session.userType === 'student' && canTakeQuiz) {
+            const existingResult = await quizResultCollection.findOne({
+                quizId: quizId,
+                studentId: req.session.userId
+            });
+
+            if (existingResult) {
+                canTakeQuiz = false;
+                statusMessage = 'You have already completed this exam.';
+            }
+        }
+
+        console.log('✅ Exam status checked:', {
+            isExamMode: quiz.isExamMode,
+            examStatus: quiz.examStatus,
+            canTakeQuiz: canTakeQuiz,
+            timeRemaining: timeRemaining
+        });
+
+        res.json({
+            success: true,
+            isExamMode: true,
+            examStatus: quiz.examStatus,
+            canTakeQuiz: canTakeQuiz,
+            timeRemaining: timeRemaining,
+            statusMessage: statusMessage,
+            quizTitle: quiz.lectureTitle,
+            classId: quiz.classId,
+            examStartTime: quiz.examStartTime,
+            examEndTime: quiz.examEndTime,
+            examDurationMinutes: quiz.examDurationMinutes
+        });
+
+    } catch (error) {
+        console.error('❌ Error checking exam status:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to check exam status: ' + error.message
+        });
+    }
+});
+
+
 app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
     try {
         const lectureId = req.params.id
 
-        // ✅ ENHANCED: Extract and validate parameters with detailed logging
-        const { durationMinutes, questionCount } = req.body;
+        
+        // ✅ ENHANCED: Extract and validate parameters including exam mode
+        const { durationMinutes, questionCount, isExamMode, examDurationMinutes } = req.body;
+        
 
         console.log('🎯 QUIZ GENERATION REQUEST:', {
             lectureId: lectureId,
             requestBody: req.body,
             durationMinutes: durationMinutes,
             questionCount: questionCount,
-            typeofDuration: typeof durationMinutes,
-            typeofQuestions: typeof questionCount,
+            isExamMode: isExamMode,
+            examDurationMinutes: examDurationMinutes,
             requestedBy: req.session.userName
         });
 
@@ -2310,12 +2598,14 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
         let customDuration = 15; // Default
         let questionsToGenerate = 10; // Default
 
+        let examMode = false;
+        let examWindowDuration = 60; // Default 60 minutes
+        
+
         if (durationMinutes !== undefined && durationMinutes !== null) {
             const parsedDuration = parseInt(durationMinutes);
             if (!isNaN(parsedDuration) && parsedDuration >= 2 && parsedDuration <= 60) {
                 customDuration = parsedDuration;
-            } else {
-                console.warn('⚠️ Invalid duration value, using default:', durationMinutes);
             }
         }
 
@@ -2323,14 +2613,25 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
             const parsedQuestions = parseInt(questionCount);
             if (!isNaN(parsedQuestions) && parsedQuestions >= 5 && parsedQuestions <= 30) {
                 questionsToGenerate = parsedQuestions;
-            } else {
-                console.warn('⚠️ Invalid question count, using default:', questionCount);
+            }
+        }
+
+        // 🆕 NEW: Handle exam mode settings
+        if (isExamMode === true || isExamMode === 'true') {
+            examMode = true;
+            if (examDurationMinutes !== undefined && examDurationMinutes !== null) {
+                const parsedExamDuration = parseInt(examDurationMinutes);
+                if (!isNaN(parsedExamDuration) && parsedExamDuration >= 30 && parsedExamDuration <= 480) {
+                    examWindowDuration = parsedExamDuration;
+                }
             }
         }
 
         console.log('✅ FINAL QUIZ SETTINGS:', {
             validDuration: customDuration,
-            questionsToGenerate: questionsToGenerate
+            questionsToGenerate: questionsToGenerate,
+            examMode: examMode,
+            examWindowDuration: examWindowDuration
         });
 
         const lecture = await lectureCollection.findById(lectureId)
@@ -2365,7 +2666,9 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
         console.log('🤖 ENHANCED AI Quiz Generation Started:', {
             lectureTitle: lecture.title,
             duration: customDuration,
-            questions: questionsToGenerate
+            questions: questionsToGenerate,
+            examMode: examMode,
+            examDuration: examWindowDuration
         });
 
         const extractedText = lecture.extractedText
@@ -2382,9 +2685,15 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
             })
         }
 
-        // ✅ ENHANCED: AI prompt with explicit duration and question count
+        // ✅ ENHANCED: AI prompt with exam mode context
+        const examModeText = examMode ? 
+            `This quiz will be used as a timed exam with a ${examWindowDuration}-minute window. Generate challenging but fair questions appropriate for an exam setting.` :
+            `This quiz will be used for regular practice and learning.`;
+
         const prompt = `
         You are an expert quiz generator and educational content creator. Create a comprehensive multiple-choice quiz with detailed explanations based on the following lecture content.
+
+        **QUIZ CONTEXT:** ${examModeText}
 
         **CRITICAL REQUIREMENTS - MUST FOLLOW EXACTLY:**
         1. Generate EXACTLY ${questionsToGenerate} multiple-choice questions (NO MORE, NO LESS)
@@ -2520,7 +2829,8 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
                     hasExplanations: !!generatedQuiz[0].explanations,
                     hasCorrectExplanation: !!generatedQuiz[0].correctAnswerExplanation,
                     actualDuration: customDuration,
-                    questionsGenerated: generatedQuiz.length
+                    questionsGenerated: generatedQuiz.length,
+                    isExamMode: examMode
                 });
 
             } catch (parseError) {
@@ -2538,24 +2848,30 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
                 })
             }
 
-            // ✅ ENHANCED: Save quiz with VERIFIED duration and question count
+            // ✅ ENHANCED: Save quiz with exam mode settings
             const newQuiz = {
                 lectureId: lectureId,
                 lectureTitle: lecture.title,
-                durationMinutes: customDuration, // ✅ VERIFIED: Use actual selected duration
+                durationMinutes: customDuration,
                 questions: generatedQuiz,
-                totalQuestions: generatedQuiz.length, // ✅ VERIFIED: Use actual generated count
+                totalQuestions: generatedQuiz.length,
                 generatedDate: new Date(),
                 createdBy: req.session.userId,
                 classId: lecture.classId || null,
                 className: lecture.className || null,
-                isActive: true
+                isActive: true,
+                // 🆕 NEW: Exam mode fields
+                isExamMode: examMode,
+                examDurationMinutes: examMode ? examWindowDuration : null,
+                examStatus: examMode ? 'scheduled' : null
             }
 
-            console.log('💾 SAVING QUIZ WITH VERIFIED SETTINGS:', {
+            console.log('💾 SAVING QUIZ WITH EXAM MODE SETTINGS:', {
                 durationMinutes: newQuiz.durationMinutes,
                 totalQuestions: newQuiz.totalQuestions,
-                questionsArrayLength: newQuiz.questions.length
+                questionsArrayLength: newQuiz.questions.length,
+                isExamMode: newQuiz.isExamMode,
+                examDurationMinutes: newQuiz.examDurationMinutes
             });
 
             try {
@@ -2564,7 +2880,9 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
                     quizId: savedQuiz._id,
                     savedDuration: savedQuiz.durationMinutes,
                     savedQuestions: savedQuiz.totalQuestions,
-                    title: lecture.title
+                    title: lecture.title,
+                    isExamMode: savedQuiz.isExamMode,
+                    examDuration: savedQuiz.examDurationMinutes
                 });
 
                 // Update lecture status
@@ -2575,25 +2893,32 @@ app.post('/generate_quiz/:id', isAuthenticated, async (req, res) => {
                     lastProcessed: new Date()
                 })
 
-                console.log('✅ ENHANCED quiz generation completed successfully for:', lecture.title)
+                const quizTypeText = examMode ? 'Timed exam' : 'Quiz';
+                console.log(`✅ ENHANCED ${quizTypeText} generation completed successfully for:`, lecture.title)
 
-                // ✅ ENHANCED: Return comprehensive response with verified settings
+                // ✅ ENHANCED: Return comprehensive response with exam mode info
                 res.json({
                     success: true,
-                    message: `Enhanced quiz generated successfully with ${generatedQuiz.length} questions, ${customDuration} minutes duration, and detailed explanations!`,
+                    message: `Enhanced ${quizTypeText} generated successfully with ${generatedQuiz.length} questions, ${customDuration} minutes duration${examMode ? `, and ${examWindowDuration}-minute exam window` : ''}, and detailed explanations!`,
                     quizId: savedQuiz._id,
-                    totalQuestions: generatedQuiz.length, // ✅ Return actual count
-                    durationMinutes: customDuration, // ✅ Return actual duration
+                    totalQuestions: generatedQuiz.length,
+                    durationMinutes: customDuration,
                     durationSeconds: customDuration * 60,
                     title: lecture.title,
                     className: lecture.className,
                     explanationsGenerated: true,
+                    // 🆕 NEW: Exam mode response data
+                    isExamMode: examMode,
+                    examDurationMinutes: examMode ? examWindowDuration : null,
+                    examStatus: examMode ? 'scheduled' : null,
                     // Debug info for verification
                     debug: {
                         requestedDuration: customDuration,
                         requestedQuestions: questionsToGenerate,
                         actualDuration: savedQuiz.durationMinutes,
-                        actualQuestions: savedQuiz.totalQuestions
+                        actualQuestions: savedQuiz.totalQuestions,
+                        examMode: examMode,
+                        examDuration: examWindowDuration
                     }
                 })
 
@@ -2886,7 +3211,7 @@ app.get('/take_quiz/:quizId', isAuthenticated, async (req, res) => {
         }
 
         const quizId = req.params.quizId;
-        const classId = req.query.classId; // 🆕 Enhanced: Get class context from query
+        const classId = req.query.classId;
 
         console.log('🎯 Quiz access request:', {
             quizId: quizId,
@@ -2894,19 +3219,68 @@ app.get('/take_quiz/:quizId', isAuthenticated, async (req, res) => {
             student: req.session.userName
         });
 
-        // Get quiz details
-        const quiz = await quizCollection.findById(quizId).select('lectureTitle totalQuestions classId').lean();
+        // Get quiz details with exam mode information
+        const quiz = await quizCollection.findById(quizId).select(
+            'lectureTitle totalQuestions classId isExamMode examStatus examStartTime examEndTime examDurationMinutes durationMinutes'
+        ).lean();
 
         if (!quiz) {
             return res.status(404).send('Quiz not found.');
         }
 
-        // 🆕 ENHANCED: Determine the target class ID and verify enrollment
+        // 🆕 NEW: Enhanced exam mode validation
+        if (quiz.isExamMode) {
+            console.log('🕐 Exam mode quiz access:', {
+                examStatus: quiz.examStatus,
+                examStartTime: quiz.examStartTime,
+                examEndTime: quiz.examEndTime
+            });
+
+            const now = new Date();
+
+            // Check exam status
+            switch (quiz.examStatus) {
+                case 'scheduled':
+                    const message = 'This exam has not started yet. Please wait for your teacher to start the exam.';
+                    const redirectUrl = classId ? 
+                        `/student/class/${classId}?message=${encodeURIComponent(message)}` :
+                        `/homeStudent?message=${encodeURIComponent(message)}`;
+                    return res.status(403).redirect(redirectUrl);
+
+                case 'ended':
+                    const endedMessage = 'This exam has ended. You can no longer take this quiz.';
+                    const endedRedirectUrl = classId ? 
+                        `/student/class/${classId}?message=${encodeURIComponent(endedMessage)}` :
+                        `/homeStudent?message=${encodeURIComponent(endedMessage)}`;
+                    return res.status(403).redirect(endedRedirectUrl);
+
+                case 'active':
+                    // Check if exam time has expired
+                    if (quiz.examEndTime && now > quiz.examEndTime) {
+                        // Auto-end the exam
+                        await quizCollection.findByIdAndUpdate(quizId, { examStatus: 'ended' });
+                        const expiredMessage = 'The exam time has expired. You can no longer take this quiz.';
+                        const expiredRedirectUrl = classId ? 
+                            `/student/class/${classId}?message=${encodeURIComponent(expiredMessage)}` :
+                            `/homeStudent?message=${encodeURIComponent(expiredMessage)}`;
+                        return res.status(403).redirect(expiredRedirectUrl);
+                    }
+                    break;
+
+                default:
+                    const unknownMessage = 'This exam is not available for taking at this time.';
+                    const unknownRedirectUrl = classId ? 
+                        `/student/class/${classId}?message=${encodeURIComponent(unknownMessage)}` :
+                        `/homeStudent?message=${encodeURIComponent(unknownMessage)}`;
+                    return res.status(403).redirect(unknownRedirectUrl);
+            }
+        }
+
+        // Rest of the existing validation logic...
         const targetClassId = classId || quiz.classId;
         let classInfo = null;
 
         if (targetClassId) {
-            // Verify student enrollment in the class
             const enrollment = await classStudentCollection.findOne({
                 studentId: req.session.userId,
                 classId: targetClassId,
@@ -2914,18 +3288,13 @@ app.get('/take_quiz/:quizId', isAuthenticated, async (req, res) => {
             });
 
             if (!enrollment) {
-                const errorMessage = classId ?
-                    'You are not enrolled in this class.' :
-                    'You are not enrolled in the class for this quiz.';
 
-                const redirectUrl = classId ?
-                    `/student/class/${classId}?message=${encodeURIComponent(errorMessage)}` :
-                    `/homeStudent?message=${encodeURIComponent(errorMessage)}`;
+                const errorMessage = 'You are not enrolled in this class.';
+                const redirectUrl = `/homeStudent?message=${encodeURIComponent(errorMessage)}`;
 
                 return res.status(403).redirect(redirectUrl);
             }
 
-            // Get class information
             classInfo = await classCollection.findById(targetClassId).select('name subject').lean();
             console.log(`✅ Class enrollment verified for: ${classInfo?.name || 'Unknown Class'}`);
         }
@@ -2937,8 +3306,10 @@ app.get('/take_quiz/:quizId', isAuthenticated, async (req, res) => {
         });
 
         if (existingResult) {
-            const redirectUrl = classId ?
-                `/student/class/${classId}?message=${encodeURIComponent(`You have already completed: ${quiz.lectureTitle}`)}` :
+
+            const message = `You have already completed: ${quiz.lectureTitle}`;
+            const redirectUrl = classId ? 
+                `/student/class/${classId}?message=${encodeURIComponent(message)}` :
                 `/quiz-results?alreadyTaken=true&quizTitle=${encodeURIComponent(quiz.lectureTitle)}`;
 
             return res.redirect(redirectUrl);
@@ -2946,30 +3317,37 @@ app.get('/take_quiz/:quizId', isAuthenticated, async (req, res) => {
 
         console.log(`🎯 Rendering take quiz page: ${quiz.lectureTitle} ${classInfo ? `(Class: ${classInfo.name})` : ''}`);
 
-        // 🆕 ENHANCED: Pass comprehensive class context to template
+        // 🆕 ENHANCED: Pass comprehensive exam mode context to template
         res.render('takeQuiz', {
             quiz: {
                 ...quiz,
-                classId: targetClassId, // 🔥 IMPORTANT: Pass classId to template
+                classId: targetClassId,
                 className: classInfo?.name,
-                classSubject: classInfo?.subject
+                classSubject: classInfo?.subject,
+                // 🆕 NEW: Exam mode data for template
+                examTimeRemaining: quiz.isExamMode && quiz.examEndTime ? 
+                    Math.max(0, Math.floor((new Date(quiz.examEndTime) - new Date()) / 1000)) : null
             },
             userName: req.session.userName,
-            classContext: !!targetClassId, // Boolean for template logic
-            // 🆕 Enhanced navigation context
+            classContext: !!targetClassId,
+            // 🆕 Enhanced navigation context with exam mode
             navigationContext: {
                 hasClass: !!targetClassId,
                 classId: targetClassId,
                 className: classInfo?.name,
                 classSubject: classInfo?.subject,
-                breadcrumbPath: targetClassId ?
+
+                isExamMode: quiz.isExamMode,
+                examStatus: quiz.examStatus,
+                breadcrumbPath: targetClassId ? 
+
                     [
                         { label: 'Dashboard', url: '/homeStudent' },
                         { label: classInfo?.name || 'Class', url: `/student/class/${targetClassId}` },
-                        { label: 'Quiz', url: null }
+                        { label: quiz.isExamMode ? 'Exam' : 'Quiz', url: null }
                     ] : [
                         { label: 'Dashboard', url: '/homeStudent' },
-                        { label: 'Quiz', url: null }
+                        { label: quiz.isExamMode ? 'Exam' : 'Quiz', url: null }
                     ]
             }
         });
@@ -3028,6 +3406,7 @@ app.get('/api/quiz/:quizId', isAuthenticated, async (req, res) => {
 
 
 // Enhanced quiz submission (class-aware)
+
 app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
     try {
         if (req.session.userType !== 'student') {
@@ -3039,41 +3418,61 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
             studentAnswers,
             timeTakenSeconds,
             classContext,
-            antiCheatData,  // 🆕 NEW: Anti-cheating data
-            navigationHints
+
+            antiCheatData,
+            navigationHints,
+            examTimeRemaining // 🆕 NEW: Time remaining in exam window
+
         } = req.body;
 
         const studentId = req.session.userId;
         const studentName = req.session.userName;
 
-        // 🆕 NEW: Log anti-cheating data for monitoring (no database storage as requested)
-        if (antiCheatData && antiCheatData.violationCount > 0) {
-            console.log('🚨 SECURITY ALERT - Quiz submission with violations:', {
-                studentId: studentId,
-                studentName: studentName,
-                quizId: quizId,
-                violationCount: antiCheatData.violationCount,
-                wasAutoSubmitted: antiCheatData.wasAutoSubmitted,
-                gracePeriodsUsed: antiCheatData.gracePeriodsUsed,
-                timestamp: new Date().toISOString(),
-                classContext: classContext
-            });
-        } else {
-            console.log('✅ Clean quiz submission (no violations):', {
-                studentId: studentId,
-                studentName: studentName,
-                quizId: quizId,
-                timestamp: new Date().toISOString()
-            });
-        }
+        console.log('📝 Quiz submission:', {
+            quizId: quizId,
+            studentName: studentName,
+            timeTaken: timeTakenSeconds,
+            examTimeRemaining: examTimeRemaining,
+            antiCheatViolations: antiCheatData?.violationCount || 0
+        });
 
-        // Get complete quiz data including class information
+        // Get complete quiz data including exam mode information
         const quiz = await quizCollection.findById(quizId).lean();
         if (!quiz) {
             return res.status(404).json({ success: false, message: 'Quiz not found for scoring.' });
         }
 
-        // 🆕 ENHANCED: Verify class enrollment if quiz belongs to a class OR if classContext provided
+        // 🆕 NEW: Enhanced exam mode validation during submission
+        if (quiz.isExamMode) {
+            const now = new Date();
+            
+            // Check if exam is still active
+            if (quiz.examStatus !== 'active') {
+                return res.status(403).json({
+                    success: false,
+                    message: 'This exam is no longer active. Submission not allowed.'
+                });
+            }
+
+            // Check if exam time has expired
+            if (quiz.examEndTime && now > quiz.examEndTime) {
+                // Auto-end the exam
+                await quizCollection.findByIdAndUpdate(quizId, { examStatus: 'ended' });
+                
+                // Allow submission if it was submitted just as time expired (within 5 seconds grace period)
+                const graceTimeMs = 5000; // 5 seconds
+                if (now - quiz.examEndTime > graceTimeMs) {
+                    return res.status(403).json({
+                        success: false,
+                        message: 'The exam time has expired. Submission not allowed.'
+                    });
+                }
+                
+                console.log('⏰ Allowing submission within grace period after exam expiry');
+            }
+        }
+
+        // Rest of existing validation logic...
         const targetClassId = quiz.classId || (classContext && classContext.classId);
 
         if (targetClassId) {
@@ -3104,12 +3503,12 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
             });
         }
 
+        // Score the quiz (existing logic)
         let score = 0;
         const totalQuestions = quiz.totalQuestions;
         const detailedAnswers = [];
         const enhancedQuestionDetails = [];
 
-        // Score the quiz and prepare detailed results
         studentAnswers.forEach(sAnswer => {
             const correspondingQuestion = quiz.questions[sAnswer.questionIndex];
             if (correspondingQuestion) {
@@ -3139,7 +3538,21 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
 
         const percentage = (totalQuestions > 0) ? (score / totalQuestions) * 100 : 0;
 
-        // 🆕 ENHANCED: Save quiz result with anti-cheating metadata
+        // 🆕 NEW: Determine submission type for exam mode
+        let submissionType = 'manual';
+        if (quiz.isExamMode) {
+            if (antiCheatData?.wasAutoSubmitted) {
+                submissionType = 'auto_exam_timer';
+            } else if (examTimeRemaining !== undefined && examTimeRemaining <= 0) {
+                submissionType = 'auto_exam_timer';
+            }
+        } else {
+            if (antiCheatData?.wasAutoSubmitted) {
+                submissionType = 'auto_quiz_timer';
+            }
+        }
+
+        // 🆕 ENHANCED: Save quiz result with exam mode metadata
         const newQuizResult = {
             quizId: quizId,
             lectureId: quiz.lectureId,
@@ -3152,14 +3565,21 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
             timeTakenSeconds: timeTakenSeconds,
             submissionDate: new Date(),
             answers: detailedAnswers,
-            // 🆕 NEW: Store anti-cheating metadata (optional fields)
+            // 🆕 NEW: Exam mode fields
+            wasExamMode: quiz.isExamMode || false,
+            examTimeRemaining: examTimeRemaining || null,
+            submissionType: submissionType,
+            // Enhanced anti-cheat metadata
             antiCheatMetadata: antiCheatData ? {
                 violationCount: antiCheatData.violationCount || 0,
                 wasAutoSubmitted: antiCheatData.wasAutoSubmitted || false,
                 gracePeriodsUsed: antiCheatData.gracePeriodsUsed || 0,
-                securityStatus: antiCheatData.violationCount === 0 ? 'Clean' :
-                    antiCheatData.violationCount === 1 ? 'Warning' : 'Violation',
-                submissionSource: antiCheatData.wasAutoSubmitted ? 'Auto-Submit' : 'Manual'
+
+                securityStatus: antiCheatData.violationCount === 0 ? 'Clean' : 
+                              antiCheatData.violationCount === 1 ? 'Warning' : 'Violation',
+                submissionSource: quiz.isExamMode && submissionType.includes('exam') ? 'Exam-Timer-Submit' : 
+                                antiCheatData.wasAutoSubmitted ? 'Auto-Submit' : 'Manual'
+
             } : {
                 violationCount: 0,
                 wasAutoSubmitted: false,
@@ -3171,32 +3591,40 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
 
         const savedResult = await quizResultCollection.create(newQuizResult);
 
-        // 🆕 NEW: Enhanced logging with security status
-        const securityStatus = antiCheatData && antiCheatData.violationCount > 0
-            ? `${antiCheatData.violationCount} violations`
+        
+        // Enhanced logging with exam mode context
+        const modeText = quiz.isExamMode ? 'exam' : 'quiz';
+        const securityStatus = antiCheatData && antiCheatData.violationCount > 0 
+            ? `${antiCheatData.violationCount} violations` 
             : 'clean submission';
+            
+        console.log(`✅ ${modeText} result saved for student ${studentName}: Score ${score}/${totalQuestions} (${securityStatus})`);
 
-        console.log(`✅ Quiz result saved for student ${studentName} on quiz ${quiz.lectureTitle}: Score ${score}/${totalQuestions} (${securityStatus})`);
 
-        // 🆕 ENHANCED: Get class information for comprehensive response
+        // Get class information for response
         let classInfo = null;
         if (targetClassId) {
             classInfo = await classCollection.findById(targetClassId).select('name subject').lean();
         }
 
-        // 🆕 ENHANCED: Prepare comprehensive response with anti-cheating summary
+        // 🆕 ENHANCED: Prepare comprehensive response with exam mode context
         const enhancedResponse = {
             success: true,
-            message: antiCheatData && antiCheatData.wasAutoSubmitted
-                ? 'Quiz auto-submitted due to security violations and scored successfully!'
-                : 'Quiz submitted and scored successfully!',
+
+            message: quiz.isExamMode ? 
+                (antiCheatData && antiCheatData.wasAutoSubmitted 
+                    ? 'Exam auto-submitted and scored successfully!'
+                    : 'Exam submitted and scored successfully!') :
+                (antiCheatData && antiCheatData.wasAutoSubmitted 
+                    ? 'Quiz auto-submitted due to security violations and scored successfully!'
+                    : 'Quiz submitted and scored successfully!'),
+
             score: score,
             totalQuestions: totalQuestions,
             percentage: percentage,
             timeTakenSeconds: timeTakenSeconds,
             quizResultId: savedResult._id,
 
-            // Enhanced response with class context
             lectureId: quiz.lectureId,
             classId: targetClassId,
             className: classInfo?.name,
@@ -3205,16 +3633,24 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
             questionDetails: enhancedQuestionDetails,
             quizId: quizId,
 
-            // 🆕 NEW: Anti-cheating summary for frontend
+            
+            // 🆕 NEW: Exam mode response data
+            wasExamMode: quiz.isExamMode,
+            examTimeRemaining: examTimeRemaining,
+            submissionType: submissionType,
+            
+            // Anti-cheating summary
             antiCheatSummary: {
                 violationCount: antiCheatData?.violationCount || 0,
                 wasAutoSubmitted: antiCheatData?.wasAutoSubmitted || false,
-                securityStatus: antiCheatData?.violationCount === 0 ? 'Clean' :
-                    antiCheatData?.violationCount === 1 ? 'Warning Issued' : 'Auto-Submitted',
-                submissionType: antiCheatData?.wasAutoSubmitted ? 'Security Auto-Submit' : 'Manual Submit'
+                securityStatus: antiCheatData?.violationCount === 0 ? 'Clean' : 
+                              antiCheatData?.violationCount === 1 ? 'Warning Issued' : 'Auto-Submitted',
+                submissionType: submissionType === 'auto_exam_timer' ? 'Exam Timer Auto-Submit' :
+                              submissionType === 'auto_quiz_timer' ? 'Quiz Timer Auto-Submit' : 'Manual Submit'
             },
+            
+            // Navigation context
 
-            // 🆕 Navigation context for frontend
             navigationContext: {
                 hasClass: !!targetClassId,
                 classId: targetClassId,
@@ -3225,7 +3661,9 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
                 classUrl: targetClassId ? `/student/class/${targetClassId}` : null
             },
 
-            // 🆕 Suggested redirect based on context
+            
+            // Suggested redirect
+
             suggestedRedirect: {
                 url: '/quiz-results',
                 context: 'results_page',
@@ -3237,7 +3675,7 @@ app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
         res.json(enhancedResponse);
 
     } catch (error) {
-        console.error('❌ Error submitting or scoring quiz:', error);
+        console.error('❌ Error submitting quiz:', error);
         res.status(500).json({ success: false, message: 'Failed to submit quiz: ' + error.message });
     }
 });
@@ -3869,6 +4307,7 @@ app.get('/student/class/:classId', isAuthenticated, async (req, res) => {
     }
 });
 
+// 🔄 UPDATED: Enhanced quiz loading with exam session status
 app.get('/api/teacher/class/:classId/quizzes', isAuthenticated, async (req, res) => {
     try {
         if (req.session.userType !== 'teacher') {
@@ -3892,32 +4331,41 @@ app.get('/api/teacher/class/:classId/quizzes', isAuthenticated, async (req, res)
             });
         }
 
-        // ✅ CRITICAL: Select durationMinutes explicitly
+        // Get quizzes with exam session info
         const quizzes = await quizCollection.find({
             classId: classId,
             isActive: true
         })
-            .select('lectureTitle totalQuestions durationMinutes generatedDate isActive lectureId') // ✅ Include durationMinutes
-            .sort({ generatedDate: -1 })
-            .lean();
 
-        console.log('📝 TEACHER QUIZ API - Found quizzes with durations:',
-            quizzes.map(q => ({ id: q._id, duration: q.durationMinutes, questions: q.totalQuestions }))
-        );
+        .select('lectureTitle totalQuestions durationMinutes generatedDate isActive lectureId examSessionActive examSessionStartTime examSessionEndTime examSessionDuration')
+        .sort({ generatedDate: -1 })
+        .lean();
 
-        // Enhance quiz data with performance stats
+        // Enhance quiz data with performance stats and exam session info
+
         const enhancedQuizzes = await Promise.all(
             quizzes.map(async (quiz) => {
                 const quizResults = await quizResultCollection.find({
                     quizId: quiz._id
                 }).lean();
 
+                // Check if exam session is expired and deactivate if needed
+                let hasActiveExamSession = quiz.examSessionActive;
+                let examEndTime = quiz.examSessionEndTime;
+                
+                if (hasActiveExamSession && examEndTime && new Date() > new Date(examEndTime)) {
+                    await quizCollection.findByIdAndUpdate(quiz._id, {
+                        examSessionActive: false
+                    });
+                    hasActiveExamSession = false;
+                }
+
                 return {
                     _id: quiz._id,
                     lectureId: quiz.lectureId,
                     lectureTitle: quiz.lectureTitle,
                     totalQuestions: quiz.totalQuestions,
-                    durationMinutes: quiz.durationMinutes || 15, // ✅ CRITICAL: Include duration
+                    durationMinutes: quiz.durationMinutes || 15,
                     generatedDate: quiz.generatedDate,
                     isActive: quiz.isActive,
                     totalAttempts: quizResults.length,
@@ -3926,14 +4374,17 @@ app.get('/api/teacher/class/:classId/quizzes', isAuthenticated, async (req, res)
                         : 0,
                     highestScore: quizResults.length > 0
                         ? Math.max(...quizResults.map(r => r.percentage)).toFixed(1)
-                        : 0
+                        : 0,
+                    // Exam session data
+                    hasActiveExamSession: hasActiveExamSession,
+                    examStartTime: quiz.examSessionStartTime,
+                    examEndTime: quiz.examSessionEndTime,
+                    examDuration: quiz.examSessionDuration
                 };
             })
         );
 
-        console.log(`📝 Enhanced quizzes with durations:`,
-            enhancedQuizzes.map(q => ({ title: q.lectureTitle, duration: q.durationMinutes }))
-        );
+
 
         res.json({
             success: true,
@@ -3950,6 +4401,21 @@ app.get('/api/teacher/class/:classId/quizzes', isAuthenticated, async (req, res)
         });
     }
 });
+
+// 🆕 NEW: Helper function for formatting exam time
+function formatExamTime(seconds) {
+    if (seconds <= 0) return '00:00:00';
+    
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    
+    if (hours > 0) {
+        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    } else {
+        return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+}
 
 
 // enrolled classes API with new stats
@@ -4455,24 +4921,166 @@ app.get('/api/teacher/quiz/:quizId/full', isAuthenticated, async (req, res) => {
     }
 });
 
-// 📈 Get performance analytics for student in specific class
+// 📈 Get detailed class analytics for student class view
 app.get('/api/student/class/:classId/analytics', isAuthenticated, async (req, res) => {
     try {
-        // ... existing code ...
+        if (req.session.userType !== 'student') {
+            return res.status(403).json({ success: false, message: 'Access denied. Students only.' });
+        }
 
-        // 🔧 FIX: Round class average properly
-        const classAverage = allClassResults.length > 0
-            ? parseFloat((allClassResults.reduce((sum, result) => sum + result.percentage, 0) / allClassResults.length).toFixed(1))
-            : 0;
 
-        // 🔧 FIX: Round student average properly  
-        const studentAverage = studentResults.length > 0
+        const studentId = req.session.userId;
+        const classId = req.params.classId;
+
+        console.log('📊 Loading student class analytics:', {
+            studentId: studentId,
+            classId: classId,
+            student: req.session.userName
+        });
+
+        // Verify student enrollment
+        const enrollment = await classStudentCollection.findOne({
+            studentId: studentId,
+            classId: classId,
+            isActive: true
+        });
+
+        if (!enrollment) {
+            return res.status(403).json({
+                success: false,
+                message: 'You are not enrolled in this class.'
+            });
+        }
+
+        // Get student's results for this class
+        const studentResults = await quizResultCollection.find({
+            studentId: studentId,
+            classId: classId
+        })
+        .sort({ submissionDate: -1 })
+        .lean();
+
+        // Get all class results for comparison
+        const allClassResults = await quizResultCollection.find({
+            classId: classId
+        }).lean();
+
+        // Get class quizzes for quiz titles
+        const classQuizzes = await quizCollection.find({
+            classId: classId,
+            isActive: true
+        }).lean();
+
+        // Create quiz map for titles
+        const quizMap = {};
+        classQuizzes.forEach(quiz => {
+            quizMap[quiz._id.toString()] = quiz.lectureTitle;
+        });
+
+        // Calculate averages
+        const studentAverage = studentResults.length > 0 
+
             ? parseFloat((studentResults.reduce((sum, result) => sum + result.percentage, 0) / studentResults.length).toFixed(1))
             : 0;
 
-        // ... rest of existing code ...
+        const classAverage = allClassResults.length > 0 
+            ? parseFloat((allClassResults.reduce((sum, result) => sum + result.percentage, 0) / allClassResults.length).toFixed(1))
+            : 0;
+
+        // Prepare chart data
+        const chartData = {
+            // Score trends chart
+            scoreTrends: {
+                labels: studentResults.slice(0, 10).reverse().map(result => {
+                    return new Date(result.submissionDate).toLocaleDateString();
+                }),
+                datasets: [{
+                    label: 'Your Scores',
+                    data: studentResults.slice(0, 10).reverse().map(result => result.percentage),
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: '#3b82f6',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 6
+                }, {
+                    label: 'Class Average',
+                    data: studentResults.slice(0, 10).reverse().map(() => classAverage),
+                    borderColor: '#64748b',
+                    backgroundColor: 'transparent',
+                    borderDash: [5, 5],
+                    tension: 0,
+                    pointRadius: 0
+                }]
+            },
+
+            // Performance breakdown pie chart
+            performanceBreakdown: {
+                labels: ['Excellent (90%+)', 'Good (70-89%)', 'Average (50-69%)', 'Needs Improvement (<50%)'],
+                datasets: [{
+                    data: [
+                        studentResults.filter(r => r.percentage >= 90).length,
+                        studentResults.filter(r => r.percentage >= 70 && r.percentage < 90).length,
+                        studentResults.filter(r => r.percentage >= 50 && r.percentage < 70).length,
+                        studentResults.filter(r => r.percentage < 50).length
+                    ],
+                    backgroundColor: [
+                        '#10b981', // Green for excellent
+                        '#3b82f6', // Blue for good
+                        '#f59e0b', // Yellow for average
+                        '#ef4444'  // Red for needs improvement
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+
+            // Time analysis bar chart
+            timeAnalysis: {
+                labels: studentResults.slice(0, 8).reverse().map(result => {
+                    const quizTitle = quizMap[result.quizId.toString()] || 'Quiz';
+                    return quizTitle.length > 15 ? quizTitle.substring(0, 15) + '...' : quizTitle;
+                }),
+                datasets: [{
+                    label: 'Time Taken (minutes)',
+                    data: studentResults.slice(0, 8).reverse().map(result => Math.round(result.timeTakenSeconds / 60)),
+                    backgroundColor: 'rgba(139, 92, 246, 0.6)',
+                    borderColor: '#8b5cf6',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            }
+        };
+
+        console.log(`📊 Analytics prepared for ${req.session.userName}:`, {
+            studentResultsCount: studentResults.length,
+            studentAverage: studentAverage,
+            classAverage: classAverage
+        });
+
+        res.json({
+            success: true,
+            data: {
+                chartData: chartData,
+                performanceMetrics: {
+                    totalQuizzes: studentResults.length,
+                    studentAverage: studentAverage,
+                    classAverage: classAverage,
+                    averageTime: studentResults.length > 0 
+                        ? Math.round(studentResults.reduce((sum, result) => sum + result.timeTakenSeconds, 0) / studentResults.length)
+                        : 0
+                }
+            }
+        });
+
     } catch (error) {
-        // ... error handling ...
+        console.error('❌ Error generating student class analytics:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to generate analytics: ' + error.message
+        });
     }
 });
 
@@ -6303,6 +6911,960 @@ app.get('/teacher/student-analytics/:studentId', isAuthenticated, async (req, re
     } catch (error) {
         console.error('❌ Error rendering student analytics page:', error);
         res.status(500).send('Failed to load student analytics page.');
+    }
+});
+
+// 🚨 NEW: Start Exam Session API
+app.post('/api/quiz/exam-session/start', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'teacher') {
+            return res.status(403).json({ 
+                success: false, 
+                message: 'Access denied. Teachers only.' 
+            });
+        }
+
+        const { quizId, sessionDurationMinutes, classId } = req.body;
+        const teacherId = req.session.userId;
+
+        console.log('🚨 Starting exam session:', {
+            quizId,
+            sessionDurationMinutes,
+            classId,
+            teacherId
+        });
+
+        // Validate inputs
+        const duration = parseInt(sessionDurationMinutes);
+        if (isNaN(duration) || duration < 5 || duration > 180) {
+            return res.status(400).json({
+                success: false,
+                message: 'Session duration must be between 5 and 180 minutes.'
+            });
+        }
+
+        // Get and verify quiz
+        const quiz = await quizCollection.findById(quizId);
+        if (!quiz) {
+            return res.status(404).json({
+                success: false,
+                message: 'Quiz not found.'
+            });
+        }
+
+        // Verify ownership through class
+        if (quiz.classId) {
+            const classDoc = await classCollection.findOne({
+                _id: quiz.classId,
+                teacherId: teacherId,
+                isActive: true
+            });
+
+            if (!classDoc) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Access denied. You do not own this class.'
+                });
+            }
+        }
+
+        // Check if already has active session
+        if (quiz.examSessionActive) {
+            return res.status(400).json({
+                success: false,
+                message: 'An exam session is already active for this quiz.'
+            });
+        }
+
+        // Start the exam session
+        const startTime = new Date();
+        const endTime = new Date(startTime.getTime() + duration * 60 * 1000);
+
+        await quizCollection.findByIdAndUpdate(quizId, {
+            examSessionActive: true,
+            examSessionStartTime: startTime,
+            examSessionEndTime: endTime,
+            examSessionDuration: duration,
+            examSessionCreatedBy: teacherId,
+            examSessionParticipants: []
+        });
+
+        console.log('✅ Exam session started:', {
+            quizId,
+            startTime,
+            endTime,
+            duration
+        });
+
+        res.json({
+            success: true,
+            message: `Exam session started successfully! Duration: ${duration} minutes`,
+            sessionId: quizId, // Using quiz ID as session ID for simplicity
+            startsAt: startTime,
+            endsAt: endTime,
+            durationMinutes: duration
+        });
+
+    } catch (error) {
+        console.error('❌ Error starting exam session:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to start exam session: ' + error.message
+        });
+    }
+});
+
+// 🚨 NEW: End Exam Session API
+app.post('/api/quiz/exam-session/end', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'teacher') {
+            return res.status(403).json({ 
+                success: false, 
+                message: 'Access denied. Teachers only.' 
+            });
+        }
+
+        const { quizId } = req.body;
+        const teacherId = req.session.userId;
+
+        // Get and verify quiz
+        const quiz = await quizCollection.findById(quizId);
+        if (!quiz) {
+            return res.status(404).json({
+                success: false,
+                message: 'Quiz not found.'
+            });
+        }
+
+        // Verify ownership
+        if (quiz.classId) {
+            const classDoc = await classCollection.findOne({
+                _id: quiz.classId,
+                teacherId: teacherId,
+                isActive: true
+            });
+
+            if (!classDoc) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Access denied.'
+                });
+            }
+        }
+
+        if (!quiz.examSessionActive) {
+            return res.status(400).json({
+                success: false,
+                message: 'No active exam session to end.'
+            });
+        }
+
+        // End the session
+        await quizCollection.findByIdAndUpdate(quizId, {
+            examSessionActive: false
+        });
+
+        console.log('🛑 Exam session ended:', { quizId, teacherId });
+
+        res.json({
+            success: true,
+            message: 'Exam session ended successfully!'
+        });
+
+    } catch (error) {
+        console.error('❌ Error ending exam session:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to end exam session: ' + error.message
+        });
+    }
+});
+
+// 🚨 NEW: Get Exam Session Status API
+app.get('/api/quiz/:quizId/exam-status', isAuthenticated, async (req, res) => {
+    try {
+        const quizId = req.params.quizId;
+
+        const quiz = await quizCollection.findById(quizId)
+            .select('examSessionActive examSessionStartTime examSessionEndTime examSessionDuration lectureTitle')
+            .lean();
+
+        if (!quiz) {
+            return res.status(404).json({
+                success: false,
+                message: 'Quiz not found.'
+            });
+        }
+
+        let remainingSeconds = 0;
+        let canTakeQuiz = true;
+        let statusMessage = 'Quiz available';
+
+        if (quiz.examSessionActive) {
+            const now = new Date();
+            const endTime = new Date(quiz.examSessionEndTime);
+            
+            if (now > endTime) {
+                // Session expired, deactivate it
+                await quizCollection.findByIdAndUpdate(quizId, {
+                    examSessionActive: false
+                });
+                canTakeQuiz = false;
+                statusMessage = 'Exam session has ended';
+            } else {
+                remainingSeconds = Math.max(0, Math.floor((endTime - now) / 1000));
+                statusMessage = `Exam session active - ${Math.floor(remainingSeconds / 60)}:${(remainingSeconds % 60).toString().padStart(2, '0')} remaining`;
+            }
+        }
+
+        res.json({
+            success: true,
+            examSessionActive: quiz.examSessionActive,
+            remainingSeconds,
+            canTakeQuiz,
+            statusMessage,
+            quizTitle: quiz.lectureTitle,
+            sessionStartTime: quiz.examSessionStartTime,
+            sessionEndTime: quiz.examSessionEndTime
+        });
+
+    } catch (error) {
+        console.error('❌ Error getting exam status:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to get exam status: ' + error.message
+        });
+    }
+});
+
+// 🚨 NEW: Start Exam Session
+app.post('/api/quiz/:quizId/start-exam-session', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'teacher') {
+            return res.status(403).json({ 
+                success: false, 
+                message: 'Access denied. Teachers only.' 
+            });
+        }
+
+        const quizId = req.params.quizId;
+        const { sessionDurationMinutes } = req.body;
+        const teacherId = req.session.userId;
+
+        console.log('🚨 Starting exam session:', {
+            quizId: quizId,
+            sessionDurationMinutes: sessionDurationMinutes,
+            teacherId: teacherId
+        });
+
+        // Validate duration
+        const duration = parseInt(sessionDurationMinutes);
+        if (isNaN(duration) || duration < 5 || duration > 180) {
+            return res.status(400).json({
+                success: false,
+                message: 'Session duration must be between 5 and 180 minutes.'
+            });
+        }
+
+        // Get the quiz
+        const quiz = await quizCollection.findById(quizId);
+        if (!quiz) {
+            return res.status(404).json({
+                success: false,
+                message: 'Quiz not found.'
+            });
+        }
+
+        // Verify ownership
+        if (!quiz.createdBy.equals(teacherId)) {
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied. You can only start sessions for your own quizzes.'
+            });
+        }
+
+        // Check if session is already active
+        if (quiz.examSessionActive) {
+            return res.status(400).json({
+                success: false,
+                message: 'An exam session is already active for this quiz.'
+            });
+        }
+
+        // Start the exam session
+        await quiz.startExamSession(duration, teacherId);
+
+        console.log('✅ Exam session started:', {
+            quizId: quizId,
+            duration: duration,
+            startTime: quiz.examSessionStartTime,
+            endTime: quiz.examSessionEndTime
+        });
+
+        res.json({
+            success: true,
+            message: `Exam session started! Duration: ${duration} minutes`,
+            sessionData: {
+                quizId: quiz._id,
+                sessionActive: true,
+                startTime: quiz.examSessionStartTime,
+                endTime: quiz.examSessionEndTime,
+                durationMinutes: duration,
+                remainingSeconds: quiz.getSessionTimeRemaining()
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error starting exam session:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to start exam session: ' + error.message
+        });
+    }
+});
+
+// 🚨 NEW: Get Exam Session Status
+app.get('/api/quiz/:quizId/exam-session-status', isAuthenticated, async (req, res) => {
+    try {
+        const quizId = req.params.quizId;
+
+        console.log('📊 Getting exam session status for quiz:', quizId);
+
+        const quiz = await quizCollection.findById(quizId)
+            .select('examSessionMode examSessionActive examSessionStartTime examSessionEndTime examSessionDuration examSessionParticipants lectureTitle')
+            .lean();
+
+        if (!quiz) {
+            return res.status(404).json({
+                success: false,
+                message: 'Quiz not found.'
+            });
+        }
+
+        // Calculate remaining time
+        let remainingSeconds = 0;
+        let isExpired = false;
+
+        if (quiz.examSessionActive && quiz.examSessionEndTime) {
+            const now = new Date();
+            const endTime = new Date(quiz.examSessionEndTime);
+            remainingSeconds = Math.max(0, Math.floor((endTime - now) / 1000));
+            isExpired = now > endTime;
+        }
+
+        // Get participant info
+        const participantCount = quiz.examSessionParticipants ? quiz.examSessionParticipants.length : 0;
+        const submittedCount = quiz.examSessionParticipants 
+            ? quiz.examSessionParticipants.filter(p => p.hasSubmitted).length 
+            : 0;
+
+        console.log('📊 Session status:', {
+            active: quiz.examSessionActive,
+            remainingSeconds: remainingSeconds,
+            participants: participantCount,
+            submitted: submittedCount
+        });
+
+        res.json({
+            success: true,
+            sessionData: {
+                quizId: quiz._id,
+                quizTitle: quiz.lectureTitle,
+                sessionMode: quiz.examSessionMode || false,
+                sessionActive: quiz.examSessionActive || false,
+                startTime: quiz.examSessionStartTime,
+                endTime: quiz.examSessionEndTime,
+                durationMinutes: quiz.examSessionDuration,
+                remainingSeconds: remainingSeconds,
+                isExpired: isExpired,
+                participantCount: participantCount,
+                submittedCount: submittedCount,
+                participants: quiz.examSessionParticipants || []
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error getting exam session status:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to get session status: ' + error.message
+        });
+    }
+});
+
+// 🚨 NEW: Join Exam Session (for students)
+app.post('/api/quiz/:quizId/join-exam-session', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'student') {
+            return res.status(403).json({ 
+                success: false, 
+                message: 'Access denied. Students only.' 
+            });
+        }
+
+        const quizId = req.params.quizId;
+        const studentId = req.session.userId;
+        const studentName = req.session.userName;
+
+        console.log('🎓 Student joining exam session:', {
+            quizId: quizId,
+            studentId: studentId,
+            studentName: studentName
+        });
+
+        const quiz = await quizCollection.findById(quizId);
+        if (!quiz) {
+            return res.status(404).json({
+                success: false,
+                message: 'Quiz not found.'
+            });
+        }
+
+        // Check if session is active
+        if (!quiz.examSessionActive) {
+            return res.status(400).json({
+                success: false,
+                message: 'No active exam session for this quiz.'
+            });
+        }
+
+        // Check if session has expired
+        if (quiz.isSessionExpired()) {
+            await quiz.endExamSession();
+            return res.status(400).json({
+                success: false,
+                message: 'Exam session has expired.'
+            });
+        }
+
+        // Check if student already submitted
+        const existingResult = await quizResultCollection.findOne({
+            quizId: quizId,
+            studentId: studentId
+        });
+
+        if (existingResult) {
+            return res.status(400).json({
+                success: false,
+                message: 'You have already submitted this quiz.'
+            });
+        }
+
+        // Add student to session participants
+        await quiz.addSessionParticipant(studentId, studentName);
+
+        console.log('✅ Student joined exam session successfully');
+
+        res.json({
+            success: true,
+            message: 'Successfully joined exam session!',
+            sessionData: {
+                quizId: quiz._id,
+                sessionActive: true,
+                remainingSeconds: quiz.getSessionTimeRemaining(),
+                startTime: quiz.examSessionStartTime,
+                endTime: quiz.examSessionEndTime
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error joining exam session:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to join exam session: ' + error.message
+        });
+    }
+});
+
+// 🚨 NEW: End Exam Session (teacher only)
+app.post('/api/quiz/:quizId/end-exam-session', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'teacher') {
+            return res.status(403).json({ 
+                success: false, 
+                message: 'Access denied. Teachers only.' 
+            });
+        }
+
+        const quizId = req.params.quizId;
+        const teacherId = req.session.userId;
+
+        const quiz = await quizCollection.findById(quizId);
+        if (!quiz) {
+            return res.status(404).json({
+                success: false,
+                message: 'Quiz not found.'
+            });
+        }
+
+        // Verify ownership
+        if (!quiz.createdBy.equals(teacherId)) {
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied. You can only end sessions for your own quizzes.'
+            });
+        }
+
+        if (!quiz.examSessionActive) {
+            return res.status(400).json({
+                success: false,
+                message: 'No active exam session to end.'
+            });
+        }
+
+        await quiz.endExamSession();
+
+        console.log('🛑 Exam session ended by teacher:', {
+            quizId: quizId,
+            teacherId: teacherId
+        });
+
+        res.json({
+            success: true,
+            message: 'Exam session ended successfully!'
+        });
+
+    } catch (error) {
+        console.error('❌ Error ending exam session:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to end exam session: ' + error.message
+        });
+    }
+});
+
+// 🚨 NEW: Auto-submit expired sessions (background job)
+async function checkAndAutoSubmitExpiredSessions() {
+    try {
+        const expiredSessions = await quizCollection.find({
+            examSessionActive: true,
+            examSessionEndTime: { $lt: new Date() }
+        });
+
+        console.log(`🕐 Checking expired sessions: ${expiredSessions.length} found`);
+
+        for (const quiz of expiredSessions) {
+            // End the session
+            await quiz.endExamSession();
+            
+            // Auto-submit for participants who haven't submitted
+            const unsubmittedParticipants = quiz.examSessionParticipants.filter(p => !p.hasSubmitted);
+            
+            for (const participant of unsubmittedParticipants) {
+                try {
+                    // Check if they already submitted somehow
+                    const existingResult = await quizResultCollection.findOne({
+                        quizId: quiz._id,
+                        studentId: participant.studentId
+                    });
+
+                    if (!existingResult) {
+                        // Auto-submit with empty answers
+                        const autoSubmissionData = {
+                            quizId: quiz._id,
+                            lectureId: quiz.lectureId,
+                            classId: quiz.classId,
+                            studentId: participant.studentId,
+                            studentName: participant.studentName,
+                            score: 0,
+                            totalQuestions: quiz.totalQuestions,
+                            percentage: 0,
+                            timeTakenSeconds: quiz.examSessionDuration * 60, // Full session time
+                            answers: quiz.questions.map((q, index) => ({
+                                questionIndex: index,
+                                question: q.question,
+                                selectedOption: 'A', // Default to A for auto-submission
+                                correctOption: q.correct_answer,
+                                isCorrect: false
+                            })),
+                            examSessionData: {
+                                wasExamSession: true,
+                                sessionStartTime: quiz.examSessionStartTime,
+                                sessionEndTime: quiz.examSessionEndTime,
+                                sessionDurationMinutes: quiz.examSessionDuration,
+                                joinedSessionAt: participant.joinedAt,
+                                autoSubmittedBySession: true,
+                                sessionTimeRemaining: 0,
+                                sessionParticipantCount: quiz.examSessionParticipants.length
+                            },
+                            antiCheatMetadata: {
+                                violationCount: 0,
+                                wasAutoSubmitted: true,
+                                submissionSource: 'Session-Auto-Submit',
+                                securityStatus: 'Auto-Submit'
+                            }
+                        };
+
+                        await quizResultCollection.create(autoSubmissionData);
+                        await quiz.markParticipantSubmitted(participant.studentId, true);
+                        
+                        console.log(`📝 Auto-submitted for student: ${participant.studentName}`);
+                    }
+                } catch (autoSubmitError) {
+                    console.error('❌ Error auto-submitting for participant:', participant.studentName, autoSubmitError);
+                }
+            }
+
+            console.log(`✅ Processed expired session for quiz: ${quiz.lectureTitle}`);
+        }
+    } catch (error) {
+        console.error('❌ Error checking expired sessions:', error);
+    }
+}
+
+// Run expired session check every 30 seconds
+setInterval(checkAndAutoSubmitExpiredSessions, 30000);
+
+// 🚨 UPDATED: Enhanced quiz submission with exam session support
+app.post('/api/quiz/submit/:quizId', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'student') {
+            return res.status(403).json({ success: false, message: 'Access denied. Only students can submit quizzes.' });
+        }
+
+        const quizId = req.params.quizId;
+        const { 
+            studentAnswers, 
+            timeTakenSeconds, 
+            classContext,
+            antiCheatData,
+            navigationHints 
+        } = req.body;
+
+        const studentId = req.session.userId;
+        const studentName = req.session.userName;
+
+        console.log('📝 Quiz submission received:', {
+            quizId: quizId,
+            studentId: studentId,
+            timeTaken: timeTakenSeconds,
+            hasAntiCheatData: !!antiCheatData
+        });
+
+        // Get complete quiz data including exam session info
+        const quiz = await quizCollection.findById(quizId).lean();
+        if (!quiz) {
+            return res.status(404).json({ success: false, message: 'Quiz not found for scoring.' });
+        }
+
+        // 🚨 NEW: Handle exam session submissions
+        let examSessionData = null;
+        let wasAutoSubmittedBySession = false;
+
+        if (quiz.examSessionMode && quiz.examSessionActive) {
+            // Verify session hasn't expired
+            if (quiz.examSessionEndTime && new Date() > new Date(quiz.examSessionEndTime)) {
+                wasAutoSubmittedBySession = true;
+                console.log('⏰ Session expired during submission - treating as auto-submit');
+            }
+
+            // Find participant
+            const participant = quiz.examSessionParticipants?.find(
+                p => p.studentId.toString() === studentId.toString()
+            );
+
+            if (participant) {
+                const sessionRemainingSeconds = quiz.examSessionEndTime 
+                    ? Math.max(0, Math.floor((new Date(quiz.examSessionEndTime) - new Date()) / 1000))
+                    : 0;
+
+                examSessionData = {
+                    wasExamSession: true,
+                    sessionStartTime: quiz.examSessionStartTime,
+                    sessionEndTime: quiz.examSessionEndTime,
+                    sessionDurationMinutes: quiz.examSessionDuration,
+                    joinedSessionAt: participant.joinedAt,
+                    autoSubmittedBySession: wasAutoSubmittedBySession,
+                    sessionTimeRemaining: sessionRemainingSeconds,
+                    sessionParticipantCount: quiz.examSessionParticipants.length
+                };
+
+                // Mark participant as submitted
+                await quizCollection.findByIdAndUpdate(quizId, {
+                    $set: {
+                        'examSessionParticipants.$[participant].hasSubmitted': true,
+                        'examSessionParticipants.$[participant].submittedAt': new Date(),
+                        'examSessionParticipants.$[participant].autoSubmitted': wasAutoSubmittedBySession
+                    }
+                }, {
+                    arrayFilters: [{ 'participant.studentId': studentId }]
+                });
+
+                console.log('🚨 Exam session submission processed:', {
+                    remainingSeconds: sessionRemainingSeconds,
+                    autoSubmitted: wasAutoSubmittedBySession
+                });
+            }
+        }
+
+        // Enhanced anti-cheat logging for exam sessions
+        if (antiCheatData && antiCheatData.violationCount > 0) {
+            console.log('🚨 SECURITY ALERT - Quiz submission with violations (Exam Session):', {
+                studentId: studentId,
+                studentName: studentName,
+                quizId: quizId,
+                violationCount: antiCheatData.violationCount,
+                wasAutoSubmitted: antiCheatData.wasAutoSubmitted,
+                isExamSession: !!examSessionData,
+                sessionAutoSubmit: wasAutoSubmittedBySession,
+                timestamp: new Date().toISOString(),
+                classContext: classContext
+            });
+        }
+
+        // Verify class enrollment if needed
+        const targetClassId = quiz.classId || (classContext && classContext.classId);
+        
+        if (targetClassId) {
+            const enrollment = await classStudentCollection.findOne({
+                studentId: studentId,
+                classId: targetClassId,
+                isActive: true
+            });
+
+            if (!enrollment) {
+                return res.status(403).json({ 
+                    success: false, 
+                    message: 'You are not enrolled in the class for this quiz.' 
+                });
+            }
+        }
+
+        // Check for duplicate submission
+        const existingResult = await quizResultCollection.findOne({
+            quizId: quizId,
+            studentId: studentId
+        });
+
+        if (existingResult) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'You have already submitted this quiz.' 
+            });
+        }
+
+        // Score the quiz
+        let score = 0;
+        const totalQuestions = quiz.totalQuestions;
+        const detailedAnswers = [];
+        const enhancedQuestionDetails = [];
+
+        studentAnswers.forEach(sAnswer => {
+            const correspondingQuestion = quiz.questions[sAnswer.questionIndex];
+            if (correspondingQuestion) {
+                const isCorrect = sAnswer.selectedOption === correspondingQuestion.correct_answer;
+                if (isCorrect) {
+                    score++;
+                }
+                
+                detailedAnswers.push({
+                    questionIndex: sAnswer.questionIndex,
+                    question: sAnswer.question,
+                    selectedOption: sAnswer.selectedOption,
+                    correctOption: correspondingQuestion.correct_answer,
+                    isCorrect: isCorrect
+                });
+
+                enhancedQuestionDetails.push({
+                    questionIndex: sAnswer.questionIndex,
+                    questionText: correspondingQuestion.question,
+                    options: correspondingQuestion.options,
+                    studentAnswer: sAnswer.selectedOption,
+                    correctAnswer: correspondingQuestion.correct_answer,
+                    isCorrect: isCorrect
+                });
+            }
+        });
+
+        const percentage = (totalQuestions > 0) ? (score / totalQuestions) * 100 : 0;
+
+        // 🚨 NEW: Enhanced quiz result with exam session metadata
+        const newQuizResult = {
+            quizId: quizId,
+            lectureId: quiz.lectureId,
+            classId: targetClassId || null,
+            studentId: studentId,
+            studentName: studentName,
+            score: score,
+            totalQuestions: totalQuestions,
+            percentage: percentage,
+            timeTakenSeconds: timeTakenSeconds,
+            submissionDate: new Date(),
+            answers: detailedAnswers,
+            // 🚨 NEW: Exam session data
+            examSessionData: examSessionData,
+            // Enhanced anti-cheat metadata for exam sessions
+            antiCheatMetadata: antiCheatData ? {
+                violationCount: antiCheatData.violationCount || 0,
+                wasAutoSubmitted: antiCheatData.wasAutoSubmitted || wasAutoSubmittedBySession,
+                gracePeriodsUsed: antiCheatData.gracePeriodsUsed || 0,
+                securityStatus: wasAutoSubmittedBySession ? 'Session-Auto-Submit' : 
+                              (antiCheatData.violationCount === 0 ? 'Clean' : 
+                               antiCheatData.violationCount === 1 ? 'Warning' : 'Violation'),
+                submissionSource: wasAutoSubmittedBySession ? 'Session-Auto-Submit' : 
+                                (antiCheatData.wasAutoSubmitted ? 'Auto-Submit' : 'Manual'),
+                violationDetails: antiCheatData.violationDetails || [],
+                monitoringStartTime: antiCheatData.monitoringStartTime,
+                monitoringEndTime: new Date()
+            } : {
+                violationCount: 0,
+                wasAutoSubmitted: wasAutoSubmittedBySession,
+                gracePeriodsUsed: 0,
+                securityStatus: wasAutoSubmittedBySession ? 'Session-Auto-Submit' : 'Clean',
+                submissionSource: wasAutoSubmittedBySession ? 'Session-Auto-Submit' : 'Manual'
+            }
+        };
+
+        const savedResult = await quizResultCollection.create(newQuizResult);
+        
+        // Enhanced logging with session context
+        const securityStatus = antiCheatData && antiCheatData.violationCount > 0 
+            ? `${antiCheatData.violationCount} violations` 
+            : 'clean submission';
+        const sessionStatus = examSessionData ? ' (exam session)' : '';
+            
+        console.log(`✅ Quiz result saved for student ${studentName} on quiz ${quiz.lectureTitle}: Score ${score}/${totalQuestions} (${securityStatus}${sessionStatus})`);
+
+        // Get class information for comprehensive response
+        let classInfo = null;
+        if (targetClassId) {
+            classInfo = await classCollection.findById(targetClassId).select('name subject').lean();
+        }
+
+        // Enhanced response with exam session summary
+        const enhancedResponse = {
+            success: true,
+            message: wasAutoSubmittedBySession 
+                ? 'Quiz auto-submitted by exam session timer and scored successfully!'
+                : (antiCheatData && antiCheatData.wasAutoSubmitted 
+                    ? 'Quiz auto-submitted due to security violations and scored successfully!'
+                    : 'Quiz submitted and scored successfully!'),
+            score: score,
+            totalQuestions: totalQuestions,
+            percentage: percentage,
+            timeTakenSeconds: timeTakenSeconds,
+            quizResultId: savedResult._id,
+            
+            // Enhanced response with class context
+            lectureId: quiz.lectureId,
+            classId: targetClassId,
+            className: classInfo?.name,
+            classSubject: classInfo?.subject,
+            quizTitle: quiz.lectureTitle,
+            questionDetails: enhancedQuestionDetails,
+            quizId: quizId,
+            
+            // 🚨 NEW: Exam session summary
+            examSessionSummary: examSessionData ? {
+                wasExamSession: true,
+                sessionDuration: examSessionData.sessionDurationMinutes,
+                timeRemaining: examSessionData.sessionTimeRemaining,
+                autoSubmittedBySession: wasAutoSubmittedBySession,
+                participantCount: examSessionData.sessionParticipantCount
+            } : {
+                wasExamSession: false
+            },
+            
+            // Enhanced anti-cheat summary
+            antiCheatSummary: {
+                violationCount: antiCheatData?.violationCount || 0,
+                wasAutoSubmitted: antiCheatData?.wasAutoSubmitted || wasAutoSubmittedBySession,
+                securityStatus: wasAutoSubmittedBySession ? 'Session Auto-Submit' :
+                              (antiCheatData?.violationCount === 0 ? 'Clean' : 
+                               antiCheatData?.violationCount === 1 ? 'Warning Issued' : 'Auto-Submitted'),
+                submissionType: wasAutoSubmittedBySession ? 'Session Timer Auto-Submit' :
+                              (antiCheatData?.wasAutoSubmitted ? 'Security Auto-Submit' : 'Manual Submit')
+            },
+            
+            // Navigation context for frontend
+            navigationContext: {
+                hasClass: !!targetClassId,
+                classId: targetClassId,
+                className: classInfo?.name,
+                classSubject: classInfo?.subject,
+                returnToClass: !!targetClassId,
+                dashboardUrl: '/homeStudent',
+                classUrl: targetClassId ? `/student/class/${targetClassId}` : null
+            },
+            
+            // Suggested redirect based on context
+            suggestedRedirect: {
+                url: '/quiz-results',
+                context: 'results_page',
+                backUrl: targetClassId ? `/student/class/${targetClassId}` : '/homeStudent',
+                backLabel: targetClassId ? `Back to ${classInfo?.name || 'Class'}` : 'Back to Dashboard'
+            }
+        };
+
+        res.json(enhancedResponse);
+
+    } catch (error) {
+        console.error('❌ Error submitting or scoring quiz:', error);
+        res.status(500).json({ success: false, message: 'Failed to submit quiz: ' + error.message });
+    }
+});
+
+// 🚨 NEW: Get active exam sessions for class (teacher dashboard)
+app.get('/api/teacher/class/:classId/active-sessions', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'teacher') {
+            return res.status(403).json({ success: false, message: 'Access denied. Teachers only.' });
+        }
+
+        const classId = req.params.classId;
+        const teacherId = req.session.userId;
+
+        // Verify class ownership
+        const classDoc = await classCollection.findOne({
+            _id: classId,
+            teacherId: teacherId,
+            isActive: true
+        });
+
+        if (!classDoc) {
+            return res.status(404).json({
+                success: false,
+                message: 'Class not found or access denied.'
+            });
+        }
+
+        // Get active exam sessions for this class
+        const activeSessions = await quizCollection.find({
+            classId: classId,
+            examSessionActive: true
+        }).select('lectureTitle examSessionStartTime examSessionEndTime examSessionDuration examSessionParticipants').lean();
+
+        const sessionSummaries = activeSessions.map(session => {
+            const now = new Date();
+            const endTime = new Date(session.examSessionEndTime);
+            const remainingSeconds = Math.max(0, Math.floor((endTime - now) / 1000));
+            
+            return {
+                quizId: session._id,
+                quizTitle: session.lectureTitle,
+                startTime: session.examSessionStartTime,
+                endTime: session.examSessionEndTime,
+                durationMinutes: session.examSessionDuration,
+                remainingSeconds: remainingSeconds,
+                participantCount: session.examSessionParticipants ? session.examSessionParticipants.length : 0,
+                submittedCount: session.examSessionParticipants 
+                    ? session.examSessionParticipants.filter(p => p.hasSubmitted).length 
+                    : 0
+            };
+        });
+
+        res.json({
+            success: true,
+            activeSessions: sessionSummaries,
+            totalActiveSessions: sessionSummaries.length
+        });
+
+    } catch (error) {
+        console.error('❌ Error getting active sessions:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to get active sessions: ' + error.message
+        });
     }
 });
 
