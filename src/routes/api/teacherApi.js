@@ -1,4 +1,4 @@
-// routes/api/teacherApi.js
+// routes/api/teacherApi.js - FIXED VERSION WITH MISSING ROUTES
 const express = require('express');
 const router = express.Router();
 const { requireAuth, requireRole } = require('../../middleware/authMiddleware');
@@ -18,6 +18,9 @@ const {
     classJoinRequestCollection
 } = require('../../mongodb');
 
+// Import utility functions
+const { formatPercentage, calculateTimeEfficiency, calculateRankingPoints, calculateParticipationWeightedPoints, formatTime, getTimeAgo } = require('../../utils/helpers');
+
 // Middleware to ensure teacher access
 const requireTeacher = requireRole('teacher');
 
@@ -28,38 +31,65 @@ router.get('/classes', requireTeacher, async (req, res) => {
     try {
         const teacherId = req.session.userId;
 
+        console.log('Teacher classes API accessed:', {
+            teacherId: teacherId,
+            teacherName: req.session.userName
+        });
+
         // Get teacher's classes with computed stats
         const classes = await classCollection.find({
             teacherId: teacherId,
             isActive: true
-        })
-            .sort({ createdAt: -1 })
-            .lean();
+        }).sort({ createdAt: -1 }).lean();
 
         console.log(`Found ${classes.length} classes for teacher ${req.session.userName}`);
 
-        // Format classes for response
-        const formattedClasses = classes.map(classDoc => ({
-            id: classDoc._id,
-            name: classDoc.name,
-            subject: classDoc.subject,
-            description: classDoc.description,
-            studentCount: classDoc.studentCount || 0,
-            lectureCount: classDoc.lectureCount || 0,
-            quizCount: classDoc.quizCount || 0,
-            averageScore: classDoc.averageScore || 0,
-            createdAt: classDoc.createdAt,
-            updatedAt: classDoc.updatedAt
-        }));
+        // Calculate detailed statistics for each class
+        const enhancedClasses = await Promise.all(
+            classes.map(async (cls) => {
+                // Get counts in parallel for better performance
+                const [studentCount, lectureCount, quizCount] = await Promise.all([
+                    classStudentCollection.countDocuments({ 
+                        classId: cls._id, 
+                        isActive: true 
+                    }),
+                    lectureCollection.countDocuments({ classId: cls._id }),
+                    quizCollection.countDocuments({ classId: cls._id, isActive: true })
+                ]);
+
+                // Get class average score
+                const quizResults = await quizResultCollection.find({ classId: cls._id }).lean();
+                const classAverageScore = quizResults.length > 0 
+                    ? (quizResults.reduce((sum, result) => sum + result.percentage, 0) / quizResults.length)
+                    : 0;
+
+                return {
+                    id: cls._id,
+                    name: cls.name,
+                    subject: cls.subject,
+                    description: cls.description,
+                    studentCount: studentCount,
+                    lectureCount: lectureCount,
+                    quizCount: quizCount,
+                    averageScore: parseFloat(classAverageScore.toFixed(1)),
+                    createdAt: cls.createdAt,
+                    updatedAt: cls.updatedAt,
+                    createdDate: cls.createdAt ? cls.createdAt.toLocaleDateString() : 'N/A'
+                };
+            })
+        );
 
         res.json({
             success: true,
-            classes: formattedClasses,
-            totalClasses: formattedClasses.length
+            classes: enhancedClasses,
+            totalClasses: enhancedClasses.length,
+            totalStudents: enhancedClasses.reduce((sum, cls) => sum + cls.studentCount, 0),
+            totalLectures: enhancedClasses.reduce((sum, cls) => sum + cls.lectureCount, 0),
+            totalQuizzes: enhancedClasses.reduce((sum, cls) => sum + cls.quizCount, 0)
         });
 
     } catch (error) {
-        console.error('Error fetching classes:', error);
+        console.error('Error fetching teacher classes:', error);
         res.status(500).json({
             success: false,
             message: 'Failed to fetch classes: ' + error.message
@@ -73,6 +103,13 @@ router.post('/classes', requireTeacher, validateClass, async (req, res) => {
         const { name, subject, description } = req.body;
         const teacherId = req.session.userId;
         const teacherName = req.session.userName;
+
+        console.log('Creating new class via teacher API:', {
+            name: name,
+            subject: subject,
+            teacherId: teacherId,
+            teacherName: teacherName
+        });
 
         // Check if class name already exists for this teacher
         const existingClass = await classCollection.findOne({
@@ -101,7 +138,7 @@ router.post('/classes', requireTeacher, validateClass, async (req, res) => {
             averageScore: 0
         });
 
-        console.log(`New class created: ${newClass.name} by ${teacherName}`);
+        console.log(`✅ New class created via teacher API: ${newClass.name} by ${teacherName}`);
 
         res.json({
             success: true,
@@ -120,7 +157,7 @@ router.post('/classes', requireTeacher, validateClass, async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error creating class:', error);
+        console.error('Error creating class via teacher API:', error);
         res.status(500).json({
             success: false,
             message: 'Failed to create class: ' + error.message
@@ -147,6 +184,16 @@ router.get('/classes/:classId', requireTeacher, async (req, res) => {
             });
         }
 
+        // Get detailed statistics
+        const [studentCount, lectureCount, quizCount] = await Promise.all([
+            classStudentCollection.countDocuments({ 
+                classId: classId, 
+                isActive: true 
+            }),
+            lectureCollection.countDocuments({ classId: classId }),
+            quizCollection.countDocuments({ classId: classId, isActive: true })
+        ]);
+
         res.json({
             success: true,
             class: {
@@ -154,9 +201,9 @@ router.get('/classes/:classId', requireTeacher, async (req, res) => {
                 name: classDoc.name,
                 subject: classDoc.subject,
                 description: classDoc.description,
-                studentCount: classDoc.studentCount || 0,
-                lectureCount: classDoc.lectureCount || 0,
-                quizCount: classDoc.quizCount || 0,
+                studentCount: studentCount,
+                lectureCount: lectureCount,
+                quizCount: quizCount,
                 averageScore: classDoc.averageScore || 0,
                 createdAt: classDoc.createdAt,
                 updatedAt: classDoc.updatedAt
@@ -205,7 +252,7 @@ router.put('/classes/:classId', requireTeacher, validateClass, async (req, res) 
             { new: true }
         ).lean();
 
-        console.log(`Class updated: ${updatedClass.name}`);
+        console.log(`✅ Class updated: ${updatedClass.name}`);
 
         res.json({
             success: true,
@@ -264,7 +311,7 @@ router.delete('/classes/:classId', requireTeacher, async (req, res) => {
             { isActive: false }
         );
 
-        console.log(`Class archived: ${existingClass.name}`);
+        console.log(`✅ Class archived: ${existingClass.name}`);
 
         res.json({
             success: true,
@@ -280,6 +327,230 @@ router.delete('/classes/:classId', requireTeacher, async (req, res) => {
     }
 });
 
+// ==================== MISSING ROUTES - FIXED ====================
+
+// Get class rankings - FIXED: This was being called as /api/teacher/class/:classId/rankings
+router.get('/class/:classId/rankings', requireTeacher, async (req, res) => {
+    try {
+        const classId = req.params.classId;
+        const teacherId = req.session.userId;
+
+        // Verify class ownership
+        const classDoc = await classCollection.findOne({
+            _id: classId,
+            teacherId: teacherId,
+            isActive: true
+        });
+
+        if (!classDoc) {
+            return res.status(404).json({
+                success: false,
+                message: 'Class not found or access denied.'
+            });
+        }
+
+        // Get all students enrolled in this class
+        const classStudents = await classStudentCollection.find({
+            classId: classId,
+            isActive: true
+        }).lean();
+
+        if (classStudents.length === 0) {
+            return res.json({
+                success: true,
+                data: {
+                    rankings: [],
+                    totalStudents: 0,
+                    rankingSystem: {
+                        formula: 'Final Points = Base Points × (0.3 + 0.7 × Participation Rate)',
+                        description: 'Rankings reward both performance and participation. Base Points = (Score × 0.7) + (Time Efficiency × 0.3)'
+                    }
+                }
+            });
+        }
+
+        // Get quiz information for participation calculation
+        const classQuizzes = await quizCollection.find({
+            classId: classId,
+            isActive: true
+        }).lean();
+
+        const totalQuizzesAvailable = classQuizzes.length;
+
+        // Calculate rankings with participation-weighted formula
+        const studentRankings = await Promise.all(
+            classStudents.map(async (student) => {
+                const studentResults = await quizResultCollection.find({
+                    studentId: student.studentId,
+                    classId: classId
+                }).lean();
+
+                if (studentResults.length === 0) {
+                    return {
+                        studentId: student.studentId,
+                        studentName: student.studentName,
+                        totalQuizzes: 0,
+                        averageScore: 0,
+                        averageTimeEfficiency: 0,
+                        participationRate: 0,
+                        basePoints: 0,
+                        finalPoints: 0,
+                        averageTime: '0:00',
+                        rank: 999
+                    };
+                }
+
+                // Calculate average score
+                const averageScore = studentResults.reduce((sum, r) => sum + r.percentage, 0) / studentResults.length;
+
+                // Calculate time efficiency for each result
+                const timeEfficiencies = studentResults.map(result => {
+                    const quiz = classQuizzes.find(q => q._id.toString() === result.quizId.toString());
+                    const quizDurationSeconds = quiz ? (quiz.durationMinutes || 15) * 60 : 900;
+                    return calculateTimeEfficiency(result.timeTakenSeconds, quizDurationSeconds);
+                });
+
+                const averageTimeEfficiency = timeEfficiencies.length > 0
+                    ? timeEfficiencies.reduce((sum, eff) => sum + eff, 0) / timeEfficiencies.length
+                    : 0;
+
+                // Calculate participation rate
+                const participationRate = totalQuizzesAvailable > 0
+                    ? (studentResults.length / totalQuizzesAvailable) * 100
+                    : 0;
+
+                // Calculate base points and participation-weighted final points
+                const basePoints = calculateRankingPoints(averageScore, averageTimeEfficiency);
+                const finalPoints = calculateParticipationWeightedPoints(averageScore, averageTimeEfficiency, participationRate);
+
+                const averageTime = studentResults.reduce((sum, r) => sum + r.timeTakenSeconds, 0) / studentResults.length;
+
+                return {
+                    studentId: student.studentId,
+                    studentName: student.studentName,
+                    totalQuizzes: studentResults.length,
+                    averageScore: formatPercentage(averageScore),
+                    averageTimeEfficiency: formatPercentage(averageTimeEfficiency),
+                    participationRate: formatPercentage(participationRate),
+                    basePoints: basePoints,
+                    finalPoints: finalPoints,
+                    averageTime: formatTime(averageTime),
+                    rank: 0
+                };
+            })
+        );
+
+        // Sort by final points (participation-weighted)
+        const rankedStudents = studentRankings
+            .filter(student => student.totalQuizzes > 0)
+            .sort((a, b) => b.finalPoints - a.finalPoints)
+            .map((student, index) => ({
+                ...student,
+                rank: index + 1
+            }));
+
+        console.log(`Teacher API - Participation-weighted rankings generated: ${rankedStudents.length} students`);
+
+        res.json({
+            success: true,
+            data: {
+                rankings: rankedStudents,
+                totalStudents: rankedStudents.length,
+                totalQuizzesAvailable: totalQuizzesAvailable,
+                rankingSystem: {
+                    formula: 'Final Points = Base Points × (0.3 + 0.7 × Participation Rate)',
+                    baseFormula: 'Base Points = (Score × 0.7) + (Time Efficiency × 0.3)',
+                    description: 'Rankings reward both performance and participation. Students with higher participation get bonus multiplier.',
+                    participationWeight: '70% of final scoring depends on participation rate'
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('Error generating teacher API rankings:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to generate rankings: ' + error.message
+        });
+    }
+});
+
+// Get class quizzes - FIXED: This was being called as /api/teacher/class/:classId/quizzes
+router.get('/class/:classId/quizzes', requireTeacher, async (req, res) => {
+    try {
+        const classId = req.params.classId;
+        const teacherId = req.session.userId;
+
+        // Verify class ownership
+        const classDoc = await classCollection.findOne({
+            _id: classId,
+            teacherId: teacherId,
+            isActive: true
+        });
+
+        if (!classDoc) {
+            return res.status(404).json({
+                success: false,
+                message: 'Class not found or access denied.'
+            });
+        }
+
+        // Get quizzes for this class
+        const quizzes = await quizCollection.find({
+            classId: classId,
+            isActive: true
+        }).sort({ generatedDate: -1 }).lean();
+
+        // Get quiz results for each quiz to calculate statistics
+        const quizzesWithStats = await Promise.all(
+            quizzes.map(async (quiz) => {
+                const quizResults = await quizResultCollection.find({
+                    quizId: quiz._id
+                }).lean();
+
+                const totalAttempts = quizResults.length;
+                const averageScore = totalAttempts > 0
+                    ? formatPercentage(quizResults.reduce((sum, result) => sum + result.percentage, 0) / totalAttempts)
+                    : 0;
+                const highestScore = totalAttempts > 0
+                    ? formatPercentage(Math.max(...quizResults.map(result => result.percentage)))
+                    : 0;
+
+                return {
+                    _id: quiz._id,
+                    lectureId: quiz.lectureId,
+                    lectureTitle: quiz.lectureTitle,
+                    totalQuestions: quiz.totalQuestions,
+                    durationMinutes: quiz.durationMinutes,
+                    generatedDate: quiz.generatedDate,
+                    isExamMode: quiz.isExamMode || false,
+                    examStatus: quiz.examStatus,
+                    // Statistics
+                    totalAttempts: totalAttempts,
+                    averageScore: averageScore,
+                    highestScore: highestScore
+                };
+            })
+        );
+
+        console.log(`Found ${quizzesWithStats.length} quizzes for teacher class ${classDoc.name}`);
+
+        res.json({
+            success: true,
+            quizzes: quizzesWithStats,
+            totalQuizzes: quizzesWithStats.length,
+            className: classDoc.name
+        });
+
+    } catch (error) {
+        console.error('Error fetching teacher class quizzes:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch quizzes: ' + error.message
+        });
+    }
+});
+
 // ==================== STUDENT MANAGEMENT APIs ====================
 
 // Add student to class
@@ -289,12 +560,11 @@ router.post('/classes/:classId/students', requireTeacher, async (req, res) => {
         const teacherId = req.session.userId;
         const { enrollmentNumber } = req.body;
 
-        console.log('Add student request:', {
-            userType: req.session.userType,
-            userId: req.session.userId,
-            userName: req.session.userName,
+        console.log('Add student request via teacher API:', {
             classId: classId,
-            enrollmentNumber: enrollmentNumber
+            enrollmentNumber: enrollmentNumber,
+            teacherId: teacherId,
+            teacherName: req.session.userName
         });
 
         if (!enrollmentNumber) {
@@ -312,69 +582,55 @@ router.post('/classes/:classId/students', requireTeacher, async (req, res) => {
         });
 
         if (!classDoc) {
-            console.log('Class not found or access denied:', {
-                classId,
-                teacherId
-            });
             return res.status(404).json({
                 success: false,
                 message: 'Class not found or access denied.'
             });
         }
 
-        console.log('Class verified:', classDoc.name);
-
         // Find student by enrollment number
         const student = await studentCollection.findOne({
-            enrollment: enrollmentNumber.trim()
+            enrollment: enrollmentNumber.trim().toUpperCase()
         });
 
         if (!student) {
-            console.log('Student not found:', enrollmentNumber);
             return res.status(404).json({
                 success: false,
                 message: 'Student not found with this enrollment number.'
             });
         }
 
-        console.log('Student found:', student.name);
-
-        // Check for ANY existing enrollment (active or inactive)
+        // Check for existing enrollment (active or inactive)
         const existingEnrollment = await classStudentCollection.findOne({
             classId: classId,
             studentId: student._id
         });
 
         if (existingEnrollment) {
-            console.log('Existing enrollment found:', {
-                isActive: existingEnrollment.isActive,
-                enrollmentId: existingEnrollment._id
-            });
-
             if (existingEnrollment.isActive) {
                 return res.status(400).json({
                     success: false,
                     message: 'Student is already enrolled in this class.'
                 });
             } else {
-                // Reactivate enrollment instead of creating new one
+                // Reactivate enrollment
                 await classStudentCollection.findByIdAndUpdate(existingEnrollment._id, {
                     isActive: true,
                     enrolledAt: new Date(),
                     studentName: student.name,
                     studentEnrollment: student.enrollment
                 });
-                console.log('Student enrollment reactivated');
+                console.log('✅ Student enrollment reactivated');
             }
         } else {
             // Create new enrollment
-            const newEnrollment = await classStudentCollection.create({
+            await classStudentCollection.create({
                 classId: classId,
                 studentId: student._id,
                 studentName: student.name,
                 studentEnrollment: student.enrollment
             });
-            console.log('New student enrollment created:', newEnrollment._id);
+            console.log('✅ New student enrollment created');
         }
 
         // Update class student count
@@ -388,7 +644,7 @@ router.post('/classes/:classId/students', requireTeacher, async (req, res) => {
             updatedAt: new Date()
         });
 
-        console.log(`Student ${student.name} (${student.enrollment}) added to class ${classDoc.name}`);
+        console.log(`✅ Student ${student.name} (${student.enrollment}) added to class ${classDoc.name}`);
 
         res.json({
             success: true,
@@ -406,7 +662,7 @@ router.post('/classes/:classId/students', requireTeacher, async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error adding student to class:', error);
+        console.error('Error adding student to class via teacher API:', error);
         res.status(500).json({
             success: false,
             message: 'Failed to add student: ' + error.message
@@ -420,7 +676,7 @@ router.get('/classes/:classId/students', requireTeacher, async (req, res) => {
         const classId = req.params.classId;
         const teacherId = req.session.userId;
 
-        console.log('Loading students for class:', {
+        console.log('Loading students for class via teacher API:', {
             classId: classId,
             teacherId: teacherId,
             requestedBy: req.session.userName
@@ -434,14 +690,11 @@ router.get('/classes/:classId/students', requireTeacher, async (req, res) => {
         });
 
         if (!classDoc) {
-            console.log('Class not found or access denied');
             return res.status(404).json({
                 success: false,
                 message: 'Class not found or access denied.'
             });
         }
-
-        console.log('Class verified:', classDoc.name);
 
         // Get students enrolled in this class
         const enrollments = await classStudentCollection.find({
@@ -462,7 +715,7 @@ router.get('/classes/:classId/students', requireTeacher, async (req, res) => {
 
                 const totalQuizzes = studentResults.length;
                 const averageScore = totalQuizzes > 0
-                    ? (studentResults.reduce((sum, result) => sum + result.percentage, 0) / totalQuizzes).toFixed(1)
+                    ? (studentResults.reduce((sum, result) => sum + result.percentage, 0) / totalQuizzes)
                     : 0;
 
                 const lastActivity = totalQuizzes > 0
@@ -475,14 +728,14 @@ router.get('/classes/:classId/students', requireTeacher, async (req, res) => {
                     studentEnrollment: enrollment.studentEnrollment,
                     enrolledAt: enrollment.enrolledAt,
                     totalQuizzes: totalQuizzes,
-                    averageScore: parseFloat(averageScore),
+                    averageScore: parseFloat(averageScore.toFixed(1)),
                     lastActivity: lastActivity,
                     participationRate: totalQuizzes > 0 ? 100 : 0
                 };
             })
         );
 
-        console.log(`Students loaded with stats: ${studentsWithStats.length}`);
+        console.log(`✅ Students loaded with stats: ${studentsWithStats.length}`);
 
         res.json({
             success: true,
@@ -492,7 +745,7 @@ router.get('/classes/:classId/students', requireTeacher, async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error fetching students:', error);
+        console.error('Error fetching students via teacher API:', error);
         res.status(500).json({
             success: false,
             message: 'Failed to fetch students: ' + error.message
@@ -540,7 +793,18 @@ router.delete('/classes/:classId/students/:studentId', requireTeacher, async (re
             });
         }
 
-        console.log(`Student ${enrollment.studentName} removed from class ${classDoc.name}`);
+        // Update class student count
+        const totalActiveStudents = await classStudentCollection.countDocuments({
+            classId: classId,
+            isActive: true
+        });
+
+        await classCollection.findByIdAndUpdate(classId, {
+            studentCount: totalActiveStudents,
+            updatedAt: new Date()
+        });
+
+        console.log(`✅ Student ${enrollment.studentName} removed from class ${classDoc.name}`);
 
         res.json({
             success: true,
@@ -548,7 +812,7 @@ router.delete('/classes/:classId/students/:studentId', requireTeacher, async (re
         });
 
     } catch (error) {
-        console.error('Error removing student from class:', error);
+        console.error('Error removing student from class via teacher API:', error);
         res.status(500).json({
             success: false,
             message: 'Failed to remove student: ' + error.message
@@ -647,7 +911,7 @@ router.get('/classes/:classId/overview', requireTeacher, async (req, res) => {
                 timeTaken: Math.floor(result.timeTakenSeconds / 60) + 'm ' + (result.timeTakenSeconds % 60) + 's'
             }));
 
-        console.log('Performance trend data:', performanceTrend.length, 'data points');
+        console.log('✅ Performance trend data:', performanceTrend.length, 'data points');
 
         res.json({
             success: true,
@@ -662,7 +926,7 @@ router.get('/classes/:classId/overview', requireTeacher, async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error fetching class overview:', error);
+        console.error('Error fetching class overview via teacher API:', error);
         res.status(500).json({
             success: false,
             message: 'Failed to fetch class overview: ' + error.message
@@ -749,10 +1013,117 @@ router.get('/classes/:classId/analytics', requireTeacher, async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error fetching class analytics:', error);
+        console.error('Error fetching class analytics via teacher API:', error);
         res.status(500).json({
             success: false,
             message: 'Failed to fetch class analytics: ' + error.message
+        });
+    }
+});
+
+// ==================== DASHBOARD STATS API ====================
+
+// Get teacher dashboard statistics
+router.get('/dashboard-stats', requireTeacher, async (req, res) => {
+    try {
+        const teacherId = req.session.userId;
+
+        console.log('Fetching dashboard stats for teacher:', req.session.userName);
+
+        // Get all teacher's classes
+        const classes = await classCollection.find({
+            teacherId: teacherId,
+            isActive: true
+        }).lean();
+
+        if (classes.length === 0) {
+            return res.json({
+                success: true,
+                stats: {
+                    totalClasses: 0,
+                    totalStudents: 0,
+                    totalLectures: 0,
+                    totalQuizzes: 0,
+                    overallAverage: 0
+                },
+                recentActivity: [],
+                topPerformingClasses: []
+            });
+        }
+
+        const classIds = classes.map(c => c._id);
+
+        // Get overall statistics
+        const [
+            totalStudents,
+            totalLectures,
+            totalQuizzes,
+            allResults
+        ] = await Promise.all([
+            classStudentCollection.countDocuments({ 
+                classId: { $in: classIds }, 
+                isActive: true 
+            }),
+            lectureCollection.countDocuments({ 
+                classId: { $in: classIds } 
+            }),
+            quizCollection.countDocuments({ 
+                classId: { $in: classIds }, 
+                isActive: true 
+            }),
+            quizResultCollection.find({ 
+                classId: { $in: classIds } 
+            }).lean()
+        ]);
+
+        const overallAverage = allResults.length > 0
+            ? parseFloat((allResults.reduce((sum, r) => sum + r.percentage, 0) / allResults.length).toFixed(1))
+            : 0;
+
+        // Get recent activity (last 10 quiz submissions)
+        const recentActivity = allResults
+            .sort((a, b) => new Date(b.submissionDate) - new Date(a.submissionDate))
+            .slice(0, 10)
+            .map(result => ({
+                studentName: result.studentName,
+                score: parseFloat(result.percentage.toFixed(1)),
+                submissionDate: result.submissionDate.toLocaleDateString(),
+                className: classes.find(c => c._id.toString() === result.classId.toString())?.name || 'Unknown Class'
+            }));
+
+        // Get top performing classes
+        const classPerformance = classes.map(cls => {
+            const classResults = allResults.filter(r => r.classId.toString() === cls._id.toString());
+            const classAverage = classResults.length > 0
+                ? classResults.reduce((sum, r) => sum + r.percentage, 0) / classResults.length
+                : 0;
+
+            return {
+                className: cls.name,
+                averageScore: parseFloat(classAverage.toFixed(1)),
+                totalResults: classResults.length,
+                studentCount: cls.studentCount || 0
+            };
+        }).sort((a, b) => b.averageScore - a.averageScore).slice(0, 5);
+
+        res.json({
+            success: true,
+            stats: {
+                totalClasses: classes.length,
+                totalStudents: totalStudents,
+                totalLectures: totalLectures,
+                totalQuizzes: totalQuizzes,
+                overallAverage: overallAverage
+            },
+            recentActivity: recentActivity,
+            topPerformingClasses: classPerformance
+        });
+
+    } catch (error) {
+        console.error('Error fetching teacher dashboard stats:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch dashboard stats: ' + error.message
         });
     }
 });

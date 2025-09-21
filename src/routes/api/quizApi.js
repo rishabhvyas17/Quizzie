@@ -1,4 +1,4 @@
-// routes/api/quizApi.js - Fixed with proper imports
+// routes/api/quizApi.js - UPDATED WITH MISSING ROUTES
 const express = require('express');
 const router = express.Router();
 const fs = require('fs');
@@ -49,10 +49,184 @@ const extractTextFromFile = async (filePath, mimetype) => {
     return await fileService.extractTextFromFile(filePath, mimetype);
 };
 
+// ==================== EXAM SESSION ROUTES - ADDED ====================
+
+// Get active exam sessions for a class
+router.get('/exam-sessions/active/:classId', requireTeacher, async (req, res) => {
+    try {
+        const classId = req.params.classId;
+        const teacherId = req.session.userId;
+
+        console.log('Fetching active exam sessions for class:', classId);
+
+        // Verify class ownership
+        const classDoc = await classCollection.findOne({
+            _id: classId,
+            teacherId: teacherId,
+            isActive: true
+        });
+
+        if (!classDoc) {
+            return res.status(404).json({
+                success: false,
+                message: 'Class not found or access denied.'
+            });
+        }
+
+        // Get active exam sessions for this class
+        const activeExamSessions = await quizCollection.find({
+            classId: classId,
+            isExamMode: true,
+            examStatus: 'active',
+            isActive: true
+        }).lean();
+
+        const formattedSessions = activeExamSessions.map(session => ({
+            quizId: session._id,
+            lectureTitle: session.lectureTitle,
+            examStartTime: session.examStartTime,
+            examEndTime: session.examEndTime,
+            examDurationMinutes: session.examDurationMinutes,
+            participantCount: session.examSessionParticipants ? session.examSessionParticipants.length : 0,
+            timeRemaining: session.examEndTime ? Math.max(0, Math.floor((new Date(session.examEndTime) - new Date()) / 1000)) : 0
+        }));
+
+        console.log(`✅ Found ${formattedSessions.length} active exam sessions for class ${classDoc.name}`);
+
+        res.json({
+            success: true,
+            activeSessions: formattedSessions,
+            totalActiveSessions: formattedSessions.length
+        });
+
+    } catch (error) {
+        console.error('Error fetching active exam sessions:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch active exam sessions: ' + error.message
+        });
+    }
+});
+
+// Start exam session
+router.post('/exam-sessions/start/:quizId', requireTeacher, async (req, res) => {
+    try {
+        const quizId = req.params.quizId;
+        const { examDurationMinutes } = req.body;
+        const teacherId = req.session.userId;
+
+        console.log('Starting exam session:', { quizId, examDurationMinutes });
+
+        // Get quiz and verify ownership
+        const quiz = await quizCollection.findById(quizId);
+        if (!quiz) {
+            return res.status(404).json({
+                success: false,
+                message: 'Quiz not found.'
+            });
+        }
+
+        // Verify class ownership
+        const classDoc = await classCollection.findOne({
+            _id: quiz.classId,
+            teacherId: teacherId,
+            isActive: true
+        });
+
+        if (!classDoc) {
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied.'
+            });
+        }
+
+        // Start the exam session
+        const examStartTime = new Date();
+        const examEndTime = new Date(examStartTime.getTime() + (examDurationMinutes || 60) * 60 * 1000);
+
+        await quizCollection.findByIdAndUpdate(quizId, {
+            isExamMode: true,
+            examStatus: 'active',
+            examStartTime: examStartTime,
+            examEndTime: examEndTime,
+            examDurationMinutes: examDurationMinutes || 60,
+            examSessionParticipants: []
+        });
+
+        console.log(`✅ Exam session started for quiz: ${quiz.lectureTitle}`);
+
+        res.json({
+            success: true,
+            message: 'Exam session started successfully!',
+            examStartTime: examStartTime,
+            examEndTime: examEndTime,
+            examDurationMinutes: examDurationMinutes || 60
+        });
+
+    } catch (error) {
+        console.error('Error starting exam session:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to start exam session: ' + error.message
+        });
+    }
+});
+
+// End exam session
+router.post('/exam-sessions/end/:quizId', requireTeacher, async (req, res) => {
+    try {
+        const quizId = req.params.quizId;
+        const teacherId = req.session.userId;
+
+        console.log('Ending exam session:', quizId);
+
+        const quiz = await quizCollection.findById(quizId);
+        if (!quiz) {
+            return res.status(404).json({
+                success: false,
+                message: 'Quiz not found.'
+            });
+        }
+
+        // Verify class ownership
+        const classDoc = await classCollection.findOne({
+            _id: quiz.classId,
+            teacherId: teacherId,
+            isActive: true
+        });
+
+        if (!classDoc) {
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied.'
+            });
+        }
+
+        // End the exam session
+        await quizCollection.findByIdAndUpdate(quizId, {
+            examStatus: 'ended'
+        });
+
+        console.log(`✅ Exam session ended for quiz: ${quiz.lectureTitle}`);
+
+        res.json({
+            success: true,
+            message: 'Exam session ended successfully!'
+        });
+
+    } catch (error) {
+        console.error('Error ending exam session:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to end exam session: ' + error.message
+        });
+    }
+});
+
 // ==================== FILE UPLOAD & LECTURE MANAGEMENT ====================
 
-// Upload lecture file and extract text
-router.post('/upload-lecture', requireTeacher, upload.single('lectureFile'), validateUploadedFile, async (req, res) => {
+// Upload lecture file and extract text - FIXED ROUTE
+router.post('/upload_lecture', requireTeacher, upload.single('lectureFile'), validateUploadedFile, async (req, res) => {
     let tempFilePath = null;
 
     try {
@@ -120,7 +294,7 @@ router.post('/upload-lecture', requireTeacher, upload.single('lectureFile'), val
         };
 
         const savedLecture = await lectureCollection.create(lectureData);
-        console.log('Lecture saved to database:', savedLecture._id);
+        console.log('✅ Lecture saved to database:', savedLecture._id);
 
         // Return structured response for API usage
         res.json({
@@ -211,7 +385,7 @@ router.delete('/lectures/:id', requireTeacher, async (req, res) => {
         // Delete lecture record
         await lectureCollection.findByIdAndDelete(lectureId);
 
-        console.log('Lecture, quizzes, and results deleted:', lecture.title);
+        console.log('✅ Lecture, quizzes, and results deleted:', lecture.title);
 
         res.json({
             success: true,
@@ -384,7 +558,7 @@ router.post('/generate-quiz/:lectureId', requireTeacher, validateQuizGeneration,
             const response = result.response;
             let quizContent = response.text();
 
-            console.log('Received response from Gemini API');
+            console.log('✅ Received response from Gemini API');
 
             // Parse and validate the AI response
             let generatedQuiz = null;
@@ -403,10 +577,10 @@ router.post('/generate-quiz/:lectureId', requireTeacher, validateQuizGeneration,
 
                 // Check if we got the right number of questions
                 if (generatedQuiz.length !== questionCount) {
-                    console.warn(`AI generated ${generatedQuiz.length} questions, expected ${questionCount}`);
+                    console.warn(`⚠️ AI generated ${generatedQuiz.length} questions, expected ${questionCount}`);
                     if (generatedQuiz.length > questionCount) {
                         generatedQuiz = generatedQuiz.slice(0, questionCount);
-                        console.log(`Trimmed to ${questionCount} questions`);
+                        console.log(`✂️ Trimmed to ${questionCount} questions`);
                     }
                 }
 
@@ -426,7 +600,7 @@ router.post('/generate-quiz/:lectureId', requireTeacher, validateQuizGeneration,
                     // Validate explanations exist for wrong answers
                     ['A', 'B', 'C', 'D'].forEach(option => {
                         if (option !== q.correct_answer && (!q.explanations[option] || q.explanations[option].trim() === '')) {
-                            console.warn(`Question ${index + 1}: Missing explanation for wrong answer ${option}`);
+                            console.warn(`⚠️ Question ${index + 1}: Missing explanation for wrong answer ${option}`);
                             q.explanations[option] = `This option is incorrect. The correct answer is ${q.correct_answer}. Please review the lecture material for more details.`;
                         }
                     });
@@ -434,18 +608,15 @@ router.post('/generate-quiz/:lectureId', requireTeacher, validateQuizGeneration,
                     q.explanations[q.correct_answer] = "";
                 });
 
-                console.log('Quiz validated:', {
+                console.log('✅ Quiz validated:', {
                     totalQuestions: generatedQuiz.length,
                     requestedQuestions: questionCount,
-                    hasExplanations: !!generatedQuiz[0].explanations,
-                    hasCorrectExplanation: !!generatedQuiz[0].correctAnswerExplanation,
-                    actualDuration: durationMinutes,
-                    questionsGenerated: generatedQuiz.length,
-                    isExamMode: isExamMode
+                    hasExplanations: !!generatedQuiz[0]?.explanations,
+                    hasCorrectExplanation: !!generatedQuiz[0]?.correctAnswerExplanation
                 });
 
             } catch (parseError) {
-                console.error('Failed to parse quiz JSON:', parseError);
+                console.error('❌ Failed to parse quiz JSON:', parseError);
 
                 await lectureCollection.findByIdAndUpdate(lectureId, {
                     processingStatus: 'failed',
@@ -477,24 +648,9 @@ router.post('/generate-quiz/:lectureId', requireTeacher, validateQuizGeneration,
                 examStatus: isExamMode ? 'scheduled' : null
             };
 
-            console.log('Saving quiz with settings:', {
-                durationMinutes: newQuiz.durationMinutes,
-                totalQuestions: newQuiz.totalQuestions,
-                questionsArrayLength: newQuiz.questions.length,
-                isExamMode: newQuiz.isExamMode,
-                examDurationMinutes: newQuiz.examDurationMinutes
-            });
-
             try {
                 const savedQuiz = await quizCollection.create(newQuiz);
-                console.log('Quiz saved to database:', {
-                    quizId: savedQuiz._id,
-                    savedDuration: savedQuiz.durationMinutes,
-                    savedQuestions: savedQuiz.totalQuestions,
-                    title: lecture.title,
-                    isExamMode: savedQuiz.isExamMode,
-                    examDuration: savedQuiz.examDurationMinutes
-                });
+                console.log('✅ Quiz saved to database:', savedQuiz._id);
 
                 // Update lecture status
                 await lectureCollection.findByIdAndUpdate(lectureId, {
@@ -505,7 +661,7 @@ router.post('/generate-quiz/:lectureId', requireTeacher, validateQuizGeneration,
                 });
 
                 const quizTypeText = isExamMode ? 'Timed exam' : 'Quiz';
-                console.log(`${quizTypeText} generation completed successfully for:`, lecture.title);
+                console.log(`✅ ${quizTypeText} generation completed successfully for:`, lecture.title);
 
                 // Return comprehensive response with exam mode info
                 res.json({
@@ -525,7 +681,7 @@ router.post('/generate-quiz/:lectureId', requireTeacher, validateQuizGeneration,
                 });
 
             } catch (saveError) {
-                console.error('Error saving quiz to MongoDB:', saveError);
+                console.error('❌ Error saving quiz to MongoDB:', saveError);
 
                 await lectureCollection.findByIdAndUpdate(lectureId, {
                     processingStatus: 'failed',
@@ -540,7 +696,7 @@ router.post('/generate-quiz/:lectureId', requireTeacher, validateQuizGeneration,
             }
 
         } catch (apiError) {
-            console.error('Gemini API Error:', apiError);
+            console.error('❌ Gemini API Error:', apiError);
 
             await lectureCollection.findByIdAndUpdate(lectureId, {
                 processingStatus: 'failed',
@@ -562,7 +718,7 @@ router.post('/generate-quiz/:lectureId', requireTeacher, validateQuizGeneration,
         }
 
     } catch (error) {
-        console.error('Quiz generation error:', error);
+        console.error('❌ Quiz generation error:', error);
 
         if (req.params.lectureId) {
             await lectureCollection.findByIdAndUpdate(req.params.lectureId, {
@@ -824,7 +980,7 @@ router.post('/quiz/submit/:quizId', requireStudent, async (req, res) => {
             classInfo = await classCollection.findById(targetClassId).select('name subject').lean();
         }
 
-        console.log(`Quiz result saved for student ${studentName}: Score ${score}/${totalQuestions}`);
+        console.log(`✅ Quiz result saved for student ${studentName}: Score ${score}/${totalQuestions}`);
 
         // Prepare response
         const enhancedResponse = {

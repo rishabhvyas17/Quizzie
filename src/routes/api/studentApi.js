@@ -1,11 +1,12 @@
-// routes/api/studentApi.js
+// routes/api/studentApi.js - FIXED VERSION
 const express = require('express');
 const router = express.Router();
 const { requireAuth, requireRole } = require('../../middleware/authMiddleware');
 
-// Import database collections
+// Import database collections - FIXED: Added missing teacherCollection
 const {
     studentCollection,
+    teacherCollection, // FIXED: Added this missing import
     classCollection,
     classStudentCollection,
     quizCollection,
@@ -146,7 +147,7 @@ router.get('/navigation-context', requireStudent, async (req, res) => {
 
 // ==================== CLASS ENROLLMENT APIs ====================
 
-// Get enrolled classes
+// Get enrolled classes - FIXED
 router.get('/enrolled-classes', requireStudent, async (req, res) => {
     try {
         const studentId = req.session.userId;
@@ -175,7 +176,7 @@ router.get('/enrolled-classes', requireStudent, async (req, res) => {
                     return null; // Skip if class doesn't exist
                 }
 
-                // Get teacher name
+                // Get teacher name - FIXED: Now properly defined
                 const teacher = await teacherCollection.findById(classDetails.teacherId).select('name').lean();
 
                 // Get available quizzes for this class
