@@ -1,4 +1,4 @@
-// routes/api/studentApi.js - FIXED VERSION
+// routes/api/studentApi.js - FIXED VERSION with Recent Quiz Route
 const express = require('express');
 const router = express.Router();
 const { requireAuth, requireRole } = require('../../middleware/authMiddleware');
@@ -17,6 +17,29 @@ const {
 
 // Middleware to ensure student access
 const requireStudent = requireRole('student');
+
+// ==================== UTILITY FUNCTIONS ====================
+
+// Helper function to calculate time ago
+function getTimeAgo(date) {
+    const now = new Date();
+    const diffInMs = now - new Date(date);
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+
+    if (diffInDays > 7) {
+        return new Date(date).toLocaleDateString();
+    } else if (diffInDays > 0) {
+        return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+    } else if (diffInHours > 0) {
+        return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+    } else if (diffInMinutes > 0) {
+        return `${diffInMinutes} minute${diffInMinutes > 1 ? 's' : ''} ago`;
+    } else {
+        return 'Just now';
+    }
+}
 
 // ==================== DASHBOARD & PROFILE APIs ====================
 
@@ -318,6 +341,81 @@ router.get('/available-quizzes', requireStudent, async (req, res) => {
 
 // ==================== CLASS-SPECIFIC APIs ====================
 
+// 🆕 NEW: Get recent quiz for a specific class (FIXES 404 ERROR)
+router.get('/class/:classId/recent-quiz', requireStudent, async (req, res) => {
+    try {
+        const studentId = req.session.userId;
+        const classId = req.params.classId;
+
+        console.log(`🎯 Recent quiz requested for class ${classId} by student ${req.session.userName}`);
+
+        // Verify student is enrolled in this class
+        const enrollment = await classStudentCollection.findOne({
+            studentId: studentId,
+            classId: classId,
+            isActive: true
+        });
+
+        if (!enrollment) {
+            return res.status(403).json({
+                success: false,
+                message: 'You are not enrolled in this class.'
+            });
+        }
+
+        // Get the most recent quiz for this class
+        const recentQuiz = await quizCollection.findOne({
+            classId: classId,
+            isActive: true
+        })
+            .select('lectureTitle totalQuestions generatedDate durationMinutes')
+            .sort({ generatedDate: -1 }) // Most recent first
+            .lean();
+
+        if (!recentQuiz) {
+            return res.json({
+                success: true,
+                quiz: null,
+                message: 'No quizzes available for this class.'
+            });
+        }
+
+        // Check if student has already taken this quiz
+        const studentResult = await quizResultCollection.findOne({
+            studentId: studentId,
+            quizId: recentQuiz._id
+        });
+
+        // Calculate time ago
+        const timeAgo = getTimeAgo(recentQuiz.generatedDate);
+
+        console.log(`🎯 Found recent quiz for class ${classId}: ${recentQuiz.lectureTitle} (Status: ${studentResult ? 'taken' : 'available'})`);
+
+        res.json({
+            success: true,
+            quiz: {
+                _id: recentQuiz._id,
+                lectureTitle: recentQuiz.lectureTitle,
+                totalQuestions: recentQuiz.totalQuestions,
+                durationMinutes: recentQuiz.durationMinutes || 15,
+                generatedDate: recentQuiz.generatedDate,
+                timeAgo: timeAgo,
+                status: studentResult ? 'taken' : 'available',
+                score: studentResult ? studentResult.percentage : null,
+                // 🆕 NEW: Include resultId for "View Results" functionality
+                resultId: studentResult ? studentResult._id : null
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error fetching recent quiz:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch recent quiz: ' + error.message
+        });
+    }
+});
+
 // Get class overview for student
 router.get('/class/:classId/overview', requireStudent, async (req, res) => {
     try {
@@ -452,27 +550,6 @@ router.get('/class/:classId/all-quizzes', requireStudent, async (req, res) => {
             resultMap[result.quizId.toString()] = result;
         });
 
-        // Helper function to calculate time ago
-        const getTimeAgo = (date) => {
-            const now = new Date();
-            const diffInMs = now - new Date(date);
-            const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-            const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
-            const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
-
-            if (diffInDays > 7) {
-                return new Date(date).toLocaleDateString();
-            } else if (diffInDays > 0) {
-                return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
-            } else if (diffInHours > 0) {
-                return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
-            } else if (diffInMinutes > 0) {
-                return `${diffInMinutes} minute${diffInMinutes > 1 ? 's' : ''} ago`;
-            } else {
-                return 'Just now';
-            }
-        };
-
         // Helper function to format time
         const formatTime = (seconds) => {
             const minutes = Math.floor(seconds / 60);
@@ -535,6 +612,83 @@ router.get('/class/:classId/all-quizzes', requireStudent, async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Failed to load quizzes: ' + error.message
+        });
+    }
+});
+
+// Get student performance data for a specific class
+router.get('/class/:classId/performance', requireStudent, async (req, res) => {
+    try {
+        const studentId = req.session.userId;
+        const classId = req.params.classId;
+
+        console.log('Loading student class performance:', {
+            studentId: studentId,
+            classId: classId,
+            student: req.session.userName
+        });
+
+        // Verify student enrollment
+        const enrollment = await classStudentCollection.findOne({
+            studentId: studentId,
+            classId: classId,
+            isActive: true
+        });
+
+        if (!enrollment) {
+            return res.status(403).json({
+                success: false,
+                message: 'You are not enrolled in this class.'
+            });
+        }
+
+        // Get student's results for this class
+        const studentResults = await quizResultCollection.find({
+            studentId: studentId,
+            classId: classId
+        }).lean();
+
+        // Get all class results for comparison
+        const allClassResults = await quizResultCollection.find({
+            classId: classId
+        }).lean();
+
+        // Calculate averages
+        const studentAverage = studentResults.length > 0 
+            ? parseFloat((studentResults.reduce((sum, result) => sum + result.percentage, 0) / studentResults.length).toFixed(1))
+            : 0;
+
+        const classAverage = allClassResults.length > 0 
+            ? parseFloat((allClassResults.reduce((sum, result) => sum + result.percentage, 0) / allClassResults.length).toFixed(1))
+            : 0;
+
+        const averageTime = studentResults.length > 0 
+            ? Math.round(studentResults.reduce((sum, result) => sum + result.timeTakenSeconds, 0) / studentResults.length)
+            : 0;
+
+        console.log(`Performance data generated for ${req.session.userName}:`, {
+            studentResultsCount: studentResults.length,
+            studentAverage: studentAverage,
+            classAverage: classAverage
+        });
+
+        res.json({
+            success: true,
+            data: {
+                performanceMetrics: {
+                    totalQuizzes: studentResults.length,
+                    studentAverage: studentAverage,
+                    classAverage: classAverage,
+                    averageTime: averageTime
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('Error generating student class performance:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to generate performance data: ' + error.message
         });
     }
 });
@@ -692,6 +846,120 @@ router.get('/class/:classId/analytics', requireStudent, async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Failed to generate analytics: ' + error.message
+        });
+    }
+});
+
+// Get class rankings for student
+router.get('/class/:classId/rankings', requireStudent, async (req, res) => {
+    try {
+        const studentId = req.session.userId;
+        const classId = req.params.classId;
+
+        // Verify student enrollment
+        const enrollment = await classStudentCollection.findOne({
+            studentId: studentId,
+            classId: classId,
+            isActive: true
+        });
+
+        if (!enrollment) {
+            return res.status(403).json({
+                success: false,
+                message: 'You are not enrolled in this class.'
+            });
+        }
+
+        // Get all quiz results for this class
+        const allResults = await quizResultCollection.find({
+            classId: classId
+        }).lean();
+
+        if (allResults.length === 0) {
+            return res.json({
+                success: true,
+                data: {
+                    rankings: [],
+                    currentStudent: null,
+                    totalStudents: 0,
+                    rankingSystem: {
+                        formula: 'Points = (Score/100) * 1000 + (Max Time - Actual Time) * 10',
+                        description: 'Rankings based on both accuracy and speed. Higher scores and faster completion times earn more points.'
+                    }
+                }
+            });
+        }
+
+        // Group results by student
+        const studentPerformances = {};
+        
+        allResults.forEach(result => {
+            const id = result.studentId.toString();
+            
+            if (!studentPerformances[id]) {
+                studentPerformances[id] = {
+                    studentId: id,
+                    studentName: result.studentName,
+                    scores: [],
+                    times: [],
+                    totalPoints: 0,
+                    totalQuizzes: 0
+                };
+            }
+            
+            studentPerformances[id].scores.push(result.percentage);
+            studentPerformances[id].times.push(result.timeTakenSeconds);
+            studentPerformances[id].totalQuizzes++;
+        });
+
+        // Calculate rankings
+        const rankedStudents = Object.values(studentPerformances)
+            .map(student => {
+                const averageScore = student.scores.reduce((sum, score) => sum + score, 0) / student.scores.length;
+                const averageTime = student.times.reduce((sum, time) => sum + time, 0) / student.times.length;
+                
+                // Point calculation: accuracy points + speed bonus
+                const accuracyPoints = (averageScore / 100) * 1000;
+                const maxTime = Math.max(...student.times);
+                const speedBonus = Math.max(0, (maxTime - averageTime) * 0.1);
+                const totalPoints = Math.round(accuracyPoints + speedBonus);
+                
+                return {
+                    ...student,
+                    averageScore: parseFloat(averageScore.toFixed(1)),
+                    averageTime: `${Math.floor(averageTime / 60)}:${Math.floor(averageTime % 60).toString().padStart(2, '0')}`,
+                    totalPoints: totalPoints
+                };
+            })
+            .sort((a, b) => b.totalPoints - a.totalPoints)
+            .map((student, index) => ({
+                ...student,
+                rank: index + 1
+            }));
+
+        // Find current student
+        const currentStudent = rankedStudents.find(s => s.studentId === studentId.toString());
+
+        console.log(`Rankings loaded for class ${classId}: ${rankedStudents.length} students`);
+
+        res.json({
+            success: true,
+            data: {
+                rankings: rankedStudents,
+                currentStudent: currentStudent,
+                totalStudents: rankedStudents.length,
+                rankingSystem: {
+                    formula: 'Points = (Score/100) * 1000 + Speed Bonus',
+                    description: 'Rankings based on both accuracy and speed. Higher scores and faster completion times earn more points.'
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('Error loading class rankings:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to load rankings: ' + error.message
         });
     }
 });
