@@ -101,7 +101,7 @@ const PERFORMANCE = {
 
 // AI/Gemini constants
 const AI = {
-    MODEL: 'gemini-1.5-flash',
+    MODEL: 'gemini-2.5-flash',
     MAX_TOKENS: 8192,
     TEMPERATURE: 0.3,
     TOP_P: 0.8,

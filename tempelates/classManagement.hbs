@@ -2566,9 +2566,15 @@
         function toggleExamMode() {
             const toggle = document.getElementById('examModeToggle');
             const controls = document.getElementById('examSessionControls');
-            
+
+            // Defensive check - if elements don't exist, just update the variable
+            if (!toggle || !controls) {
+                console.warn('⚠️ Exam mode toggle elements not found in this view');
+                return;
+            }
+
             isExamModeEnabled = toggle.checked;
-            
+
             if (isExamModeEnabled) {
                 controls.classList.add('active');
                 console.log('🔥 Exam mode enabled');
@@ -2586,21 +2592,27 @@
 
         function setSessionDuration(minutes) {
             currentSessionDuration = Math.max(15, Math.min(300, minutes));
-            
-            // Update display
-            document.getElementById('sessionDurationValue').textContent = currentSessionDuration;
-            
-            // Update preset buttons
-            document.querySelectorAll('#examSessionControls .compact-presets .compact-preset-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            // Highlight active preset if it matches
-            const matchingPreset = document.querySelector(`#examSessionControls .compact-preset-btn[onclick="setSessionDuration(${currentSessionDuration})"]`);
-            if (matchingPreset) {
-                matchingPreset.classList.add('active');
+
+            // Update display - with defensive null check
+            const durationValueElement = document.getElementById('sessionDurationValue');
+            if (durationValueElement) {
+                durationValueElement.textContent = currentSessionDuration;
             }
-            
+
+            // Update preset buttons - with defensive null check
+            const presetButtons = document.querySelectorAll('#examSessionControls .compact-presets .compact-preset-btn');
+            if (presetButtons && presetButtons.length > 0) {
+                presetButtons.forEach(btn => {
+                    btn.classList.remove('active');
+                });
+
+                // Highlight active preset if it matches
+                const matchingPreset = document.querySelector(`#examSessionControls .compact-preset-btn[onclick="setSessionDuration(${currentSessionDuration})"]`);
+                if (matchingPreset) {
+                    matchingPreset.classList.add('active');
+                }
+            }
+
             console.log('⏰ Session duration set to:', currentSessionDuration, 'minutes');
         }
 

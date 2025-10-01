@@ -1128,4 +1128,58 @@ router.get('/dashboard-stats', requireTeacher, async (req, res) => {
     }
 });
 
+// ==================== QUIZ VIEW ROUTES ====================
+
+// Get full quiz content for teacher view (with answers and explanations)
+router.get('/quiz/:quizId/full', requireTeacher, async (req, res) => {
+    try {
+        const quizId = req.params.quizId;
+        const teacherId = req.session.userId;
+
+        console.log(`👁️ Teacher ${teacherId} requesting full quiz: ${quizId}`);
+
+        // Get quiz with full details including explanations
+        const quiz = await quizCollection.findById(quizId).lean();
+
+        if (!quiz) {
+            return res.status(404).json({
+                success: false,
+                message: 'Quiz not found.'
+            });
+        }
+
+        // Verify teacher owns this quiz
+        if (quiz.createdBy.toString() !== teacherId.toString()) {
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied. You can only view your own quizzes.'
+            });
+        }
+
+        console.log(`✅ Teacher viewing quiz: ${quiz.lectureTitle} with ${quiz.totalQuestions} questions`);
+
+        res.json({
+            success: true,
+            quiz: {
+                _id: quiz._id,
+                lectureTitle: quiz.lectureTitle,
+                totalQuestions: quiz.totalQuestions,
+                durationMinutes: quiz.durationMinutes || 15,
+                questions: quiz.questions, // Full questions with correct answers and explanations
+                generatedDate: quiz.generatedDate,
+                classId: quiz.classId,
+                isExamMode: quiz.isExamMode || false,
+                examStatus: quiz.examStatus
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error fetching full quiz:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch quiz: ' + error.message
+        });
+    }
+});
+
 module.exports = router;

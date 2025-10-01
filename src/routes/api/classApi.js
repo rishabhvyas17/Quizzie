@@ -1084,7 +1084,8 @@ router.get('/:classId/join-requests', requireTeacher, async (req, res) => {
 
         res.json({
             success: true,
-            joinRequests: formattedRequests,
+            requests: formattedRequests, // Changed from 'joinRequests' to 'requests' for compatibility
+            joinRequests: formattedRequests, // Keep both for backward compatibility
             totalRequests: formattedRequests.length,
             pendingRequests: formattedRequests.filter(r => r.status === 'pending').length
         });
