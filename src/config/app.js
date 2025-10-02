@@ -28,7 +28,12 @@ const configureApp = (app) => {
             mongoUrl: process.env.MONGODB_URI,
             ttl: 14 * 24 * 60 * 60, // 14 days
             autoRemove: 'interval',
-            autoRemoveInterval: 10 // 10 minutes
+            autoRemoveInterval: 10, // 10 minutes
+            touchAfter: 24 * 3600, // Lazy session update (once per 24 hours)
+            mongoOptions: {
+                serverSelectionTimeoutMS: 5000, // Fail fast on connection issues
+                socketTimeoutMS: 45000,
+            }
         }),
         cookie: {
             maxAge: 1000 * 60 * 60 * 24 * 14, // 14 days

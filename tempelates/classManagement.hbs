@@ -2876,12 +2876,17 @@
                     } else {
                         showSuccess(`Join request from ${result.studentName} has been rejected.`);
                     }
-                    
-                    // Refresh modal content and update badge
-                    loadPendingRequestsForModal();
-                    updatePendingRequestsBadge();
+
+                    // ALWAYS refresh modal content and update badge after success
+                    await loadPendingRequestsForModal();
+                    await updatePendingRequestsBadge();
+
+                    console.log('✅ Pending requests list refreshed');
                 } else {
                     showError('Failed to process request: ' + result.message);
+                    // Still refresh even on error (in case request was partially processed)
+                    await loadPendingRequestsForModal();
+                    await updatePendingRequestsBadge();
                 }
             } catch (error) {
                 console.error('❌ Error processing join request from modal:', error);

@@ -1065,29 +1065,33 @@ router.get('/:classId/join-requests', requireTeacher, async (req, res) => {
             });
         }
 
-        // Get join requests for this class
+        // Get ONLY PENDING join requests for this class (exclude approved/rejected)
         const joinRequests = await classJoinRequestCollection.find({
-            classId: classId
+            classId: classId,
+            status: 'pending' // Only show pending requests
         }).sort({ requestedAt: -1 }).lean();
 
         const formattedRequests = joinRequests.map(request => ({
             _id: request._id,
+            requestId: request._id, // For frontend compatibility
             studentName: request.studentName,
             studentEnrollment: request.studentEnrollment,
             status: request.status,
             requestedAt: request.requestedAt,
             processedAt: request.processedAt,
-            rejectionReason: request.rejectionReason
+            rejectionReason: request.rejectionReason,
+            timeAgo: getTimeAgo(request.requestedAt),
+            joinCode: request.joinCode || 'N/A'
         }));
 
-        console.log(`Found ${formattedRequests.length} join requests for class ${classDoc.name}`);
+        console.log(`Found ${formattedRequests.length} pending join requests for class ${classDoc.name}`);
 
         res.json({
             success: true,
-            requests: formattedRequests, // Changed from 'joinRequests' to 'requests' for compatibility
+            requests: formattedRequests, // Only pending requests
             joinRequests: formattedRequests, // Keep both for backward compatibility
             totalRequests: formattedRequests.length,
-            pendingRequests: formattedRequests.filter(r => r.status === 'pending').length
+            pendingRequests: formattedRequests.length // All returned requests are pending
         });
 
     } catch (error) {
@@ -1565,6 +1569,160 @@ router.post('/join-request', requireStudent, async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Failed to submit join request: ' + error.message
+        });
+    }
+});
+
+// ==================== JOIN REQUEST APPROVAL/REJECTION ====================
+
+// Approve or reject join request
+router.post('/:classId/join-requests/:requestId/:action', requireTeacher, async (req, res) => {
+    try {
+        const { classId, requestId, action } = req.params;
+        const teacherId = req.session.userId;
+
+        console.log('⚖️ Processing join request action:', {
+            classId: classId,
+            requestId: requestId,
+            action: action,
+            teacherId: teacherId
+        });
+
+        // Validate action
+        if (!['approve', 'reject'].includes(action)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid action. Must be "approve" or "reject".'
+            });
+        }
+
+        // Verify class ownership
+        const classDoc = await classCollection.findOne({
+            _id: classId,
+            teacherId: teacherId,
+            isActive: true
+        });
+
+        if (!classDoc) {
+            return res.status(404).json({
+                success: false,
+                message: 'Class not found or access denied.'
+            });
+        }
+
+        // Find the join request
+        const joinRequest = await classJoinRequestCollection.findOne({
+            _id: requestId,
+            classId: classId,
+            status: 'pending'
+        });
+
+        if (!joinRequest) {
+            return res.status(404).json({
+                success: false,
+                message: 'Join request not found or already processed.'
+            });
+        }
+
+        if (action === 'approve') {
+            // Check for ANY existing enrollment (active or inactive)
+            const existingEnrollment = await classStudentCollection.findOne({
+                classId: classId,
+                studentId: joinRequest.studentId
+            });
+
+            if (existingEnrollment) {
+                if (existingEnrollment.isActive) {
+                    // Student is already actively enrolled - just mark request as approved and continue
+                    console.log('ℹ️ Student already enrolled, marking request as approved:', joinRequest.studentName);
+                    // Don't return error, just mark as approved and continue to success response
+                } else {
+                    // Reactivate existing inactive enrollment
+                    console.log('🔄 Reactivating existing inactive enrollment for student:', joinRequest.studentName);
+
+                    await classStudentCollection.findByIdAndUpdate(existingEnrollment._id, {
+                        isActive: true,
+                        enrolledAt: new Date(),
+                        studentName: joinRequest.studentName,
+                        studentEnrollment: joinRequest.studentEnrollment
+                    });
+                }
+            } else {
+                // Create new enrollment
+                console.log('➕ Creating new enrollment for student:', joinRequest.studentName);
+
+                await classStudentCollection.create({
+                    classId: classId,
+                    studentId: joinRequest.studentId,
+                    studentName: joinRequest.studentName,
+                    studentEnrollment: joinRequest.studentEnrollment,
+                    enrolledAt: new Date(),
+                    isActive: true
+                });
+            }
+
+            // Approve the request
+            await classJoinRequestCollection.findByIdAndUpdate(requestId, {
+                status: 'approved',
+                processedAt: new Date(),
+                processedBy: teacherId
+            });
+
+            // Update class student count
+            const totalActiveStudents = await classStudentCollection.countDocuments({
+                classId: classId,
+                isActive: true
+            });
+
+            await classCollection.findByIdAndUpdate(classId, {
+                studentCount: totalActiveStudents,
+                updatedAt: new Date()
+            });
+
+            console.log('✅ Join request approved:', {
+                studentName: joinRequest.studentName,
+                className: classDoc.name,
+                enrollmentMethod: existingEnrollment ? 'reactivated' : 'new'
+            });
+
+            res.json({
+                success: true,
+                message: `${joinRequest.studentName} has been added to the class successfully!`,
+                action: 'approved',
+                studentName: joinRequest.studentName,
+                studentEnrollment: joinRequest.studentEnrollment
+            });
+
+        } else if (action === 'reject') {
+            // Reject the request
+            const defaultRejectionReason = 'Request rejected by teacher';
+
+            await classJoinRequestCollection.findByIdAndUpdate(requestId, {
+                status: 'rejected',
+                processedAt: new Date(),
+                processedBy: teacherId,
+                rejectionReason: defaultRejectionReason
+            });
+
+            console.log('❌ Join request rejected:', {
+                studentName: joinRequest.studentName,
+                reason: defaultRejectionReason
+            });
+
+            res.json({
+                success: true,
+                message: `Join request from ${joinRequest.studentName} has been rejected.`,
+                action: 'rejected',
+                studentName: joinRequest.studentName,
+                rejectionReason: defaultRejectionReason
+            });
+        }
+
+    } catch (error) {
+        console.error('❌ Error processing join request:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to process join request: ' + error.message
         });
     }
 });

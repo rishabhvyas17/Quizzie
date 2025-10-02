@@ -6,6 +6,7 @@ const { isAuthenticated, requireTeacher } = require('../middleware/authMiddlewar
 // Import database collections
 const {
     teacherCollection,
+    studentCollection,
     classCollection,
     lectureCollection,
     quizCollection,
