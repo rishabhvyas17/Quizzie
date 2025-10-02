@@ -2,13 +2,17 @@
 
 const mongoose = require("mongoose");
 // Use the MONGODB_URI environment variable for a single connection
-mongoose.connect(process.env.MONGODB_URI)
+mongoose.connect(process.env.MONGODB_URI, {
+    serverSelectionTimeoutMS: 30000, // 30 seconds for initial connection
+    socketTimeoutMS: 45000,
+    connectTimeoutMS: 30000
+})
 .then(() => {
     console.log("✅ Successfully connected to MongoDB Atlas");
 })
 .catch((error) => {
     console.error("❌ Failed to connect to MongoDB Atlas:", error);
-    process.exit(1); 
+    process.exit(1);
 })
 
 // 🔄 UPDATED: Single QuizAI Database Connection

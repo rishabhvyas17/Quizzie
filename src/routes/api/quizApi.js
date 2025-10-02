@@ -24,6 +24,9 @@ const { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } = require('@googl
 // Import file processing services
 const fileService = require('../../services/fileService');
 
+// Import utility functions
+const { formatTime } = require('../../utils/helpers');
+
 // Initialize Gemini AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
@@ -1576,6 +1579,227 @@ router.get('/:quizId/exam-status', async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Failed to get exam status: ' + error.message
+        });
+    }
+});
+
+// Get quiz explanations status
+router.get('/:quizId/explanations-status', requireAuth, async (req, res) => {
+    try {
+        const quizId = req.params.quizId;
+        const quiz = await quizCollection.findById(quizId).select('questions generatedDate').lean();
+
+        if (!quiz) {
+            return res.status(404).json({ success: false, message: 'Quiz not found.' });
+        }
+
+        // Check if questions have enhanced explanations
+        const questionsWithExplanations = quiz.questions.filter(q =>
+            q.explanations && Object.keys(q.explanations).some(key => q.explanations[key] && q.explanations[key].trim() !== '')
+        ).length;
+
+        const questionsWithCorrectExplanations = quiz.questions.filter(q =>
+            q.correctAnswerExplanation && q.correctAnswerExplanation.trim() !== ''
+        ).length;
+
+        const hasEnhancedExplanations = questionsWithExplanations > 0;
+
+        console.log('📊 Explanation status check:', {
+            quizId: quizId,
+            totalQuestions: quiz.questions.length,
+            questionsWithExplanations: questionsWithExplanations,
+            questionsWithCorrectExplanations: questionsWithCorrectExplanations,
+            hasEnhancedExplanations: hasEnhancedExplanations
+        });
+
+        res.json({
+            success: true,
+            hasEnhancedExplanations: hasEnhancedExplanations,
+            explanationStats: {
+                totalQuestions: quiz.questions.length,
+                questionsWithExplanations: questionsWithExplanations,
+                questionsWithCorrectExplanations: questionsWithCorrectExplanations,
+                enhancementLevel: questionsWithExplanations === quiz.questions.length ? 'full' :
+                    questionsWithExplanations > 0 ? 'partial' : 'none'
+            },
+            generatedDate: quiz.generatedDate
+        });
+
+    } catch (error) {
+        console.error('❌ Error checking explanation status:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to check explanation status: ' + error.message
+        });
+    }
+});
+
+// Get enhanced explanation for a specific question/answer
+router.post('/get', requireAuth, async (req, res) => {
+    try {
+        if (req.session.userType !== 'student') {
+            return res.status(403).json({ success: false, message: 'Access denied. Students only.' });
+        }
+
+        const { quizId, questionIndex, wrongAnswer } = req.body;
+
+        console.log('🔍 Getting ENHANCED explanation for:', {
+            quizId: quizId,
+            questionIndex: questionIndex,
+            wrongAnswer: wrongAnswer
+        });
+
+        // Get the quiz with enhanced explanations
+        const quiz = await quizCollection.findById(quizId).lean();
+        if (!quiz) {
+            return res.status(404).json({ success: false, message: 'Quiz not found.' });
+        }
+
+        const question = quiz.questions[questionIndex];
+        if (!question) {
+            return res.status(404).json({ success: false, message: 'Question not found.' });
+        }
+
+        let explanation = null;
+        let explanationType = 'detailed';
+
+        // Get the detailed explanation for the wrong answer
+        if (question.explanations && question.explanations[wrongAnswer] && question.explanations[wrongAnswer].trim() !== '') {
+            explanation = question.explanations[wrongAnswer];
+
+            // Also include context about the correct answer
+            if (question.correctAnswerExplanation && question.correctAnswerExplanation.trim() !== '') {
+                explanation += `\n\n💡 **Why ${question.correct_answer} is correct:** ${question.correctAnswerExplanation}`;
+            }
+
+            console.log('✅ Retrieved detailed explanation for wrong answer:', wrongAnswer);
+        } else {
+            // Fallback explanation if detailed ones aren't available
+            explanationType = 'basic';
+            if (question.correctAnswerExplanation && question.correctAnswerExplanation.trim() !== '') {
+                explanation = `The correct answer is ${question.correct_answer}) ${question.options[question.correct_answer]}.\n\n${question.correctAnswerExplanation}`;
+            } else {
+                explanation = `The correct answer is ${question.correct_answer}) ${question.options[question.correct_answer]}. Please review the lecture material for detailed understanding.`;
+            }
+
+            console.log('⚠️ Using fallback explanation - detailed explanation not found');
+        }
+
+        console.log('✅ Retrieved explanation:', {
+            type: explanationType,
+            length: explanation.length,
+            preview: explanation.substring(0, 100) + '...'
+        });
+
+        res.json({
+            success: true,
+            explanation: explanation,
+            cached: true,
+            source: 'pre-generated-enhanced',
+            explanationType: explanationType,
+            questionDetails: {
+                correctAnswer: question.correct_answer,
+                correctOption: question.options[question.correct_answer],
+                wrongOption: question.options[wrongAnswer],
+                hasDetailedExplanations: !!(question.explanations && Object.keys(question.explanations).length > 0),
+                hasCorrectExplanation: !!(question.correctAnswerExplanation && question.correctAnswerExplanation.trim() !== '')
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error retrieving enhanced explanation:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to retrieve explanation: ' + error.message
+        });
+    }
+});
+
+// Get top 3 rankings for a specific quiz
+router.get('/:quizId/rankings', requireAuth, async (req, res) => {
+    try {
+        if (req.session.userType !== 'student') {
+            return res.status(403).json({ success: false, message: 'Access denied. Students only.' });
+        }
+
+        const quizId = req.params.quizId;
+        const studentId = req.session.userId;
+
+        console.log('🏆 Loading quiz rankings:', {
+            quizId: quizId,
+            requestedBy: req.session.userName
+        });
+
+        // Get quiz info
+        const quiz = await quizCollection.findById(quizId).select('lectureTitle classId').lean();
+
+        if (!quiz) {
+            return res.status(404).json({
+                success: false,
+                message: 'Quiz not found.'
+            });
+        }
+
+        // Get all results for this quiz
+        const allResults = await quizResultCollection.find({
+            quizId: quizId
+        })
+            .select('studentId studentName score percentage timeTakenSeconds submissionDate')
+            .lean();
+
+        if (allResults.length === 0) {
+            return res.json({
+                success: true,
+                data: {
+                    topRankers: [],
+                    currentStudentRank: null,
+                    totalParticipants: 0,
+                    quizTitle: quiz.lectureTitle
+                }
+            });
+        }
+
+        // Sort by percentage (desc), then by time taken (asc) for ties
+        const sortedResults = allResults.sort((a, b) => {
+            if (b.percentage !== a.percentage) {
+                return b.percentage - a.percentage;
+            }
+            return a.timeTakenSeconds - b.timeTakenSeconds;
+        });
+
+        // Get top 3 rankers
+        const topRankers = sortedResults.slice(0, 3).map((result, index) => ({
+            rank: index + 1,
+            studentName: result.studentName,
+            score: result.score,
+            percentage: result.percentage.toFixed(1),
+            timeTaken: formatTime(result.timeTakenSeconds),
+            submissionDate: result.submissionDate.toLocaleDateString(),
+            isCurrentStudent: result.studentId.toString() === studentId.toString()
+        }));
+
+        // Find current student's rank
+        const currentStudentIndex = sortedResults.findIndex(r => r.studentId.toString() === studentId.toString());
+        const currentStudentRank = currentStudentIndex >= 0 ? currentStudentIndex + 1 : null;
+
+        console.log(`🏆 Rankings loaded for quiz: ${quiz.lectureTitle} - Top 3 of ${allResults.length} participants`);
+
+        res.json({
+            success: true,
+            data: {
+                topRankers: topRankers,
+                currentStudentRank: currentStudentRank,
+                totalParticipants: allResults.length,
+                quizTitle: quiz.lectureTitle,
+                isInTop3: currentStudentRank && currentStudentRank <= 3
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error loading quiz rankings:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to load quiz rankings: ' + error.message
         });
     }
 });

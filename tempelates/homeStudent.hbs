@@ -1751,9 +1751,10 @@
         }, 30000);
 
         // Global variables for live quiz system
-let liveQuizSocket = null;
-let liveQuizTimers = {};
-let currentLiveQuizzes = [];
+        const studentId = '{{{studentId}}}'; // Student ID from server
+        let liveQuizSocket = null;
+        let liveQuizTimers = {};
+        let currentLiveQuizzes = [];
 
 // Initialize live quiz socket connection
 function initializeLiveQuizSocket() {

@@ -15,6 +15,9 @@ const {
     classJoinRequestCollection
 } = require('../../mongodb');
 
+// Import utility functions
+const { formatTime } = require('../../utils/helpers');
+
 // Middleware to ensure student access
 const requireStudent = requireRole('student');
 
@@ -960,6 +963,308 @@ router.get('/class/:classId/rankings', requireStudent, async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Failed to load rankings: ' + error.message
+        });
+    }
+});
+
+// ==================== LIVE QUIZ ROUTES ====================
+
+// Get active live quizzes for student
+router.get('/live-quizzes', requireStudent, async (req, res) => {
+    try {
+        const studentId = req.session.userId;
+
+        console.log('🔴 Loading live quizzes for student:', studentId);
+
+        // Get all classes the student is enrolled in
+        const enrollments = await classStudentCollection.find({
+            studentId: studentId,
+            isActive: true
+        }).select('classId').lean();
+
+        const enrolledClassIds = enrollments.map(e => e.classId);
+
+        if (enrolledClassIds.length === 0) {
+            return res.json({
+                success: true,
+                liveQuizzes: [],
+                message: 'Not enrolled in any classes'
+            });
+        }
+
+        // Find active exam sessions in enrolled classes
+        const now = new Date();
+        const activeQuizzes = await quizCollection.find({
+            classId: { $in: enrolledClassIds },
+            examSessionActive: true,
+            examSessionEndTime: { $gt: now },
+            isActive: true
+        }).lean();
+
+        // Format quiz data with class information
+        const liveQuizzes = await Promise.all(
+            activeQuizzes.map(async (quiz) => {
+                const classInfo = await classCollection.findById(quiz.classId).select('name').lean();
+                const timeRemaining = Math.max(0, Math.floor((new Date(quiz.examSessionEndTime) - now) / 1000));
+
+                return {
+                    quizId: quiz._id,
+                    quizTitle: quiz.lectureTitle,
+                    className: classInfo ? classInfo.name : 'Unknown Class',
+                    classId: quiz.classId,
+                    startTime: quiz.examSessionStartTime,
+                    endTime: quiz.examSessionEndTime,
+                    durationMinutes: quiz.examSessionDuration,
+                    remainingTime: timeRemaining,
+                    totalQuestions: quiz.totalQuestions
+                };
+            })
+        );
+
+        // Sort by remaining time (expiring soon first)
+        liveQuizzes.sort((a, b) => a.remainingTime - b.remainingTime);
+
+        console.log(`✅ Found ${liveQuizzes.length} active live quizzes for student`);
+
+        res.json({
+            success: true,
+            liveQuizzes: liveQuizzes,
+            totalActive: liveQuizzes.length
+        });
+
+    } catch (error) {
+        console.error('❌ Error loading live quizzes:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to load live quizzes: ' + error.message,
+            liveQuizzes: []
+        });
+    }
+});
+
+// Get detailed quiz result with anti-cheat info
+router.get('/:resultId/detailed', requireStudent, async (req, res) => {
+    try {
+        const resultId = req.params.resultId;
+        const studentId = req.session.userId;
+
+        console.log('📊 Loading detailed quiz result with anti-cheat info:', {
+            resultId: resultId,
+            studentId: studentId,
+            requestedBy: req.session.userName
+        });
+
+        // Get the quiz result
+        const quizResult = await quizResultCollection.findById(resultId).lean();
+
+        if (!quizResult) {
+            return res.status(404).json({
+                success: false,
+                message: 'Quiz result not found.'
+            });
+        }
+
+        // Verify ownership
+        if (quizResult.studentId.toString() !== studentId.toString()) {
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied. You can only view your own quiz results.'
+            });
+        }
+
+        // Get the complete quiz data with questions and explanations
+        const quiz = await quizCollection.findById(quizResult.quizId).lean();
+
+        if (!quiz) {
+            return res.status(404).json({
+                success: false,
+                message: 'Quiz not found.'
+            });
+        }
+
+        // Get class information if available
+        let classInfo = null;
+        if (quizResult.classId) {
+            classInfo = await classCollection.findById(quizResult.classId).select('name subject teacherId').lean();
+            if (classInfo) {
+                const teacher = await teacherCollection.findById(classInfo.teacherId).select('name').lean();
+                classInfo.teacherName = teacher ? teacher.name : 'Unknown Teacher';
+            }
+        }
+
+        // Prepare detailed question results with explanations availability
+        const detailedQuestions = quiz.questions.map((question, index) => {
+            const studentAnswer = quizResult.answers[index];
+            const hasDetailedExplanations = !!(question.explanations &&
+                Object.keys(question.explanations).some(key =>
+                    key !== question.correct_answer &&
+                    question.explanations[key] &&
+                    question.explanations[key].trim() !== ''
+                ));
+
+            return {
+                questionIndex: index,
+                questionText: question.question,
+                options: question.options,
+                correctAnswer: question.correct_answer,
+                correctOption: question.options[question.correct_answer],
+                studentAnswer: studentAnswer ? studentAnswer.selectedOption : null,
+                studentOption: studentAnswer ? question.options[studentAnswer.selectedOption] : null,
+                isCorrect: studentAnswer ? studentAnswer.isCorrect : false,
+                hasExplanations: hasDetailedExplanations,
+                hasCorrectExplanation: !!(question.correctAnswerExplanation && question.correctAnswerExplanation.trim() !== '')
+            };
+        });
+
+        // Calculate additional statistics with duration info
+        const correctAnswers = detailedQuestions.filter(q => q.isCorrect).length;
+        const incorrectAnswers = detailedQuestions.length - correctAnswers;
+        const accuracyRate = ((correctAnswers / detailedQuestions.length) * 100).toFixed(1);
+        const averageTimePerQuestion = (quizResult.timeTakenSeconds / detailedQuestions.length).toFixed(1);
+
+        // Get actual quiz duration (with fallback)
+        const quizDurationMinutes = quiz.durationMinutes || quizResult.quizDurationMinutes || 15;
+        const quizDurationSeconds = quizDurationMinutes * 60;
+        const timeEfficiency = quizResult.timeEfficiency || Math.max(0, 100 - ((quizResult.timeTakenSeconds / quizDurationSeconds) * 100));
+
+        // Get class average for comparison
+        let classAverage = null;
+        if (quizResult.classId) {
+            const classResults = await quizResultCollection.find({
+                classId: quizResult.classId
+            }).lean();
+
+            if (classResults.length > 1) {
+                const otherResults = classResults.filter(r => r.studentId.toString() !== studentId.toString());
+                if (otherResults.length > 0) {
+                    classAverage = (otherResults.reduce((sum, r) => sum + r.percentage, 0) / otherResults.length).toFixed(1);
+                }
+            }
+        }
+
+        console.log(`✅ Detailed quiz result loaded: ${quiz.lectureTitle} - ${quizResult.percentage}% (${quizDurationMinutes}min quiz)`);
+
+        // Include anti-cheat summary in detailed results
+        const antiCheatSummary = quizResult.antiCheatMetadata || {
+            violationCount: 0,
+            wasAutoSubmitted: false,
+            securityStatus: 'Clean',
+            submissionType: 'Manual Submit'
+        };
+
+        res.json({
+            success: true,
+            data: {
+                quizResult: {
+                    resultId: quizResult._id,
+                    quizId: quizResult.quizId,
+                    lectureTitle: quiz.lectureTitle,
+                    score: quizResult.score,
+                    totalQuestions: quizResult.totalQuestions,
+                    percentage: quizResult.percentage,
+                    timeTakenSeconds: quizResult.timeTakenSeconds,
+                    submissionDate: quizResult.submissionDate,
+                    studentName: quizResult.studentName,
+                    quizDurationMinutes: quizDurationMinutes,
+                    quizDurationSeconds: quizDurationSeconds,
+                    timeEfficiency: timeEfficiency
+                },
+                quizStats: {
+                    correctAnswers: correctAnswers,
+                    incorrectAnswers: incorrectAnswers,
+                    accuracyRate: parseFloat(accuracyRate),
+                    averageTimePerQuestion: parseFloat(averageTimePerQuestion),
+                    classAverage: classAverage ? parseFloat(classAverage) : null,
+                    performanceVsClass: classAverage ?
+                        (quizResult.percentage > parseFloat(classAverage) ? 'above' :
+                            quizResult.percentage < parseFloat(classAverage) ? 'below' : 'equal') : null,
+                    timeEfficiencyPercentage: parseFloat(timeEfficiency.toFixed(1)),
+                    averageTimeVsAllocated: `${Math.round((quizResult.timeTakenSeconds / quizDurationSeconds) * 100)}%`
+                },
+                detailedQuestions: detailedQuestions,
+                classInfo: classInfo,
+                explanationsAvailable: detailedQuestions.some(q => q.hasExplanations),
+                antiCheatSummary: antiCheatSummary
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error loading detailed quiz result:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to load detailed quiz result: ' + error.message
+        });
+    }
+});
+
+// Get quiz result statistics
+router.get('/:resultId/stats', requireStudent, async (req, res) => {
+    try {
+        const resultId = req.params.resultId;
+        const studentId = req.session.userId;
+
+        // Get the quiz result
+        const quizResult = await quizResultCollection.findById(resultId).lean();
+
+        if (!quizResult) {
+            return res.status(404).json({
+                success: false,
+                message: 'Quiz result not found.'
+            });
+        }
+
+        // Verify ownership
+        if (quizResult.studentId.toString() !== studentId.toString()) {
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied. You can only view your own quiz statistics.'
+            });
+        }
+
+        // Get quiz info
+        const quiz = await quizCollection.findById(quizResult.quizId).select('lectureTitle totalQuestions classId').lean();
+
+        // Get all results for this quiz for comparison
+        const allQuizResults = await quizResultCollection.find({
+            quizId: quizResult.quizId
+        }).lean();
+
+        // Calculate quiz statistics
+        const quizStats = {
+            // Basic quiz info
+            quizTitle: quiz.lectureTitle,
+            totalQuestions: quiz.totalQuestions,
+
+            // Student performance
+            studentScore: quizResult.score,
+            studentPercentage: quizResult.percentage,
+            timeTaken: formatTime(quizResult.timeTakenSeconds),
+            averageTimePerQuestion: (quizResult.timeTakenSeconds / quiz.totalQuestions).toFixed(1),
+
+            // Comparison statistics
+            totalParticipants: allQuizResults.length,
+            averageScore: allQuizResults.length > 0 ?
+                (allQuizResults.reduce((sum, r) => sum + r.percentage, 0) / allQuizResults.length).toFixed(1) : 0,
+
+            // Rankings
+            betterThan: allQuizResults.filter(r => r.percentage < quizResult.percentage).length,
+            rankPosition: allQuizResults
+                .sort((a, b) => b.percentage - a.percentage || a.timeTakenSeconds - b.timeTakenSeconds)
+                .findIndex(r => r._id.toString() === resultId.toString()) + 1
+        };
+
+        console.log(`📊 Quiz statistics loaded for: ${quiz.lectureTitle}`);
+
+        res.json({
+            success: true,
+            data: quizStats
+        });
+
+    } catch (error) {
+        console.error('❌ Error loading quiz statistics:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to load quiz statistics: ' + error.message
         });
     }
 });

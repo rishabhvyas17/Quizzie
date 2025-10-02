@@ -31,8 +31,9 @@ const configureApp = (app) => {
             autoRemoveInterval: 10, // 10 minutes
             touchAfter: 24 * 3600, // Lazy session update (once per 24 hours)
             mongoOptions: {
-                serverSelectionTimeoutMS: 5000, // Fail fast on connection issues
+                serverSelectionTimeoutMS: 30000, // 30 seconds for connection
                 socketTimeoutMS: 45000,
+                connectTimeoutMS: 30000
             }
         }),
         cookie: {

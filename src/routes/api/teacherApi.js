@@ -1182,4 +1182,244 @@ router.get('/quiz/:quizId/full', requireTeacher, async (req, res) => {
     }
 });
 
+// ==================== STUDENT ANALYTICS API ====================
+
+// Individual Student Analytics for Teachers
+router.get('/student-analytics/:studentId', requireTeacher, async (req, res) => {
+    try {
+        const studentId = req.params.studentId;
+        const classId = req.query.classId; // Optional class filter
+        const teacherId = req.session.userId;
+        const fifteenDaysAgo = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000);
+
+        console.log('📊 Loading student analytics API:', {
+            studentId: studentId,
+            classId: classId,
+            teacherId: teacherId
+        });
+
+        // Get student info
+        const student = await studentCollection.findById(studentId).select('name enrollment').lean();
+        if (!student) {
+            return res.status(404).json({ success: false, message: 'Student not found.' });
+        }
+
+        // Build query filter based on class context
+        let quizResultsFilter = {
+            studentId: studentId,
+            submissionDate: { $gte: fifteenDaysAgo }
+        };
+
+        let classAverageFilter = {
+            submissionDate: { $gte: fifteenDaysAgo }
+        };
+
+        let totalQuizzesFilter = {};
+
+        // Apply class filtering if specified
+        if (classId) {
+            // Verify teacher access to class
+            const classDoc = await classCollection.findOne({
+                _id: classId,
+                teacherId: teacherId,
+                isActive: true
+            }).lean();
+
+            if (!classDoc) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Class not found or access denied.'
+                });
+            }
+
+            // Verify student enrollment
+            const enrollment = await classStudentCollection.findOne({
+                studentId: studentId,
+                classId: classId,
+                isActive: true
+            }).lean();
+
+            if (!enrollment) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Student is not enrolled in this class.'
+                });
+            }
+
+            // Filter by specific class
+            quizResultsFilter.classId = classId;
+            classAverageFilter.classId = classId;
+            totalQuizzesFilter.classId = classId;
+
+            console.log(`🏫 Filtering analytics for class: ${classDoc.name}`);
+        } else {
+            // Verify teacher has access to student through any class
+            const teacherClasses = await classCollection.find({
+                teacherId: teacherId,
+                isActive: true
+            }).select('_id').lean();
+
+            const teacherClassIds = teacherClasses.map(c => c._id);
+
+            const studentEnrollment = await classStudentCollection.findOne({
+                studentId: studentId,
+                classId: { $in: teacherClassIds },
+                isActive: true
+            }).lean();
+
+            if (!studentEnrollment) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'You do not have access to this student\'s analytics.'
+                });
+            }
+
+            // Filter by teacher's classes only
+            classAverageFilter.classId = { $in: teacherClassIds };
+            quizResultsFilter.classId = { $in: teacherClassIds };
+            totalQuizzesFilter.classId = { $in: teacherClassIds };
+
+            console.log('📊 Loading analytics across all teacher\'s classes');
+        }
+
+        // Get student's quiz results (filtered)
+        const studentResults = await quizResultCollection
+            .find(quizResultsFilter)
+            .sort({ submissionDate: -1 })
+            .lean();
+
+        // Get class average for comparison (filtered)
+        const allClassResults = await quizResultCollection
+            .find(classAverageFilter)
+            .lean();
+
+        // Get total available quizzes for participation calculation
+        const totalAvailableQuizzes = await quizCollection.countDocuments({
+            ...totalQuizzesFilter,
+            isActive: true
+        });
+
+        // Enhanced: Get quiz details with class information
+        const enhancedStudentResults = await Promise.all(
+            studentResults.map(async (result) => {
+                const quiz = await quizCollection.findById(result.quizId).select('lectureTitle classId').lean();
+                const classInfo = quiz && quiz.classId ? await classCollection.findById(quiz.classId).select('name').lean() : null;
+
+                return {
+                    ...result,
+                    quizTitle: quiz ? quiz.lectureTitle : 'Unknown Quiz',
+                    className: classInfo ? classInfo.name : 'Unknown Class'
+                };
+            })
+        );
+
+        // Calculate statistics
+        const totalQuizzes = studentResults.length;
+        const averageScore = totalQuizzes > 0
+            ? (studentResults.reduce((sum, result) => sum + result.percentage, 0) / totalQuizzes).toFixed(1)
+            : 0;
+
+        // Calculate class average (filtered by same criteria)
+        const classScores = allClassResults.map(r => r.percentage);
+        const classAverage = classScores.length > 0
+            ? (classScores.reduce((sum, score) => sum + score, 0) / classScores.length).toFixed(1)
+            : 0;
+
+        // Calculate improvement trend
+        let trendIndicator = '→';
+        if (studentResults.length >= 6) {
+            const recent3 = studentResults.slice(0, 3).reduce((sum, r) => sum + r.percentage, 0) / 3;
+            const previous3 = studentResults.slice(3, 6).reduce((sum, r) => sum + r.percentage, 0) / 3;
+
+            if (recent3 > previous3 + 5) trendIndicator = '↗️';
+            else if (recent3 < previous3 - 5) trendIndicator = '↘️';
+        }
+
+        // Calculate average time
+        const averageTime = totalQuizzes > 0
+            ? Math.floor(studentResults.reduce((sum, result) => sum + result.timeTakenSeconds, 0) / totalQuizzes / 60)
+            : 0;
+
+        // Calculate participation data
+        const participationData = {
+            attempted: totalQuizzes,
+            totalAvailable: totalAvailableQuizzes,
+            participationRate: totalAvailableQuizzes > 0
+                ? ((totalQuizzes / totalAvailableQuizzes) * 100).toFixed(1)
+                : 0
+        };
+
+        // Prepare trend data for charts
+        const trendData = enhancedStudentResults.reverse().map(result => ({
+            date: result.submissionDate.toLocaleDateString(),
+            score: result.percentage,
+            classAvg: parseFloat(classAverage)
+        }));
+
+        // Format detailed results (limit to 10 most recent)
+        const detailedResults = enhancedStudentResults.slice(0, 10).map(result => ({
+            quizTitle: result.quizTitle,
+            score: result.score,
+            totalQuestions: result.totalQuestions,
+            percentage: result.percentage,
+            timeTaken: result.timeTakenSeconds,
+            submissionDate: result.submissionDate,
+            className: result.className,
+            answers: result.answers
+        }));
+
+        // Prepare time analysis data
+        const timeAnalysisData = enhancedStudentResults.slice(0, 10).map(result => ({
+            quiz: result.quizTitle,
+            timeMinutes: Math.floor(result.timeTakenSeconds / 60)
+        }));
+
+        // Return class-aware analytics data with participation
+        const analyticsData = {
+            studentInfo: {
+                name: student.name,
+                enrollment: student.enrollment,
+                studentId: studentId
+            },
+            performanceMetrics: {
+                totalQuizzes,
+                averageScore: parseFloat(averageScore),
+                classAverage: parseFloat(classAverage),
+                averageTime: averageTime + 'm',
+                trendIndicator
+            },
+            participationData: participationData,
+            detailedResults,
+            chartData: {
+                scoresTrend: trendData,
+                timeAnalysis: timeAnalysisData
+            },
+            classContext: {
+                hasClassFilter: !!classId,
+                classId: classId,
+                totalResultsFound: studentResults.length
+            }
+        };
+
+        console.log(`✅ Analytics data prepared for ${student.name}:`, {
+            totalQuizzes: analyticsData.performanceMetrics.totalQuizzes,
+            averageScore: analyticsData.performanceMetrics.averageScore,
+            participationRate: participationData.participationRate,
+            classFiltered: !!classId
+        });
+
+        res.json({
+            success: true,
+            data: analyticsData
+        });
+
+    } catch (error) {
+        console.error('❌ Error loading student analytics API:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to load student analytics: ' + error.message
+        });
+    }
+});
+
 module.exports = router;

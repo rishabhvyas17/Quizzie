@@ -443,7 +443,9 @@ app.use('/', studentRoutes);
 app.use('/api/auth', authApi);
 app.use('/api/teacher', teacherApi);
 app.use('/api/student', studentApi);
+app.use('/api/quiz-result', studentApi); // Mount studentApi for quiz-result routes too
 app.use('/api/quiz', quizApi);
+app.use('/api/explanation', quizApi); // Mount quizApi for explanation routes too
 app.use('/api/classes', classApi);
 
 // ==================== CORE QUIZ FUNCTIONALITY ROUTES ====================

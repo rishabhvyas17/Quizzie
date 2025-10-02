@@ -1733,6 +1733,7 @@
         }
 
         // Global variables for live quiz system
+const studentId = '{{{studentId}}}'; // Student ID from server
 let liveQuizSocket = null;
 let liveQuizTimers = {};
 let currentLiveQuizzes = [];
@@ -1913,9 +1914,9 @@ function displayLiveQuizzes(liveQuizzes) {
 // Check for class-specific live quiz (for class view page)
 async function checkClassLiveQuiz() {
     if (!classId) return;
-    
+
     try {
-        const response = await fetch(`/api/class/${classId}/live-quiz`);
+        const response = await fetch(`/api/classes/${classId}/live-quiz`);
         const data = await response.json();
         
         if (data.success && data.hasLiveQuiz) {

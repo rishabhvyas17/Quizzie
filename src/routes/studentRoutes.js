@@ -36,6 +36,7 @@ router.get('/homeStudent', isAuthenticated, async (req, res) => {
         res.render("homeStudent", {
             userType: req.session.userType || "student",
             userName: req.session.userName || "Student",
+            studentId: req.session.userId, // Pass studentId for socket connections
             classContext: classContext,
             message: req.query.message,
             // Pass dashboard mode
@@ -46,6 +47,7 @@ router.get('/homeStudent', isAuthenticated, async (req, res) => {
         res.render("homeStudent", {
             userType: req.session.userType || "student",
             userName: req.session.userName || "Student",
+            studentId: req.session.userId, // Pass studentId for socket connections
             error: 'Failed to load dashboard'
         });
     }
@@ -506,6 +508,7 @@ router.get('/student/class/:classId', isAuthenticated, async (req, res) => {
             teacherName: teacher ? teacher.name : 'Unknown Teacher',
             userName: req.session.userName,
             userId: req.session.userId, // For identifying current student in rankings
+            studentId: req.session.userId, // For socket connections
             userType: 'student',
             enrolledDate: enrollment.enrolledAt
         });

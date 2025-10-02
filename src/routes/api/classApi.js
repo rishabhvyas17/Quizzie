@@ -1727,4 +1727,67 @@ router.post('/:classId/join-requests/:requestId/:action', requireTeacher, async 
     }
 });
 
+// Get active live quiz for a specific class
+router.get('/:classId/live-quiz', requireStudent, async (req, res) => {
+    try {
+        const { classId } = req.params;
+        const studentId = req.session.userId;
+
+        console.log(`🔴 Checking live quiz for class: ${classId}`);
+
+        // Verify student is enrolled in the class
+        const enrollment = await classStudentCollection.findOne({
+            studentId: studentId,
+            classId: classId,
+            isActive: true
+        });
+
+        if (!enrollment) {
+            return res.status(403).json({
+                success: false,
+                message: 'Not enrolled in this class'
+            });
+        }
+
+        // Find active exam session in this class
+        const now = new Date();
+        const activeQuiz = await quizCollection.findOne({
+            classId: classId,
+            examSessionActive: true,
+            examSessionEndTime: { $gt: now },
+            isActive: true
+        }).lean();
+
+        if (!activeQuiz) {
+            return res.json({
+                success: true,
+                hasLiveQuiz: false
+            });
+        }
+
+        const timeRemaining = Math.max(0, Math.floor((new Date(activeQuiz.examSessionEndTime) - now) / 1000));
+
+        res.json({
+            success: true,
+            hasLiveQuiz: true,
+            liveQuiz: {
+                quizId: activeQuiz._id,
+                quizTitle: activeQuiz.lectureTitle,
+                startTime: activeQuiz.examSessionStartTime,
+                endTime: activeQuiz.examSessionEndTime,
+                durationMinutes: activeQuiz.examSessionDuration,
+                remainingTime: timeRemaining,
+                totalQuestions: activeQuiz.totalQuestions
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Error checking class live quiz:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to check live quiz: ' + error.message
+        });
+    }
+});
+
 module.exports = router;
