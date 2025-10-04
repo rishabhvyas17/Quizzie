@@ -213,46 +213,70 @@ router.get('/take_quiz/:quizId', isAuthenticated, async (req, res) => {
 
         // Get quiz details with exam mode information
         const quiz = await quizCollection.findById(quizId).select(
-            'lectureTitle totalQuestions classId isExamMode examStatus examStartTime examEndTime examDurationMinutes durationMinutes'
+            'lectureTitle totalQuestions classId isExamMode examStatus examStartTime examEndTime examDurationMinutes durationMinutes examSessionActive examSessionStartTime examSessionEndTime examSessionDuration'
         ).lean();
 
         if (!quiz) {
             return res.status(404).send('Quiz not found.');
         }
 
-        // Enhanced exam mode validation
-        if (quiz.isExamMode) {
+        // Enhanced exam mode validation (supports both old and new exam session systems)
+        const now = new Date();
+
+        // Check for new-style exam session (auto-started exams)
+        if (quiz.examSessionActive) {
+            console.log('Exam session quiz access:', {
+                examSessionActive: quiz.examSessionActive,
+                examSessionStartTime: quiz.examSessionStartTime,
+                examSessionEndTime: quiz.examSessionEndTime,
+                remainingTime: quiz.examSessionEndTime ? Math.floor((new Date(quiz.examSessionEndTime) - now) / 1000) : 0
+            });
+
+            // Check if exam session has expired
+            if (quiz.examSessionEndTime && now > new Date(quiz.examSessionEndTime)) {
+                // Auto-end the exam session
+                await quizCollection.findByIdAndUpdate(quizId, {
+                    examSessionActive: false
+                });
+                const expiredMessage = 'The exam session has expired. You can no longer take this quiz.';
+                const expiredRedirectUrl = classId ?
+                    `/student/class/${classId}?message=${encodeURIComponent(expiredMessage)}` :
+                    `/homeStudent?message=${encodeURIComponent(expiredMessage)}`;
+                return res.status(403).redirect(expiredRedirectUrl);
+            }
+            // If exam session is active and not expired, allow access (will be handled below)
+        }
+        // Check for old-style exam mode
+        else if (quiz.isExamMode) {
             console.log('Exam mode quiz access:', {
                 examStatus: quiz.examStatus,
                 examStartTime: quiz.examStartTime,
                 examEndTime: quiz.examEndTime
             });
 
-            const now = new Date();
-
             // Check exam status
             switch (quiz.examStatus) {
                 case 'scheduled':
                     const message = 'This exam has not started yet. Please wait for your teacher to start the exam.';
-                    const redirectUrl = classId ? 
+                    const redirectUrl = classId ?
                         `/student/class/${classId}?message=${encodeURIComponent(message)}` :
                         `/homeStudent?message=${encodeURIComponent(message)}`;
                     return res.status(403).redirect(redirectUrl);
 
                 case 'ended':
                     const endedMessage = 'This exam has ended. You can no longer take this quiz.';
-                    const endedRedirectUrl = classId ? 
+                    const endedRedirectUrl = classId ?
                         `/student/class/${classId}?message=${encodeURIComponent(endedMessage)}` :
                         `/homeStudent?message=${encodeURIComponent(endedMessage)}`;
                     return res.status(403).redirect(endedRedirectUrl);
 
                 case 'active':
                     // Check if exam time has expired
-                    if (quiz.examEndTime && now > quiz.examEndTime) {
+                    if (quiz.examEndTime && now > new Date(quiz.examEndTime)) {
                         // Auto-end the exam
                         await quizCollection.findByIdAndUpdate(quizId, { examStatus: 'ended' });
                         const expiredMessage = 'The exam time has expired. You can no longer take this quiz.';
-                        const expiredRedirectUrl = classId ? 
+                        const expiredRedirectUrl = classId ?
                             `/student/class/${classId}?message=${encodeURIComponent(expiredMessage)}` :
                             `/homeStudent?message=${encodeURIComponent(expiredMessage)}`;
                         return res.status(403).redirect(expiredRedirectUrl);
@@ -261,7 +285,7 @@ router.get('/take_quiz/:quizId', isAuthenticated, async (req, res) => {
 
                 default:
                     const unknownMessage = 'This exam is not available for taking at this time.';
-                    const unknownRedirectUrl = classId ? 
+                    const unknownRedirectUrl = classId ?
                         `/student/class/${classId}?message=${encodeURIComponent(unknownMessage)}` :
                         `/homeStudent?message=${encodeURIComponent(unknownMessage)}`;
                     return res.status(403).redirect(unknownRedirectUrl);
@@ -306,6 +330,22 @@ router.get('/take_quiz/:quizId', isAuthenticated, async (req, res) => {
 
         console.log(`Rendering take quiz page: ${quiz.lectureTitle} ${classInfo ? `(Class: ${classInfo.name})` : ''}`);
 
+        // Calculate remaining time for both exam systems
+        let examTimeRemaining = null;
+        let isExamActive = false;
+
+        // New exam session system (auto-started exams)
+        if (quiz.examSessionActive && quiz.examSessionEndTime) {
+            examTimeRemaining = Math.max(0, Math.floor((new Date(quiz.examSessionEndTime) - new Date()) / 1000));
+            isExamActive = true;
+            console.log('🚨 Exam session active - Remaining time:', Math.floor(examTimeRemaining / 60), 'minutes');
+        }
+        // Old exam mode system
+        else if (quiz.isExamMode && quiz.examEndTime) {
+            examTimeRemaining = Math.max(0, Math.floor((new Date(quiz.examEndTime) - new Date()) / 1000));
+            isExamActive = true;
+        }
+
         // Pass comprehensive exam mode context to template
         res.render('takeQuiz', {
             quiz: {
@@ -313,9 +353,9 @@ router.get('/take_quiz/:quizId', isAuthenticated, async (req, res) => {
                 classId: targetClassId,
                 className: classInfo?.name,
                 classSubject: classInfo?.subject,
-                // Exam mode data for template
-                examTimeRemaining: quiz.isExamMode && quiz.examEndTime ? 
-                    Math.max(0, Math.floor((new Date(quiz.examEndTime) - new Date()) / 1000)) : null
+                // Unified exam mode data for template
+                isExamMode: quiz.isExamMode || quiz.examSessionActive, // Support both systems
+                examTimeRemaining: examTimeRemaining
             },
             userName: req.session.userName,
             classContext: !!targetClassId,
@@ -325,16 +365,16 @@ router.get('/take_quiz/:quizId', isAuthenticated, async (req, res) => {
                 classId: targetClassId,
                 className: classInfo?.name,
                 classSubject: classInfo?.subject,
-                isExamMode: quiz.isExamMode,
-                examStatus: quiz.examStatus,
-                breadcrumbPath: targetClassId ? 
+                isExamMode: isExamActive, // Unified exam status
+                examStatus: quiz.examStatus || (quiz.examSessionActive ? 'active' : null),
+                breadcrumbPath: targetClassId ?
                     [
                         { label: 'Dashboard', url: '/homeStudent' },
                         { label: classInfo?.name || 'Class', url: `/student/class/${targetClassId}` },
-                        { label: quiz.isExamMode ? 'Exam' : 'Quiz', url: null }
+                        { label: isExamActive ? 'Exam' : 'Quiz', url: null }
                     ] : [
                         { label: 'Dashboard', url: '/homeStudent' },
-                        { label: quiz.isExamMode ? 'Exam' : 'Quiz', url: null }
+                        { label: isExamActive ? 'Exam' : 'Quiz', url: null }
                     ]
             }
         });

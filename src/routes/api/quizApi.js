@@ -1561,16 +1561,25 @@ router.get('/:quizId/exam-status', async (req, res) => {
 
         const now = new Date();
         const isActive = quiz.examSessionActive && quiz.examSessionEndTime && new Date(quiz.examSessionEndTime) > now;
+        const remainingSeconds = isActive ? Math.max(0, Math.floor((new Date(quiz.examSessionEndTime) - now) / 1000)) : 0;
+
+        console.log('📊 Exam status:', {
+            isActive,
+            remainingSeconds,
+            remainingMinutes: Math.floor(remainingSeconds / 60)
+        });
 
         res.json({
             success: true,
+            examSessionActive: isActive, // Field name expected by frontend
+            remainingSeconds: remainingSeconds, // Field name expected by frontend
             examSession: {
                 isActive: isActive,
                 startTime: quiz.examSessionStartTime || null,
                 endTime: quiz.examSessionEndTime || null,
                 durationMinutes: quiz.examSessionDuration || null,
                 quizTitle: quiz.lectureTitle,
-                timeRemaining: isActive ? Math.max(0, Math.floor((new Date(quiz.examSessionEndTime) - now) / 1000)) : 0
+                timeRemaining: remainingSeconds
             }
         });
 
