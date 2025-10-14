@@ -888,11 +888,18 @@
             classId: '{{quiz.classId}}' || null
         };
 
+        // Exam session data from server (if available)
+        const serverExamData = {
+            isExamMode: {{#if quiz.isExamMode}}true{{else}}false{{/if}},
+            examTimeRemaining: {{#if quiz.examTimeRemaining}}{{quiz.examTimeRemaining}}{{else}}null{{/if}}
+        };
+
         // Enhanced navigation context from server
         const navigationContext = {{{json navigationContext}}};
 
         console.log('🏫 Enhanced class context:', classContext);
         console.log('🧭 Enhanced navigation context:', navigationContext);
+        console.log('⏱️ Server exam data:', serverExamData);
         console.log('🛡️ Anti-cheating system with exam mode timer initialized');
 
         // ===== ENHANCED EXAM TIMER FUNCTIONS =====
@@ -900,23 +907,51 @@
         // Check exam session status when page loads
         async function checkExamSessionStatus() {
             try {
+                // First, check if we have server-side exam data
+                if (serverExamData.isExamMode && serverExamData.examTimeRemaining !== null) {
+                    console.log('✅ Using server-side exam time:', serverExamData.examTimeRemaining, 'seconds');
+                    isExamMode = true;
+
+                    if (serverExamData.examTimeRemaining > 0) {
+                        const timerElement = document.getElementById('quizTimer');
+                        timerElement.classList.add('exam-mode', 'warning'); // Always show warning class for exam
+                        document.getElementById('timerStatus').textContent = '🚨 EXAM MODE - Time Remaining';
+                        QUIZ_TIME_LIMIT = serverExamData.examTimeRemaining;
+                        startSynchronizedTimer(serverExamData.examTimeRemaining);
+                        return;
+                    } else {
+                        // Exam has ended
+                        document.getElementById('timerDisplay').textContent = 'ENDED';
+                        document.getElementById('timerStatus').textContent = 'Exam session ended';
+                        alert('⏰ Exam session has ended. You cannot take this quiz.');
+                        if (classContext.classId) {
+                            window.location.href = `/student/class/${classContext.classId}`;
+                        } else {
+                            window.location.href = '/homeStudent';
+                        }
+                        return;
+                    }
+                }
+
+                // Fall back to API check if no server data
                 const response = await fetch(`/api/quiz/${quizId}/exam-status`);
                 const result = await response.json();
-                
+
                 if (result.success) {
                     isExamMode = result.examSessionActive;
-                    
+
                     if (isExamMode) {
-                        document.getElementById('quizTimer').classList.add('exam-mode');
-                        document.getElementById('timerStatus').textContent = '🚨 EXAM MODE';
-                        
+                        const timerElement = document.getElementById('quizTimer');
+                        timerElement.classList.add('exam-mode', 'warning'); // Always show warning class for exam
+                        document.getElementById('timerStatus').textContent = '🚨 EXAM MODE - Time Remaining';
+
                         if (result.remainingSeconds > 0) {
                             QUIZ_TIME_LIMIT = result.remainingSeconds;
+                            console.log('✅ Using API exam time:', result.remainingSeconds, 'seconds');
                             startSynchronizedTimer(result.remainingSeconds);
                         } else {
                             document.getElementById('timerDisplay').textContent = 'ENDED';
                             document.getElementById('timerStatus').textContent = 'Exam session ended';
-                            // Optionally redirect or disable quiz
                             alert('⏰ Exam session has ended. You cannot take this quiz.');
                             if (classContext.classId) {
                                 window.location.href = `/student/class/${classContext.classId}`;
@@ -961,19 +996,19 @@
                 
                 const minutes = Math.floor(timeLeft / 60);
                 const seconds = timeLeft % 60;
-                
-                document.getElementById('timerDisplay').textContent = 
+
+                document.getElementById('timerDisplay').textContent =
                     `${minutes}:${seconds.toString().padStart(2, '0')}`;
-                
-                // Update status based on remaining time
+
+                // Update status based on remaining time (keep warning class always on)
+                const timerElement = document.getElementById('quizTimer');
                 if (timeLeft <= 60) {
                     document.getElementById('timerStatus').textContent = '⚠️ FINAL MINUTE!';
-                    document.getElementById('quizTimer').classList.add('danger');
-                } else if (timeLeft <= 300) {
-                    document.getElementById('timerStatus').textContent = '⏰ 5 minutes left';
-                    document.getElementById('quizTimer').classList.add('warning');
+                    timerElement.classList.remove('warning');
+                    timerElement.classList.add('danger');
                 } else {
-                    document.getElementById('timerStatus').textContent = '🚨 EXAM MODE';
+                    // Keep showing "Time Remaining" with warning class throughout
+                    document.getElementById('timerStatus').textContent = '🚨 EXAM MODE - Time Remaining';
                 }
                 
                 timeLeft--;
