@@ -778,6 +778,216 @@
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
+        /* 🆕 NEW: Exam Mode Toggle Styles */
+        .exam-mode-toggle-container {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .exam-mode-toggle-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transform: translate(20px, -20px);
+        }
+
+        .exam-mode-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            margin-bottom: 0.75rem;
+        }
+
+        .exam-mode-title {
+            font-size: 1rem;
+            font-weight: bold;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .exam-mode-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .exam-mode-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .exam-mode-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.3);
+            -webkit-transition: .4s;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .exam-mode-slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            -webkit-transition: .4s;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .exam-mode-slider {
+            background-color: rgba(255, 255, 255, 0.6);
+        }
+
+        input:checked + .exam-mode-slider:before {
+            -webkit-transform: translateX(26px);
+            -ms-transform: translateX(26px);
+            transform: translateX(26px);
+        }
+
+        .exam-mode-info {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+        }
+
+        .exam-session-controls {
+            display: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .exam-session-controls.active {
+            display: block;
+        }
+
+        .session-duration-selector {
+            margin-bottom: 1rem;
+        }
+
+        .session-duration-selector label {
+            color: white;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: block;
+            font-size: 0.9rem;
+        }
+
+        /* 🆕 NEW: Active Exam Session Display */
+        .active-exam-session {
+            background: linear-gradient(135deg, #10b981, #16a34a);
+            color: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .active-exam-session::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transform: translate(25px, -25px);
+        }
+
+        .session-status-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .session-status-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .end-session-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            font-size: 0.85rem;
+        }
+
+        .end-session-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .session-info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        .session-info-item {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.75rem 0.5rem;
+            border-radius: 8px;
+        }
+
+        .session-info-value {
+            font-size: 1.25rem;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .session-info-label {
+            font-size: 0.75rem;
+            opacity: 0.9;
+        }
+
+        .session-countdown {
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 1rem 0;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 0.05em;
+        }
+
         /* Compact Selector Styles */
         .compact-selector {
             display: flex;
@@ -905,11 +1115,11 @@
         }
 
         .btn-success {
-            ackground: linear-gradient(135deg, #0d63a1, #0b4f99);
+            background: linear-gradient(135deg, #0d63a1, #0b4f99);
         }
 
         .btn-success:hover {
-            ackground: linear-gradient(135deg, #1072b9, #165aa3);
+            background: linear-gradient(135deg, #1072b9, #165aa3);
         }
 
         .btn-warning {
@@ -942,6 +1152,42 @@
 
         .btn-info:hover {
             background: #7c3aed;
+        }
+
+        /* 🆕 NEW: Start Exam Session Button */
+        .start-session-btn {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .start-session-btn:hover {
+            background: linear-gradient(135deg, #ff5252, #e04848);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+        }
+
+        .start-session-btn:active {
+            transform: translateY(0);
+        }
+
+        .start-session-btn:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
         .refresh-btn {
@@ -1209,6 +1455,40 @@
         .quiz-actions {
             display: flex;
             gap: 0.5rem;
+        }
+
+        /* 🆕 NEW: Exam Session Status Badge */
+        .exam-session-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+            animation: pulse-glow 2s infinite;
+        }
+
+        .exam-session-badge.active {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: white;
+            box-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+        }
+
+        .exam-session-badge.inactive {
+            background: #e2e8f0;
+            color: #64748b;
+        }
+
+        @keyframes pulse-glow {
+            0% {
+                box-shadow: 0 0 5px rgba(255, 107, 107, 0.5);
+            }
+            50% {
+                box-shadow: 0 0 15px rgba(255, 107, 107, 0.8);
+            }
+            100% {
+                box-shadow: 0 0 5px rgba(255, 107, 107, 0.5);
+            }
         }
 
         /* Student Item Styles */
@@ -1770,6 +2050,32 @@
             .loading-text {
                 font-size: 1rem;
             }
+
+            /* 🆕 NEW: Mobile responsive for exam mode */
+            .exam-mode-toggle-container {
+                padding: 1rem;
+            }
+
+            .exam-mode-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.5rem;
+            }
+
+            .session-info-grid {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+
+            .session-countdown {
+                font-size: 1.25rem;
+                margin: 0.75rem 0;
+                padding: 0.5rem;
+            }
+
+            .exam-session-controls {
+                padding: 0.75rem;
+            }
         }
 
         html, body {
@@ -1778,8 +2084,56 @@
             overflow-x: hidden;
         }
 
+        /* 🆕 NEW: Simple Exam Session Button Styles */
+.start-exam-session-btn {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
 
-        
+.start-exam-session-btn:hover {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+.start-exam-session-btn:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Active Exam Timer Styles */
+.exam-timer-display {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+    margin: 1rem 0;
+    font-family: 'Courier New', monospace;
+    font-size: 1.2rem;
+    font-weight: bold;
+    letter-spacing: 0.05em;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.exam-timer-display .timer-label {
+    font-size: 0.8rem;
+    opacity: 0.9;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+
     </style>
 </head>
 <body>
@@ -2068,7 +2422,7 @@
         </main>
     </div>
 
-    <!-- Create Quiz Modal -->
+    <!-- 🔄 UPDATED: Create Quiz Modal with Simplified Exam Session -->
     <div id="createQuizModal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
@@ -2086,20 +2440,32 @@
                         <input type="text" id="lectureTitle" class="form-input" placeholder="e.g., Chapter 1: Introduction to Physics" required>
                     </div>
                     
+                    <!-- 🆕 NEW: Exam Session Toggle - Added above Quiz Duration -->
+                    <div class="exam-mode-toggle-container" style="margin-bottom: 1rem;">
+                        <div class="exam-mode-header">
+                            <h3 class="exam-mode-title">
+                                🚨 Auto-Start Exam Session
+                            </h3>
+                            <label class="exam-mode-switch">
+                                <input type="checkbox" id="autoStartExamToggle">
+                                <span class="exam-mode-slider"></span>
+                            </label>
+                        </div>
+                        <div class="exam-mode-info">
+                            When enabled, an exam session will start automatically after quiz creation with the selected duration.
+                        </div>
+                    </div>
+                    
                     <!-- Quiz Duration Selector -->
                     <div class="form-group">
                         <label class="form-label">Quiz Duration</label>
                         <div class="compact-selector">
-                            <button type="button" class="compact-btn" onclick="adjustDuration(-1)" title="Decrease by 1 minute">
-                                <span>−</span>
-                            </button>
+                            <button type="button" class="compact-btn" onclick="adjustDuration(-1)">−</button>
                             <div class="compact-display">
                                 <span class="compact-value" id="durationValue">15</span>
                                 <span class="compact-unit">min</span>
                             </div>
-                            <button type="button" class="compact-btn" onclick="adjustDuration(1)" title="Increase by 1 minute">
-                                <span>+</span>
-                            </button>
+                            <button type="button" class="compact-btn" onclick="adjustDuration(1)">+</button>
                         </div>
                         <div class="compact-presets">
                             <button type="button" class="compact-preset-btn" onclick="setDuration(5)">5m</button>
@@ -2110,23 +2476,18 @@
                             <button type="button" class="compact-preset-btn" onclick="setDuration(45)">45m</button>
                             <button type="button" class="compact-preset-btn" onclick="setDuration(60)">1h</button>
                         </div>
-                        <p class="compact-help">Set the time limit for students to complete this quiz (2-60 minutes)</p>
                     </div>
 
                     <!-- Number of Questions Selector -->
                     <div class="form-group">
                         <label class="form-label">Number of Questions</label>
                         <div class="compact-selector">
-                            <button type="button" class="compact-btn" onclick="adjustQuestions(-1)" title="Decrease by 1 question">
-                                <span>−</span>
-                            </button>
+                            <button type="button" class="compact-btn" onclick="adjustQuestions(-1)">−</button>
                             <div class="compact-display">
                                 <span class="compact-value" id="questionsValue">10</span>
                                 <span class="compact-unit">questions</span>
                             </div>
-                            <button type="button" class="compact-btn" onclick="adjustQuestions(1)" title="Increase by 1 question">
-                                <span>+</span>
-                            </button>
+                            <button type="button" class="compact-btn" onclick="adjustQuestions(1)">+</button>
                         </div>
                         <div class="compact-presets">
                             <button type="button" class="compact-preset-btn" onclick="setQuestions(5)">5</button>
@@ -2136,7 +2497,6 @@
                             <button type="button" class="compact-preset-btn" onclick="setQuestions(25)">25</button>
                             <button type="button" class="compact-preset-btn" onclick="setQuestions(30)">30</button>
                         </div>
-                        <p class="compact-help">Set the number of questions to generate (5-30 questions)</p>
                     </div>
                     
                     <button type="submit" class="btn btn-success" style="width: 100%; margin-top: 1rem;">📤 Upload & Generate Quiz</button>
@@ -2172,6 +2532,9 @@
     </div>
 
     <script>
+
+
+
         // Global variables
         const classId = '{{classId}}';
         const className = '{{className}}';
@@ -2187,13 +2550,235 @@
         let currentDuration = 15; // Default 15 minutes
         let currentQuestions = 10; // Default 10 questions
 
+        // 🆕 NEW: Exam session variables
+        let currentSessionDuration = 60; // Default 60 minutes for exam session
+        let isExamModeEnabled = false;
+        let activeExamSessions = new Map(); // Track active sessions
+        let examSessionTimers = new Map(); // Track session timers
+
         console.log('🚀 Class Management initializing for:', {
             classId: classId,
             className: className,
             classSubject: classSubject
         });
 
+        // 🆕 NEW: Exam Mode Toggle Functions
+        function toggleExamMode() {
+            const toggle = document.getElementById('examModeToggle');
+            const controls = document.getElementById('examSessionControls');
 
+            // Defensive check - if elements don't exist, just update the variable
+            if (!toggle || !controls) {
+                console.warn('⚠️ Exam mode toggle elements not found in this view');
+                return;
+            }
+
+            isExamModeEnabled = toggle.checked;
+
+            if (isExamModeEnabled) {
+                controls.classList.add('active');
+                console.log('🔥 Exam mode enabled');
+            } else {
+                controls.classList.remove('active');
+                console.log('📝 Regular quiz mode');
+            }
+        }
+
+        // 🆕 NEW: Session Duration Functions
+        function adjustSessionDuration(change) {
+            const newDuration = Math.max(15, Math.min(300, currentSessionDuration + change));
+            setSessionDuration(newDuration);
+        }
+
+        function setSessionDuration(minutes) {
+            currentSessionDuration = Math.max(15, Math.min(300, minutes));
+
+            // Update display - with defensive null check
+            const durationValueElement = document.getElementById('sessionDurationValue');
+            if (durationValueElement) {
+                durationValueElement.textContent = currentSessionDuration;
+            }
+
+            // Update preset buttons - with defensive null check
+            const presetButtons = document.querySelectorAll('#examSessionControls .compact-presets .compact-preset-btn');
+            if (presetButtons && presetButtons.length > 0) {
+                presetButtons.forEach(btn => {
+                    btn.classList.remove('active');
+                });
+
+                // Highlight active preset if it matches
+                const matchingPreset = document.querySelector(`#examSessionControls .compact-preset-btn[onclick="setSessionDuration(${currentSessionDuration})"]`);
+                if (matchingPreset) {
+                    matchingPreset.classList.add('active');
+                }
+            }
+
+            console.log('⏰ Session duration set to:', currentSessionDuration, 'minutes');
+        }
+
+        // 🆕 NEW: Start Exam Session Function
+        async function startExamSession(quizId) {
+            try {
+                console.log('🔥 Starting exam session for quiz:', quizId);
+                
+                if (!currentSessionDuration || currentSessionDuration < 15) {
+                    showError('Session duration must be at least 15 minutes.');
+                    return;
+                }
+
+                const response = await fetch('/api/quiz/exam-session/start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        quizId: quizId,
+                        sessionDurationMinutes: currentSessionDuration,
+                        classId: classId
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showSuccess(`🔥 Exam session started! Students have ${currentSessionDuration} minutes to complete the quiz.`);
+                    
+                    // Store session info
+                    activeExamSessions.set(quizId, {
+                        sessionId: result.sessionId,
+                        endsAt: new Date(result.endsAt),
+                        duration: currentSessionDuration
+                    });
+                    
+                    // Start countdown timer
+                    startExamSessionTimer(quizId, result.sessionId, new Date(result.endsAt));
+                    
+                    // Refresh quiz list to show session status
+                    loadQuizzes();
+                    
+                } else {
+                    showError('Failed to start exam session: ' + result.message);
+                }
+            } catch (error) {
+                console.error('❌ Error starting exam session:', error);
+                showError('Network error while starting exam session.');
+            }
+        }
+
+        // 🆕 NEW: End Exam Session Function
+        async function endExamSession(quizId, sessionId) {
+            try {
+                if (!confirm('Are you sure you want to end this exam session? This will auto-submit all active quiz attempts.')) {
+                    return;
+                }
+
+                console.log('🛑 Ending exam session:', sessionId);
+                
+                const response = await fetch('/api/quiz/exam-session/end', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        sessionId: sessionId,
+                        quizId: quizId
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showSuccess(`🛑 Exam session ended! ${result.autoSubmittedCount || 0} submissions were auto-submitted.`);
+                    
+                    // Clean up local tracking
+                    activeExamSessions.delete(quizId);
+                    if (examSessionTimers.has(quizId)) {
+                        clearInterval(examSessionTimers.get(quizId));
+                        examSessionTimers.delete(quizId);
+                    }
+                    
+                    // Refresh quiz list
+                    loadQuizzes();
+                    
+                } else {
+                    showError('Failed to end exam session: ' + result.message);
+                }
+            } catch (error) {
+                console.error('❌ Error ending exam session:', error);
+                showError('Network error while ending exam session.');
+            }
+        }
+
+        // 🆕 NEW: Exam Session Timer Function
+        function startExamSessionTimer(quizId, sessionId, endsAt) {
+            // Clear any existing timer
+            if (examSessionTimers.has(quizId)) {
+                clearInterval(examSessionTimers.get(quizId));
+            }
+
+            const timer = setInterval(() => {
+                const now = new Date();
+                const remainingMs = endsAt - now;
+                const remainingSeconds = Math.max(0, Math.floor(remainingMs / 1000));
+
+                // Update countdown display if visible
+                const countdownElement = document.querySelector(`[data-session-id="${sessionId}"] .session-countdown`);
+                if (countdownElement) {
+                    countdownElement.textContent = formatSessionTime(remainingSeconds);
+                }
+
+                // Auto-end session when time runs out
+                if (remainingSeconds <= 0) {
+                    clearInterval(timer);
+                    examSessionTimers.delete(quizId);
+                    
+                    // Auto-end session
+                    console.log('⏰ Session time expired, auto-ending session');
+                    endExamSession(quizId, sessionId);
+                }
+            }, 1000);
+
+            examSessionTimers.set(quizId, timer);
+            console.log('⏰ Session timer started for quiz:', quizId);
+        }
+
+        // 🆕 NEW: Format Session Time Function
+        function formatSessionTime(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            
+            if (hours > 0) {
+                return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            } else {
+                return `${minutes}:${secs.toString().padStart(2, '0')}`;
+            }
+        }
+
+        // 🆕 NEW: Check for Active Exam Sessions on Load
+        async function loadActiveExamSessions() {
+            try {
+                const response = await fetch(`/api/quiz/exam-sessions/active/${classId}`);
+                const result = await response.json();
+
+                if (result.success && result.sessions.length > 0) {
+                    console.log('🔥 Found', result.sessions.length, 'active exam sessions');
+                    
+                    result.sessions.forEach(session => {
+                        activeExamSessions.set(session.quizId, {
+                            sessionId: session.sessionId,
+                            endsAt: new Date(session.endsAt),
+                            duration: session.sessionDurationMinutes
+                        });
+                        
+                        // Start timer for this session
+                        startExamSessionTimer(session.quizId, session.sessionId, new Date(session.endsAt));
+                    });
+                }
+            } catch (error) {
+                console.error('❌ Error loading active exam sessions:', error);
+            }
+        }
 
         // 🆕 NEW: Pending Requests Modal Functions
         function openPendingRequestsModal() {
@@ -2291,12 +2876,17 @@
                     } else {
                         showSuccess(`Join request from ${result.studentName} has been rejected.`);
                     }
-                    
-                    // Refresh modal content and update badge
-                    loadPendingRequestsForModal();
-                    updatePendingRequestsBadge();
+
+                    // ALWAYS refresh modal content and update badge after success
+                    await loadPendingRequestsForModal();
+                    await updatePendingRequestsBadge();
+
+                    console.log('✅ Pending requests list refreshed');
                 } else {
                     showError('Failed to process request: ' + result.message);
+                    // Still refresh even on error (in case request was partially processed)
+                    await loadPendingRequestsForModal();
+                    await updatePendingRequestsBadge();
                 }
             } catch (error) {
                 console.error('❌ Error processing join request from modal:', error);
@@ -2547,6 +3137,9 @@
             document.getElementById('createQuizForm').reset();
             setDuration(15);
             setQuestions(10);
+            
+            // 🆕 NEW: Reset auto-start exam toggle
+            document.getElementById('autoStartExamToggle').checked = false;
         }
 
         function closeCreateQuizModal() {
@@ -2750,229 +3343,375 @@
             }
         });
 
-        // 🔄 UPDATED: Enhanced form submission handler with loading overlay
+        // 🔄 UPDATED: Enhanced form submission handler with loading overlay and exam session support
         document.getElementById('createQuizForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            // ✅ CAPTURE VALUES IMMEDIATELY when form is submitted
-            const capturedDuration = currentDuration;
-            const capturedQuestions = currentQuestions;
-            
-            console.log('📝 FORM SUBMIT - Captured values:', {
-                duration: capturedDuration,
-                questions: capturedQuestions
-            });
-
-            // 🆕 Show loading overlay immediately
+            // Show loading overlay
             showLoadingOverlay('Uploading your file...', 0);
             
             const formData = new FormData();
             formData.append('lectureFile', document.getElementById('lectureFile').files[0]);
             formData.append('title', document.getElementById('lectureTitle').value);
             formData.append('classId', classId);
-            
-            // ✅ ALSO send duration and questions with the upload (for context)
-            formData.append('durationMinutes', capturedDuration.toString());
-            formData.append('questionCount', capturedQuestions.toString());
+            formData.append('durationMinutes', currentDuration.toString());
+            formData.append('questionCount', currentQuestions.toString());
 
-            const submitButton = this.querySelector('button[type="submit"]');
-            const originalText = submitButton.textContent;
-            
+            // Check if auto-start exam session is enabled
+            const autoStartExam = document.getElementById('autoStartExamToggle').checked;
+
             try {
-                // Stage 1: Upload file
                 updateLoadingProgress('Uploading your file...', 10);
-                
-                console.log('📤 Uploading lecture with settings:', {
-                    classId: classId,
-                    duration: capturedDuration,
-                    questions: capturedQuestions,
-                    title: document.getElementById('lectureTitle').value
-                });
                 
                 const response = await fetch('/upload_lecture', {
                     method: 'POST',
                     body: formData
                 });
 
+                // 🔧 BUG FIX: Check if response is valid before parsing
+                if (!response.ok) {
+                    throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
+                }
+
                 const result = await response.json();
 
+                // 🔧 BUG FIX: Validate result object
+                if (!result || typeof result !== 'object') {
+                    throw new Error('Invalid response from server');
+                }
+
                 if (result.success) {
-                    // Stage 2: File uploaded, processing data
                     updateLoadingProgress('Processing data...', 35);
-                    
                     console.log('✅ File uploaded successfully, starting quiz generation...');
                     
-                    // Reset form
-                    document.getElementById('createQuizForm').reset();
-                    setDuration(15); // Reset to defaults
-                    setQuestions(10);
-                    
-                    // Stage 3: Generate quiz
+                    // Generate quiz
                     updateLoadingProgress('Generating questions...', 60);
+                    const quizResult = await generateQuizFromLecture(result.lectureId, currentDuration, currentQuestions);
                     
-                    // ✅ DIRECTLY call quiz generation with captured values
-                    await generateQuizFromLecture(result.lectureId, capturedDuration, capturedQuestions);
-                    
-                    // Stage 4: Wrapping up
-                    updateLoadingProgress('Wrapping things up!', 90);
-                    
-                    // Short delay to show final message
-                    setTimeout(() => {
-                        updateLoadingProgress('Quiz created successfully!', 100);
+                    // 🔧 BUG FIX: Validate quiz result
+                    if (quizResult && quizResult.success) {
+                        updateLoadingProgress('Quiz created successfully!', 85);
                         
-                        // Hide loading after another short delay
+                        // 🆕 NEW: Auto-start exam session if enabled
+                        if (autoStartExam && quizResult.quizId) {
+                            updateLoadingProgress('Starting exam session...', 95);
+                            await startAutoExamSession(quizResult.quizId, currentDuration);
+                        }
+                        
+                        updateLoadingProgress('Complete!', 100);
+                        
                         setTimeout(() => {
                             hideLoadingOverlay();
                             closeCreateQuizModal();
-                            showSuccess(`🎉 Quiz created successfully with ${capturedQuestions} questions and ${capturedDuration}-minute duration!`);
+                            
+                            const examMessage = autoStartExam ? ' Exam session started automatically!' : '';
+                            showSuccess(`🎉 Quiz created successfully!${examMessage}`);
+                            loadQuizzes();
                         }, 1000);
-                    }, 500);
-                    
+                    } else {
+                        throw new Error(quizResult?.message || 'Quiz generation failed');
+                    }
                 } else {
                     throw new Error(result.message || 'Upload failed');
                 }
             } catch (error) {
-                console.error('❌ Upload error:', error);
+                console.error('❌ Upload/Generation error:', error);
                 hideLoadingOverlay();
-                showError('Failed to upload lecture: ' + error.message);
+                showError('Failed to create quiz: ' + error.message);
             }
         });
-        // Updated quiz generation function with duration and questions parameters
-        async function generateQuizFromLecture(lectureId, durationMinutes, questionCount) {
-            const submitButton = document.querySelector('#createQuizForm button[type="submit"]');
-            
+
+
+        // 🆕 NEW: Auto-start exam session after quiz creation
+        async function startAutoExamSession(quizId, durationMinutes) {
             try {
-                console.log('🤖 QUIZ GENERATION - Starting with exact settings:', {
-                    lectureId: lectureId,
-                    durationMinutes: durationMinutes,
-                    questionCount: questionCount,
-                    typeofDuration: typeof durationMinutes,
-                    typeofQuestions: typeof questionCount
-                });
+                console.log('🚨 Auto-starting exam session for quiz:', quizId);
                 
-                // ✅ ENSURE values are numbers
-                const safeDuration = parseInt(durationMinutes) || 15;
-                const safeQuestions = parseInt(questionCount) || 10;
-                
-                console.log('🔧 QUIZ GENERATION - Sanitized values:', {
-                    safeDuration: safeDuration,
-                    safeQuestions: safeQuestions
-                });
-                
-                const requestBody = {
-                    durationMinutes: safeDuration,
-                    questionCount: safeQuestions
-                };
-                
-                console.log('📡 QUIZ GENERATION - Request body:', requestBody);
-                
-                const response = await fetch(`/generate_quiz/${lectureId}`, {
+                const response = await fetch('/api/quiz/exam-session/start', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(requestBody)
+                    body: JSON.stringify({
+                        quizId: quizId,
+                        sessionDurationMinutes: durationMinutes,
+                        classId: classId
+                    })
                 });
 
                 const result = await response.json();
-                
-                console.log('📡 QUIZ GENERATION - Server response:', result);
 
                 if (result.success) {
-                    console.log('✅ Quiz generated successfully with settings:', {
-                        returnedDuration: result.durationMinutes,
-                        returnedQuestions: result.totalQuestions,
-                        requestedDuration: safeDuration,
-                        requestedQuestions: safeQuestions
-                    });
-                    
-                    const durationText = result.durationMinutes ? ` (${result.durationMinutes} minutes)` : '';
-                    showSuccess(`🎉 Quiz generated successfully${durationText}! ${result.totalQuestions} questions created with detailed explanations.`);
-                    
-                    loadQuizzes(); // Refresh quiz list
-                    loadAnalytics(); // Refresh analytics
-                    
+                    console.log('✅ Exam session auto-started successfully');
+                    return true;
                 } else {
-                    console.error('❌ Quiz generation failed:', result.message);
-                    showError('Quiz generation failed: ' + result.message);
+                    console.error('❌ Failed to auto-start exam session:', result.message);
+                    return false;
                 }
             } catch (error) {
-                console.error('❌ Quiz generation error:', error);
-                showError('Failed to generate quiz: ' + error.message);
-            } finally {
-                if (submitButton) {
-                    submitButton.textContent = '📤 Upload & Generate Quiz';
-                    submitButton.disabled = false;
-                }
+                console.error('❌ Error auto-starting exam session:', error);
+                return false;
             }
         }
 
-        // 🔄 UPDATED: Display quizzes with proper formatting
-        function displayQuizzes(quizzes) {
-            const container = document.getElementById('quizzesContainer');
-            
-            if (quizzes.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <h3>📝 No Quizzes Yet</h3>
-                        <p>Click the "Create Quiz" button to upload a lecture and create your first quiz!</p>
-                    </div>
-                `;
+        // 🔄 UPDATED: Quiz generation with improved error handling
+        async function generateQuizFromLecture(lectureId, durationMinutes, questionCount) {
+    try {
+        console.log('🤖 QUIZ GENERATION - Starting with settings:', {
+            lectureId: lectureId,
+            durationMinutes: durationMinutes,
+            questionCount: questionCount
+        });
+        
+        // ✅ ENSURE values are valid
+        if (!lectureId) {
+            throw new Error('Lecture ID is required');
+        }
+        
+        const safeDuration = parseInt(durationMinutes) || 15;
+        const safeQuestions = parseInt(questionCount) || 10;
+        
+        const requestBody = {
+            durationMinutes: safeDuration,
+            questionCount: safeQuestions
+        };
+        
+        console.log('📡 QUIZ GENERATION - Request body:', requestBody);
+        
+        const response = await fetch(`/generate_quiz/${lectureId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestBody)
+        });
+
+        // 🔧 BUG FIX: Check response status
+        if (!response.ok) {
+            throw new Error(`Generation failed: ${response.status} ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        
+        // 🔧 BUG FIX: Validate result
+        if (!result || typeof result !== 'object') {
+            throw new Error('Invalid response from quiz generation');
+        }
+        
+        console.log('📡 QUIZ GENERATION - Server response:', result);
+
+        if (result.success) {
+            console.log('✅ Quiz generated successfully');
+            return result; // Return the full result object
+        } else {
+            throw new Error(result.message || 'Quiz generation failed');
+        }
+    } catch (error) {
+        console.error('❌ Quiz generation error:', error);
+        throw error; // Re-throw to be handled by caller
+    }
+}
+
+// 🔄 UPDATED: Simplified quiz display (remove complex exam session UI)
+function displayQuizzes(quizzes) {
+    const container = document.getElementById('quizzesContainer');
+    
+    if (quizzes.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <h3>📝 No Quizzes Yet</h3>
+                <p>Click the "Create Quiz" button to upload a lecture and create your first quiz!</p>
+            </div>
+        `;
+        return;
+    }
+
+    const quizzesHTML = quizzes.map(quiz => {
+        const durationMinutes = quiz.durationMinutes || 15;
+        const durationText = `${durationMinutes}min`;
+        
+        let durationBadge = '';
+        if (durationMinutes <= 10) {
+            durationBadge = '⚡ Quick';
+        } else if (durationMinutes <= 30) {
+            durationBadge = '⏱️ Standard';
+        } else {
+            durationBadge = '🕐 Extended';
+        }
+
+        // 🆕 NEW: Check for active exam session
+        let examSessionHTML = '';
+        if (quiz.hasActiveExamSession) {
+            examSessionHTML = `
+                <div class="exam-timer-display">
+                    <span class="timer-label">🚨 LIVE EXAM SESSION</span>
+                    <div id="quizTimer_${quiz._id}">Loading...</div>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="quiz-item">
+                <div class="quiz-title">
+                    ${quiz.lectureTitle}
+                    ${quiz.hasActiveExamSession ? '<span style="color: #ef4444; font-weight: bold;">🚨 LIVE</span>' : ''}
+                </div>
+                <div class="quiz-meta">
+                    📝 ${quiz.totalQuestions} questions • 
+                    ⏱️ ${durationText} duration (${durationBadge}) •
+                    📅 Created ${new Date(quiz.generatedDate).toLocaleDateString()} •
+                    🆔 ${quiz._id.toString().slice(-6)}
+                </div>
+                <div class="quiz-stats">
+                    <span class="quiz-stat">📊 Avg: ${formatPercentage(quiz.averageScore || 0)}%</span>
+                    <span class="quiz-stat">🎯 High: ${formatPercentage(quiz.highestScore || 0)}%</span>
+                    <span class="quiz-stat">👥 ${quiz.totalAttempts || 0} attempts</span>
+                    <span class="quiz-stat">
+                        ${quiz.isActive ? '🟢 Active' : '🔴 Inactive'}
+                    </span>
+                </div>
+                <div class="quiz-actions">
+                    <a href="/lecture_results/${quiz.lectureId}" class="btn btn-secondary" 
+                    style="font-size: 0.8rem; padding: 0.5rem 1rem;">
+                        📊 View Results
+                    </a>
+                    <button class="btn btn-info" onclick="viewQuiz('${quiz._id}')" 
+                            style="font-size: 0.8rem; padding: 0.5rem 1rem;">
+                        👁️ View Quiz
+                    </button>
+                    ${quiz.hasActiveExamSession ? `
+                        <button class="btn" onclick="endExamSession('${quiz._id}')" 
+                                style="font-size: 0.8rem; padding: 0.5rem 1rem; background: #6b7280;">
+                            🛑 End Exam
+                        </button>
+                    ` : ''}
+                </div>
+                ${examSessionHTML}
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = quizzesHTML;
+    
+    // Start timers for active exam sessions
+    quizzes.forEach(quiz => {
+        if (quiz.hasActiveExamSession && quiz.examEndTime) {
+            startQuizTimer(quiz._id, new Date(quiz.examEndTime));
+        }
+    });
+}
+
+// 🆕 NEW: Quick exam session start
+async function startQuickExamSession(quizId, durationMinutes) {
+    try {
+        const response = await fetch('/api/quiz/exam-session/start', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                quizId: quizId,
+                sessionDurationMinutes: durationMinutes,
+                classId: classId
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showSuccess(`🚨 Exam Session Started! ${durationMinutes} minutes duration.`);
+            loadQuizzes(); // Refresh to show timer
+        } else {
+            showError('Failed to start exam session: ' + result.message);
+        }
+    } catch (error) {
+        console.error('❌ Error starting quick exam session:', error);
+        showError('Network error while starting exam session.');
+    }
+}
+
+// 🆕 NEW: Individual quiz timer
+function startQuizTimer(quizId, endsAt) {
+    const updateTimer = () => {
+        const now = new Date();
+        const remaining = Math.max(0, Math.floor((endsAt - now) / 1000));
+        const timerElement = document.getElementById(`quizTimer_${quizId}`);
+        
+        if (timerElement) {
+            if (remaining > 0) {
+                const minutes = Math.floor(remaining / 60);
+                const seconds = remaining % 60;
+                timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            } else {
+                timerElement.textContent = 'ENDED';
+                setTimeout(() => loadQuizzes(), 2000); // Refresh after session ends
                 return;
             }
+        }
+    };
+    
+    updateTimer(); // Initial call
+    const interval = setInterval(updateTimer, 1000);
+    
+    // Store interval for cleanup if needed
+    if (!window.quizTimers) window.quizTimers = {};
+    window.quizTimers[quizId] = interval;
+}
 
-            const quizzesHTML = quizzes.map(quiz => {
-                console.log('🎯 Displaying quiz with duration:', {
-                    quizId: quiz._id,
-                    durationMinutes: quiz.durationMinutes,
-                    totalQuestions: quiz.totalQuestions,
-                    title: quiz.lectureTitle
-                });
+// 🆕 NEW: End exam session
+async function endExamSession(quizId) {
+    if (!confirm('Are you sure you want to end this exam session? This will auto-submit all active attempts.')) {
+        return;
+    }
 
-                const durationMinutes = quiz.durationMinutes || 15;
-                const durationText = `${durationMinutes}min`;
-                
-                let durationBadge = '';
-                if (durationMinutes <= 10) {
-                    durationBadge = '⚡ Quick';
-                } else if (durationMinutes <= 30) {
-                    durationBadge = '⏱️ Standard';
-                } else {
-                    durationBadge = '🕐 Extended';
-                }
+    try {
+        const response = await fetch('/api/quiz/exam-session/end', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                quizId: quizId,
+                classId: classId
+            })
+        });
 
-                return `
-                    <div class="quiz-item">
-                        <div class="quiz-title">${quiz.lectureTitle}</div>
-                        <div class="quiz-meta">
-                            📝 ${quiz.totalQuestions} questions • 
-                            ⏱️ ${durationText} duration (${durationBadge}) •
-                            📅 Created ${new Date(quiz.generatedDate).toLocaleDateString()} •
-                            🆔 ${quiz._id.toString().slice(-6)}
-                        </div>
-                        <div class="quiz-stats">
-                            <span class="quiz-stat">📊 Avg: ${(parseFloat(quiz.averageScore) || 0).toFixed(2)}%</span>
-                            <span class="quiz-stat">🎯 High: ${(parseFloat(quiz.highestScore) || 0).toFixed(2)}%</span>
-                            <span class="quiz-stat">👥 ${quiz.totalAttempts || 0} attempts</span>
-                            <span class="quiz-stat">
-                                ${quiz.isActive ? '🟢 Active' : '🔴 Inactive'}
-                            </span>
-                        </div>
-                        <div class="quiz-actions">
-                            <a href="/lecture_results/${quiz.lectureId}" class="btn btn-secondary" 
-                            style="font-size: 0.8rem; padding: 0.5rem 1rem;">
-                                📊 View Results
-                            </a>
-                            <button class="btn btn-info" onclick="viewQuiz('${quiz._id}')" 
-                                    style="font-size: 0.8rem; padding: 0.5rem 1rem;">
-                                👁️ View Quiz
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
+        const result = await response.json();
 
-            container.innerHTML = quizzesHTML;
+        if (result.success) {
+            showSuccess('🛑 Exam session ended successfully!');
+            loadQuizzes();
+        } else {
+            showError('Failed to end exam session: ' + result.message);
+        }
+    } catch (error) {
+        console.error('❌ Error ending exam session:', error);
+        showError('Network error while ending exam session.');
+    }
+}
+
+
+
+        // 🆕 NEW: Adjust session duration for specific quiz
+        function adjustQuizSessionDuration(quizId, change) {
+            const valueElement = document.getElementById(`sessionDuration_${quizId}`);
+            const currentValue = parseInt(valueElement.textContent) || 60;
+            const newValue = Math.max(15, Math.min(300, currentValue + change));
+            valueElement.textContent = newValue;
+        }
+
+        // 🆕 NEW: Start exam session for specific quiz
+        function startExamSessionForQuiz(quizId) {
+            const sessionDuration = parseInt(document.getElementById(`sessionDuration_${quizId}`).textContent) || 60;
+            
+            // Temporarily set the session duration and start session
+            const originalSessionDuration = currentSessionDuration;
+            currentSessionDuration = sessionDuration;
+            
+            startExamSession(quizId).then(() => {
+                // Restore original session duration
+                currentSessionDuration = originalSessionDuration;
+            });
         }
 
         // Edit class form handler
@@ -3101,10 +3840,12 @@
             loadStudents();
             loadActiveJoinCode();
             updatePendingRequestsBadge(); // 🆕 NEW: Load badge instead of full requests
+            loadActiveExamSessions(); // 🆕 NEW: Load active exam sessions
 
             // Initialize selectors
             setDuration(15);
             setQuestions(10);
+            setSessionDuration(60);
         });
 
         // Add Student Form Handler
@@ -3182,6 +3923,7 @@
                     break;
                 case 'quizzes':
                     loadQuizzes();
+                    loadActiveExamSessions(); // 🆕 NEW: Load exam sessions when viewing quizzes
                     break;
                 case 'students':
                     loadStudents();
@@ -3223,6 +3965,7 @@
                         break;
                     case 'quizzes':
                         loadQuizzes();
+                        loadActiveExamSessions();
                         break;
                     case 'students':
                         loadStudents();
@@ -3828,6 +4571,12 @@
             if (joinCodeTimer) {
                 clearInterval(joinCodeTimer);
             }
+            
+            // 🆕 NEW: Clean up exam session timers
+            examSessionTimers.forEach((timer, quizId) => {
+                clearInterval(timer);
+            });
+            examSessionTimers.clear();
         });
     </script>
 </body>

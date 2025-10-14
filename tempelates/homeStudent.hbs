@@ -6,6 +6,7 @@
     <title>Student Dashboard - Quizzie</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
     <style>
         /* Reset and Base Styles */
         * {
@@ -735,6 +736,322 @@
                 padding: 1rem;
             }
         }
+
+        /* Live Quiz Notifications Styles */
+.live-quiz-section {
+    margin-bottom: 3rem;
+}
+
+.live-quiz-alert {
+    background: linear-gradient(135deg, #fee2e2, #fef2f2);
+    border: 2px solid #ef4444;
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    animation: liveQuizPulse 2s infinite;
+    box-shadow: 0 8px 32px rgba(239, 68, 68, 0.2);
+}
+
+.alert-content {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    gap: 1.5rem;
+    align-items: center;
+}
+
+.alert-icon {
+    font-size: 2rem;
+    animation: pulse 1.5s infinite;
+}
+
+.alert-text {
+    flex: 1;
+}
+
+.alert-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #dc2626;
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.alert-message {
+    color: #7f1d1d;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.alert-timer {
+    text-align: center;
+    padding: 0.75rem;
+    background: white;
+    border-radius: 12px;
+    border: 2px solid #ef4444;
+    min-width: 120px;
+}
+
+.timer-label {
+    font-size: 0.7rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
+}
+
+.timer-display {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #ef4444;
+    font-family: 'Courier New', monospace;
+    line-height: 1;
+}
+
+.take-live-quiz-btn {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    font-weight: bold;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.take-live-quiz-btn:hover {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+}
+
+.live-quiz-card {
+    display: none !important; /* Hidden - live quiz cards removed */
+}
+
+.live-quiz-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 6px;
+    height: 100%;
+    background: #ef4444;
+    animation: liveIndicator 2s infinite;
+}
+
+.live-quiz-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.live-quiz-info h3 {
+    color: #dc2626;
+    font-size: 1.3rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.live-badge {
+    background: #ef4444;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    animation: pulse 2s infinite;
+}
+
+.live-quiz-meta {
+    color: #7f1d1d;
+    font-size: 0.9rem;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.live-quiz-timer {
+    text-align: center;
+    background: white;
+    border: 2px solid #ef4444;
+    border-radius: 12px;
+    padding: 1rem;
+    min-width: 120px;
+}
+
+.timer-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #ef4444;
+    font-family: 'Courier New', monospace;
+    display: block;
+    line-height: 1;
+}
+
+.timer-text {
+    font-size: 0.7rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 0.25rem;
+}
+
+.live-quiz-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.btn-live {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex: 1;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-live:hover {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    transform: translateY(-1px);
+    color: white;
+}
+
+/* Notification Toast Styles */
+.notification-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(239, 68, 68, 0.3);
+    z-index: 1000;
+    max-width: 400px;
+    animation: slideInRight 0.5s ease-out;
+}
+
+.toast-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.toast-icon {
+    font-size: 1.5rem;
+    animation: pulse 1.5s infinite;
+}
+
+.toast-title {
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.toast-message {
+    font-size: 0.9rem;
+    line-height: 1.4;
+    margin-bottom: 1rem;
+}
+
+.toast-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.toast-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s ease;
+}
+
+.toast-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.toast-btn.primary {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* Animations */
+@keyframes liveQuizPulse {
+    0%, 100% { box-shadow: 0 8px 32px rgba(239, 68, 68, 0.2); }
+    50% { box-shadow: 0 8px 32px rgba(239, 68, 68, 0.4); }
+}
+
+@keyframes liveIndicator {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .alert-content {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .live-quiz-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .live-quiz-meta {
+        justify-content: center;
+    }
+    
+    .notification-toast {
+        left: 20px;
+        right: 20px;
+        max-width: none;
+    }
+    
+    .toast-actions {
+        flex-direction: column;
+    }
+}
     </style>
 </head>
 <body>
@@ -795,6 +1112,29 @@
                 <div class="comparison">Classes with recent activity</div>
             </div>
         </section>
+
+        <!-- 🆕 ADD TO studentClassView.hbs - Live Quiz Alert Banner -->
+
+        <!-- Live Quiz Alert Banner (Add at the top, after breadcrumb) -->
+        <div id="liveQuizAlert" class="live-quiz-alert" style="display: none;">
+            <div class="alert-content">
+                <div class="alert-icon">🔴</div>
+                <div class="alert-text">
+                    <h3 class="alert-title">LIVE QUIZ IN PROGRESS</h3>
+                    <p class="alert-message" id="liveQuizMessage">A live quiz is currently active in this class.</p>
+                </div>
+                <div class="alert-timer">
+                    <div class="timer-label">Time Remaining</div>
+                    <div class="timer-display" id="liveQuizCountdown">--:--</div>
+                </div>
+                <div class="alert-action">
+                    <button class="take-live-quiz-btn" id="takeLiveQuizBtn" onclick="takeLiveQuiz()">
+                        🚀 Take Quiz Now
+                    </button>
+                </div>
+            </div>
+        </div>
+
 
         <!-- 🆕 UPDATED: My Classes Section with Join Button -->
         <section class="section">
@@ -1394,6 +1734,361 @@
             console.log('🔄 Auto-refreshing data...');
             loadEnrolledClasses();
         }, 30000);
+
+        // Global variables for live quiz system
+        const studentId = '{{{studentId}}}'; // Student ID from server
+        let liveQuizSocket = null;
+        let liveQuizTimers = {};
+        let currentLiveQuizzes = [];
+
+// Initialize live quiz socket connection
+function initializeLiveQuizSocket() {
+    if (typeof io !== 'undefined') {
+        liveQuizSocket = io();
+        
+        // Join student rooms for notifications
+        liveQuizSocket.emit('join-student-rooms', studentId);
+        
+        // Listen for live quiz notifications
+        liveQuizSocket.on('live-quiz-notification', function(notification) {
+            console.log('🔴 Live quiz notification received:', notification);
+            handleLiveQuizNotification(notification);
+        });
+        
+        console.log('⚡ Live quiz socket initialized for student');
+    } else {
+        console.warn('⚠️ Socket.io not available');
+    }
+}
+
+// Handle live quiz notifications
+function handleLiveQuizNotification(notification) {
+    switch (notification.type) {
+        case 'live_quiz_started':
+            showLiveQuizNotification(notification);
+            loadLiveQuizzes(); // Refresh live quizzes
+            break;
+            
+        case 'live_quiz_ended':
+        case 'live_quiz_expired':
+            showLiveQuizEndedNotification(notification);
+            loadLiveQuizzes(); // Refresh live quizzes
+            break;
+    }
+}
+
+// Show live quiz started notification
+function showLiveQuizNotification(notification) {
+    const toast = document.createElement('div');
+    toast.className = 'notification-toast';
+    toast.innerHTML = `
+        <div class="toast-header">
+            <span class="toast-icon">🔴</span>
+            <span class="toast-title">LIVE QUIZ STARTED!</span>
+        </div>
+        <div class="toast-message">
+            <strong>${notification.quizTitle}</strong><br>
+            ${notification.className}<br>
+            Duration: ${notification.durationMinutes} minutes
+        </div>
+        <div class="toast-actions">
+            <button class="toast-btn primary" onclick="goToLiveQuiz('${notification.quizId}')">
+                🚀 Take Quiz
+            </button>
+            <button class="toast-btn" onclick="this.closest('.notification-toast').remove()">
+                Dismiss
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Auto-remove after 10 seconds
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.remove();
+        }
+    }, 10000);
+    
+    // Play notification sound if supported
+    playNotificationSound();
+}
+
+// Show live quiz ended notification
+function showLiveQuizEndedNotification(notification) {
+    const toast = document.createElement('div');
+    toast.className = 'notification-toast';
+    toast.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
+    toast.innerHTML = `
+        <div class="toast-header">
+            <span class="toast-icon">⏰</span>
+            <span class="toast-title">LIVE QUIZ ENDED</span>
+        </div>
+        <div class="toast-message">
+            <strong>${notification.quizTitle}</strong><br>
+            The live quiz session has ended.
+        </div>
+        <div class="toast-actions">
+            <button class="toast-btn" onclick="this.closest('.notification-toast').remove()">
+                OK
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.remove();
+        }
+    }, 5000);
+}
+
+// Load live quizzes for student dashboard
+async function loadLiveQuizzes() {
+    try {
+        const response = await fetch('/api/student/live-quizzes');
+        const data = await response.json();
+        
+        if (data.success) {
+            currentLiveQuizzes = data.liveQuizzes;
+            displayLiveQuizzes(data.liveQuizzes);
+            
+            // Check for class-specific live quiz if on class page
+            if (window.location.pathname.includes('/student/class/')) {
+                checkClassLiveQuiz();
+            }
+        }
+    } catch (error) {
+        console.error('❌ Error loading live quizzes:', error);
+    }
+}
+
+// Display live quizzes on dashboard
+function displayLiveQuizzes(liveQuizzes) {
+    const section = document.getElementById('liveQuizSection');
+    const container = document.getElementById('liveQuizzesContainer');
+    
+    if (!section || !container) return;
+    
+    if (liveQuizzes.length === 0) {
+        section.style.display = 'none';
+        return;
+    }
+    
+    section.style.display = 'block';
+    
+    const liveQuizzesHTML = liveQuizzes.map(quiz => `
+        <div class="live-quiz-card" data-quiz-id="${quiz.quizId}">
+            <div class="live-quiz-header">
+                <div class="live-quiz-info">
+                    <h3>
+                        🔴 ${quiz.quizTitle}
+                        <span class="live-badge">LIVE</span>
+                    </h3>
+                    <div class="live-quiz-meta">
+                        <span>📚 ${quiz.className}</span>
+                        <span>📝 ${quiz.totalQuestions} questions</span>
+                        <span>⏱️ ${quiz.durationMinutes} minutes</span>
+                    </div>
+                </div>
+                <div class="live-quiz-timer">
+                    <span class="timer-value" id="timer-${quiz.quizId}">--:--</span>
+                    <span class="timer-text">TIME LEFT</span>
+                </div>
+            </div>
+            <div class="live-quiz-actions">
+                <button class="btn-live" onclick="goToLiveQuiz('${quiz.quizId}')">
+                    🚀 Take Quiz Now
+                </button>
+            </div>
+        </div>
+    `).join('');
+    
+    container.innerHTML = liveQuizzesHTML;
+    
+    // Start timers for each live quiz
+    liveQuizzes.forEach(quiz => {
+        startLiveQuizTimer(quiz.quizId, quiz.remainingTime);
+    });
+}
+
+// Check for class-specific live quiz (for class view page)
+async function checkClassLiveQuiz() {
+    if (!classId) return;
+    
+    try {
+        const response = await fetch(`/api/class/${classId}/live-quiz`);
+        const data = await response.json();
+        
+        if (data.success && data.hasLiveQuiz) {
+            showLiveQuizAlert(data.liveQuiz);
+        } else {
+            hideLiveQuizAlert();
+        }
+    } catch (error) {
+        console.error('❌ Error checking class live quiz:', error);
+    }
+}
+
+// Show live quiz alert banner (for class view)
+function showLiveQuizAlert(liveQuiz) {
+    const alert = document.getElementById('liveQuizAlert');
+    const message = document.getElementById('liveQuizMessage');
+    const button = document.getElementById('takeLiveQuizBtn');
+    
+    if (!alert) return;
+    
+    message.textContent = `${liveQuiz.quizTitle} is currently active. ${liveQuiz.totalQuestions} questions, ${liveQuiz.durationMinutes} minutes total.`;
+    button.setAttribute('data-quiz-id', liveQuiz.quizId);
+    
+    alert.style.display = 'block';
+    
+    // Start countdown timer
+    startLiveQuizTimer('liveQuizCountdown', liveQuiz.remainingTime);
+}
+
+// Hide live quiz alert banner
+function hideLiveQuizAlert() {
+    const alert = document.getElementById('liveQuizAlert');
+    if (alert) {
+        alert.style.display = 'none';
+    }
+    
+    // Clear timer
+    if (liveQuizTimers['liveQuizCountdown']) {
+        clearInterval(liveQuizTimers['liveQuizCountdown']);
+        delete liveQuizTimers['liveQuizCountdown'];
+    }
+}
+
+// Start live quiz timer
+function startLiveQuizTimer(elementId, remainingSeconds) {
+    // Clear existing timer
+    if (liveQuizTimers[elementId]) {
+        clearInterval(liveQuizTimers[elementId]);
+    }
+    
+    let timeLeft = remainingSeconds;
+    
+    function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        
+        const timerElement = document.getElementById(elementId) || document.getElementById(`timer-${elementId}`);
+        if (timerElement) {
+            timerElement.textContent = timeString;
+            
+            // Change color based on remaining time
+            if (timeLeft <= 60) {
+                timerElement.style.color = '#ef4444';
+            } else if (timeLeft <= 300) {
+                timerElement.style.color = '#f59e0b';
+            }
+        }
+        
+        if (timeLeft <= 0) {
+            clearInterval(liveQuizTimers[elementId]);
+            delete liveQuizTimers[elementId];
+            
+            // Refresh live quizzes when timer expires
+            setTimeout(() => {
+                loadLiveQuizzes();
+                if (window.location.pathname.includes('/student/class/')) {
+                    checkClassLiveQuiz();
+                }
+            }, 1000);
+        }
+        
+        timeLeft--;
+    }
+    
+    updateTimer(); // Initial call
+    liveQuizTimers[elementId] = setInterval(updateTimer, 1000);
+}
+
+// Go to live quiz
+function goToLiveQuiz(quizId) {
+    // Check if quiz is still active
+    const currentQuiz = currentLiveQuizzes.find(q => q.quizId === quizId);
+    if (currentQuiz && currentQuiz.remainingTime <= 0) {
+        alert('⏰ This live quiz has expired and is no longer available.');
+        loadLiveQuizzes(); // Refresh the list
+        return;
+    }
+    
+    // Build quiz URL with class context if available
+    let quizUrl = `/quiz-info/${quizId}`;
+    if (classId) {
+        quizUrl += `?classId=${classId}&live=true`;
+    } else {
+        quizUrl += `?live=true`;
+    }
+    
+    window.location.href = quizUrl;
+}
+
+// Take live quiz from alert banner
+function takeLiveQuiz() {
+    const button = document.getElementById('takeLiveQuizBtn');
+    const quizId = button.getAttribute('data-quiz-id');
+    
+    if (quizId) {
+        goToLiveQuiz(quizId);
+    }
+}
+
+// Play notification sound
+function playNotificationSound() {
+    try {
+        // Create audio context for notification sound
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+        oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.3);
+    } catch (error) {
+        console.log('🔇 Audio notification not available');
+    }
+}
+
+// Initialize live quiz system when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize socket connection
+    initializeLiveQuizSocket();
+    
+    // Load initial live quizzes
+    loadLiveQuizzes();
+    
+    // Set up periodic refresh (every 30 seconds)
+    setInterval(() => {
+        loadLiveQuizzes();
+        if (window.location.pathname.includes('/student/class/')) {
+            checkClassLiveQuiz();
+        }
+    }, 30000);
+    
+    console.log('🔴 Live quiz system initialized for student');
+});
+
+// Clean up timers when leaving page
+window.addEventListener('beforeunload', function() {
+    Object.values(liveQuizTimers).forEach(timer => {
+        clearInterval(timer);
+    });
+});
     </script>
 </body>
 </html>

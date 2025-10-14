@@ -1,0 +1,11 @@
+gcloud run deploy quizai-service \
+  --source . \
+  --region asia-east1 \
+  --allow-unauthenticated \
+  --set-env-vars GEMINI_API_KEY="AIzaSyAfXH_Do69nIDf1ig67GChMG__fYUP_V7g" \
+  --set-env-vars SESSION_SECRET="xKj8mP9\$vL2@nQ5\!rT7\&wE3\*uI6%oA1^sD4+fG8-hB0~xC99" \
+  --set-env-vars MONGODB_URI="mongodb+srv://rishabhvyas:faCWMxbu0XPPVwSe@quizziedb.jdvsntc.mongodb.net/?retryWrites=true&w=majority&appName=QuizzieDB" \
+  --set-env-vars BREVO_API_KEY="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" \
+  --set-env-vars SENDER_EMAIL="noreply@quizzie.in" \
+  --set-env-vars BASE_URL="https://YOUR_CLOUD_RUN_SERVICE_URL" \
+  --set-env-vars NODE_ENV="production"
