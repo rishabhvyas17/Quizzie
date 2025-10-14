@@ -1074,12 +1074,14 @@ const quizResultCollection = mongoose.model("QuizResultCollection", quizResultSc
 const explanationCacheCollection = mongoose.model("ExplanationCache", explanationCacheSchema);
 
 // Class management collections
+// FIX: Changed quizAIConnection.model to mongoose.model
 const classCollection = mongoose.model("ClassCollection", classSchema);
 const classStudentCollection = mongoose.model("ClassStudentCollection", classStudentSchema);
 
 // Join system collections
-const classJoinCodeCollection = quizAIConnection.model("ClassJoinCodeCollection", classJoinCodeSchema);
-const classJoinRequestCollection = quizAIConnection.model("ClassJoinRequestCollection", classJoinRequestSchema);
+// FIX: Changed quizAIConnection.model to mongoose.model
+const classJoinCodeCollection = mongoose.model("ClassJoinCodeCollection", classJoinCodeSchema);
+const classJoinRequestCollection = mongoose.model("ClassJoinRequestCollection", classJoinRequestSchema);
 
 // ==================== EXPORT ALL COLLECTIONS ====================
 
