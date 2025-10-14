@@ -756,13 +756,7 @@
 }
 
 .live-quiz-card {
-    background: linear-gradient(135deg, #fef2f2, #ffffff);
-    border: 2px solid #ef4444;
-    border-radius: 16px;
-    padding: 1.5rem;
-    margin-bottom: 1rem;
-    position: relative;
-    overflow: hidden;
+    display: none !important; /* Hidden - live quiz cards removed */
 }
 
 .live-quiz-card::before {
@@ -1733,6 +1727,7 @@
         }
 
         // Global variables for live quiz system
+const studentId = '{{{studentId}}}'; // Student ID from server
 let liveQuizSocket = null;
 let liveQuizTimers = {};
 let currentLiveQuizzes = [];
@@ -1913,9 +1908,9 @@ function displayLiveQuizzes(liveQuizzes) {
 // Check for class-specific live quiz (for class view page)
 async function checkClassLiveQuiz() {
     if (!classId) return;
-    
+
     try {
-        const response = await fetch(`/api/class/${classId}/live-quiz`);
+        const response = await fetch(`/api/classes/${classId}/live-quiz`);
         const data = await response.json();
         
         if (data.success && data.hasLiveQuiz) {

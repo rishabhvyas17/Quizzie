@@ -1,23 +1,20 @@
-
+# Environment variables
 .env
 
-
+# Dependencies
 node_modules/
+node_modules
 
-
+# Uploads
 uploads/
 
-
-
+# OS files
 .DS_Store
 Thumbs.db
 
-
+# IDE files
 .vscode/
 .idea/
 
-
+# Logs
 *.log
-.env
-
-deploycommand.txt

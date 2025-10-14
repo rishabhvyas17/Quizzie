@@ -1,27 +1,35 @@
+// mongodb.js - FIXED VERSION with resolved validation and index issues
+
 const mongoose = require("mongoose");
 // Use the MONGODB_URI environment variable for a single connection
-// This URI will connect to your MongoDB Atlas cluster, and you can specify the default database name within the URI itself (e.g., /quizai_db)
-mongoose.connect(process.env.MONGODB_URI)
+mongoose.connect(process.env.MONGODB_URI, {
+    serverSelectionTimeoutMS: 30000, // 30 seconds for initial connection
+    socketTimeoutMS: 45000,
+    connectTimeoutMS: 30000
+})
 .then(() => {
     console.log("✅ Successfully connected to MongoDB Atlas");
 })
 .catch((error) => {
     console.error("❌ Failed to connect to MongoDB Atlas:", error);
-    // You might want to exit the process if the database connection fails on startup
-    process.exit(1); 
+    process.exit(1);
 })
 
 
-// ==================== EXISTING SCHEMAS ====================
+// ==================== FIXED SCHEMAS ====================
 
-// For Student
+// For Student - FIXED validation issues
 const studentSchema = new mongoose.Schema({
-    name: { // 🆕 MODIFIED: Make 'name' required
+    name: {
         type: String,
-        required: true, // Now required on the schema
+        required: false // Not required as it will be auto-generated from firstName/lastName
+    },
+    firstName: {
+        type: String,
+        required: true, // Required for proper name handling
         trim: true
     },
-    firstName: { // 🆕 MODIFIED: Make 'firstName' NOT required
+    lastName: {
         type: String,
         required: false, // <--- CHANGE THIS TO false
         trim: true
@@ -37,17 +45,17 @@ const studentSchema = new mongoose.Schema({
         sparse: true, // Allows null values but enforces uniqueness for non-null
         trim: true,
         lowercase: true,
-        match: [/.+@.+\..+/, 'Please fill a valid email address'] // Basic email regex validation
+        match: [/.+@.+\..+/, 'Please fill a valid email address']
     },
     isVerified: {
         type: Boolean,
         default: false
     },
-    pendingEmail: String, // 🆕 NEW FIELD: Stores email pending verification
+    pendingEmail: String,
     verificationToken: String,
     verificationTokenExpires: Date,
-    resetPasswordToken: String, // 🆕 NEW FIELD
-    resetPasswordTokenExpires: Date, // 🆕 NEW FIELD
+    resetPasswordToken: String,
+    resetPasswordTokenExpires: Date,
     enrollment: {
         type: String,
         required: true,
@@ -69,33 +77,26 @@ const studentSchema = new mongoose.Schema({
     }
 });
 
-// 🔄 UPDATED: studentSchema.pre('save') hook
+// Pre-save hook to manage name fields for students
 studentSchema.pre('save', function (next) {
-    // Ensure firstName and lastName are populated from 'name' if they are missing
-    // This is crucial for initial creation where only 'name' is provided from the form
-    if (this.isNew || (!this.firstName && this.name)) { // 'isNew' checks if it's a new document
-        const nameParts = this.name.trim().split(/\s+/);
-        this.firstName = nameParts[0] || '';
-        this.lastName = nameParts.slice(1).join(' ') || '';
-    }
-
-    // Always ensure 'name' is derived from 'firstName' and 'lastName'
-    // This handles cases where firstName/lastName might be updated directly
-    if (this.isModified('firstName') || this.isModified('lastName') || this.isNew) {
-        this.name = `${this.firstName || ''} ${this.lastName || ''}`.trim();
-    }
-    
+    // Always ensure name is set from firstName and lastName
+    this.name = `${this.firstName || ''} ${this.lastName || ''}`.trim();
     this.updatedAt = Date.now();
     next();
 });
-// For Teacher
+
+// For Teacher - FIXED validation issues
 const teacherSchema = new mongoose.Schema({
-    name: { // 🆕 MODIFIED: Make 'name' required
+    name: {
         type: String,
-        required: true, // Now required on the schema
+        required: false // Not required as it will be auto-generated from firstName/lastName
+    },
+    firstName: {
+        type: String,
+        required: true, // Required for proper name handling
         trim: true
     },
-    firstName: { // 🆕 MODIFIED: Make 'firstName' NOT required
+    lastName: {
         type: String,
         required: false, // <--- CHANGE THIS TO false
         trim: true
@@ -121,11 +122,11 @@ const teacherSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    pendingEmail: String, // 🆕 NEW FIELD: Stores email pending verification
+    pendingEmail: String,
     verificationToken: String,
     verificationTokenExpires: Date,
-    resetPasswordToken: String, // 🆕 NEW FIELD
-    resetPasswordTokenExpires: Date, // 🆕 NEW FIELD
+    resetPasswordToken: String,
+    resetPasswordTokenExpires: Date,
     createdAt: {
         type: Date,
         default: Date.now
@@ -136,27 +137,15 @@ const teacherSchema = new mongoose.Schema({
     }
 });
 
-// 🔄 UPDATED: teacherSchema.pre('save') hook
+// Pre-save hook to manage name fields for teachers
 teacherSchema.pre('save', function (next) {
-    // Ensure firstName and lastName are populated from 'name' if they are missing
-    // This is crucial for initial creation where only 'name' is provided from the form
-    if (this.isNew || (!this.firstName && this.name)) { // 'isNew' checks if it's a new document
-        const nameParts = this.name.trim().split(/\s+/);
-        this.firstName = nameParts[0] || '';
-        this.lastName = nameParts.slice(1).join(' ') || '';
-    }
-
-    // Always ensure 'name' is derived from 'firstName' and 'lastName'
-    // This handles cases where firstName/lastName might be updated directly
-    if (this.isModified('firstName') || this.isModified('lastName') || this.isNew) {
-        this.name = `${this.firstName || ''} ${this.lastName || ''}`.trim();
-    }
-    
+    // Always ensure name is set from firstName and lastName
+    this.name = `${this.firstName || ''} ${this.lastName || ''}`.trim();
     this.updatedAt = Date.now();
     next();
 });
 
-// ==================== EXISTING CLASS MANAGEMENT SCHEMAS ====================
+// ==================== CLASS MANAGEMENT SCHEMAS ====================
 
 // Classes Schema - Core class information
 const classSchema = new mongoose.Schema({
@@ -184,7 +173,6 @@ const classSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    // 📊 Quick stats (computed fields)
     studentCount: {
         type: Number,
         default: 0
@@ -201,7 +189,6 @@ const classSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
-    // 🗓️ Timestamps
     createdAt: {
         type: Date,
         default: Date.now
@@ -216,7 +203,7 @@ const classSchema = new mongoose.Schema({
     }
 });
 
-// ClassStudents Junction Table - Many-to-many relationship
+// ClassStudents Junction Table
 const classStudentSchema = new mongoose.Schema({
     classId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -246,9 +233,7 @@ const classStudentSchema = new mongoose.Schema({
     }
 });
 
-// ==================== 🆕 NEW: CLASS JOIN SYSTEM SCHEMAS ====================
-
-// 🆕 NEW: Class Join Codes Schema - Temporary codes with 10min expiry
+// Class Join Codes Schema
 const classJoinCodeSchema = new mongoose.Schema({
     classId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -283,7 +268,7 @@ const classJoinCodeSchema = new mongoose.Schema({
     expiresAt: {
         type: Date,
         required: true,
-        index: { expireAfterSeconds: 0 } // MongoDB TTL index for automatic cleanup
+        index: { expireAfterSeconds: 0 }
     },
     isActive: {
         type: Boolean,
@@ -299,11 +284,11 @@ const classJoinCodeSchema = new mongoose.Schema({
     },
     maxUsage: {
         type: Number,
-        default: 50 // Prevent spam, reasonable limit for class size
+        default: 50
     }
 });
 
-// 🆕 NEW: Class Join Requests Schema - Pending approval requests
+// Class Join Requests Schema
 const classJoinRequestSchema = new mongoose.Schema({
     classId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -328,7 +313,6 @@ const classJoinRequestSchema = new mongoose.Schema({
         required: true,
         uppercase: true
     },
-    // Class info for easier reference
     className: {
         type: String,
         required: true
@@ -366,7 +350,6 @@ const classJoinRequestSchema = new mongoose.Schema({
         type: String,
         trim: true
     },
-    // Metadata
     ipAddress: {
         type: String
     },
@@ -375,9 +358,8 @@ const classJoinRequestSchema = new mongoose.Schema({
     }
 });
 
-// ==================== ENHANCED EXISTING SCHEMAS ====================
+// ==================== EXISTING SCHEMAS - KEPT AS IS ====================
 
-// Lectures Schema - Now supports classes
 const lectureSchema = new mongoose.Schema({
     title: {
         type: String,
@@ -434,7 +416,6 @@ const lectureSchema = new mongoose.Schema({
         ref: 'TeacherCollection',
         required: true
     },
-    // Class association
     classId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'ClassCollection',
@@ -472,16 +453,15 @@ const quizSchema = new mongoose.Schema({
         type: String,
         required: false
     },
-    // 🚨 NEW: Exam Session Mode Fields
     examSessionMode: {
         type: Boolean,
         default: false
     },
     examSessionDuration: {
-        type: Number, // Duration in minutes for the exam session
+        type: Number,
         required: false,
         min: 5,
-        max: 180 // Max 3 hours
+        max: 180
     },
     examSessionStartTime: {
         type: Date,
@@ -536,8 +516,6 @@ const quizSchema = new mongoose.Schema({
             enum: ['A', 'B', 'C', 'D'],
             required: true
         },
-        // Enhanced explanation fields
-
         explanations: {
             A: { type: String, default: "" },
             B: { type: String, default: "" }, 
@@ -580,7 +558,6 @@ const quizSchema = new mongoose.Schema({
     }
 });
 
-// Quiz Results Schema with anti-cheating metadata and exam session tracking
 const quizResultSchema = new mongoose.Schema({
     quizId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -648,7 +625,6 @@ const quizResultSchema = new mongoose.Schema({
         min: 0,
         max: 100
     },
-    // 🚨 NEW: Exam Session Metadata
     examSessionData: {
         wasExamSession: {
             type: Boolean,
@@ -662,8 +638,8 @@ const quizResultSchema = new mongoose.Schema({
             type: Boolean,
             default: false
         },
-        sessionTimeRemaining: Number, // Seconds remaining when submitted
-        sessionParticipantCount: Number // How many students were in the session
+        sessionTimeRemaining: Number,
+        sessionParticipantCount: Number
     },
     antiCheatMetadata: {
         violationCount: {
@@ -741,7 +717,6 @@ const quizResultSchema = new mongoose.Schema({
     }]
 });
 
-// AI Explanations Cache Schema
 const explanationCacheSchema = new mongoose.Schema({
     questionText: {
         type: String,
@@ -784,80 +759,41 @@ const explanationCacheSchema = new mongoose.Schema({
     }
 });
 
-// ==================== INDEXES FOR PERFORMANCE ====================
+// ==================== FIXED INDEXES - No Duplicates ====================
 
-// Existing indexes
-studentSchema.index({ enrollment: 1 });
-teacherSchema.index({ email: 1 });
+// Basic indexes only (removed duplicates)
 lectureSchema.index({ professorId: 1, uploadDate: -1 });
-quizSchema.index({ lectureId: 1, generatedDate: -1 });
-quizResultSchema.index({ studentId: 1, submissionDate: -1 });
-
-
-// 🆕 NEW: Class management indexes
-classSchema.index({ teacherId: 1, createdAt: -1 }); // Find teacher's classes
-classSchema.index({ isActive: 1, teacherId: 1 }); // Active classes for teacher
-classStudentSchema.index({ classId: 1, isActive: 1 }); // Students in a class
-classStudentSchema.index({ studentId: 1, isActive: 1 }); // Classes for a student
-classStudentSchema.index({ classId: 1, studentId: 1 }, { unique: true }); // Prevent duplicates
-
-// Enhanced indexes for class-based queries
 lectureSchema.index({ classId: 1, uploadDate: -1 });
+
+quizSchema.index({ lectureId: 1, generatedDate: -1 });
 quizSchema.index({ classId: 1, generatedDate: -1 });
+quizSchema.index({ examSessionActive: 1 });
+quizSchema.index({ examSessionEndTime: 1 });
+quizSchema.index({ classId: 1, examSessionActive: 1 });
+
+quizResultSchema.index({ studentId: 1, submissionDate: -1 });
 quizResultSchema.index({ classId: 1, submissionDate: -1 });
+quizResultSchema.index({ 'examSessionData.wasExamSession': 1, submissionDate: -1 });
+quizResultSchema.index({ 'antiCheatMetadata.violationCount': 1, submissionDate: -1 });
 
-// 🚨 NEW: Exam Session Indexes
-quizSchema.index({ examSessionActive: 1 }); // Find active exam sessions
-quizSchema.index({ examSessionEndTime: 1 }); // Cleanup expired sessions
-quizSchema.index({ classId: 1, examSessionActive: 1 }); // Active sessions in class
-quizSchema.index({ 'examSessionParticipants.studentId': 1 }); // Student participation
+classSchema.index({ teacherId: 1, createdAt: -1 });
+classSchema.index({ isActive: 1, teacherId: 1 });
 
-// Anti-cheat and session tracking indexes
-quizResultSchema.index({ 
-    'examSessionData.wasExamSession': 1, 
-    submissionDate: -1 
-});
-quizResultSchema.index({ 
-    'examSessionData.sessionStartTime': 1,
-    'examSessionData.sessionEndTime': 1 
-});
+classStudentSchema.index({ classId: 1, isActive: 1 });
+classStudentSchema.index({ studentId: 1, isActive: 1 });
+classStudentSchema.index({ classId: 1, studentId: 1 }, { unique: true });
 
-// 🆕 NEW: Join System Indexes for Performance
-classJoinCodeSchema.index({ joinCode: 1 }, { unique: true }); // Fast code lookup
-classJoinCodeSchema.index({ classId: 1, isActive: 1 }); // Active codes for a class
-classJoinCodeSchema.index({ teacherId: 1, isActive: 1 }); // Teacher's active codes
-classJoinCodeSchema.index({ expiresAt: 1 }); // TTL cleanup and expiry checks
-classJoinCodeSchema.index({ generatedAt: -1 }); // Recent codes first
-
-classJoinRequestSchema.index({ classId: 1, status: 1 }); // Requests by class and status
-classJoinRequestSchema.index({ studentId: 1, status: 1 }); // Student's requests
-classJoinRequestSchema.index({ teacherId: 1, status: 1 }); // Teacher's pending requests
-classJoinRequestSchema.index({ requestedAt: -1 }); // Recent requests first
-classJoinRequestSchema.index({ joinCode: 1 }); // Track usage of codes
+classJoinRequestSchema.index({ classId: 1, status: 1 });
+classJoinRequestSchema.index({ studentId: 1, status: 1 });
+classJoinRequestSchema.index({ teacherId: 1, status: 1 });
+classJoinRequestSchema.index({ requestedAt: -1 });
 classJoinRequestSchema.index({ 
     studentId: 1, 
     classId: 1 
 }, { 
     unique: true, 
     partialFilterExpression: { status: { $in: ['pending', 'approved'] } } 
-}); // Prevent duplicate active requests
-
-// Anti-cheat indexes
-quizResultSchema.index({ 
-    'antiCheatMetadata.violationCount': 1, 
-    submissionDate: -1 
 });
-quizResultSchema.index({ 
-    'antiCheatMetadata.wasAutoSubmitted': 1, 
-    submissionDate: -1 
-});
-quizResultSchema.index({ 
-    'antiCheatMetadata.securityStatus': 1, 
-    classId: 1, 
-    submissionDate: -1 
-});
-
-// Create compound index for fast explanation lookups
 
 explanationCacheSchema.index({ 
     questionText: 1, 
@@ -865,7 +801,6 @@ explanationCacheSchema.index({
     wrongAnswer: 1,
     lectureId: 1 
 });
-
 
 // ==================== SCHEMA MIDDLEWARE ====================
 
@@ -962,7 +897,7 @@ quizResultSchema.post('save', async function() {
     }
 });
 
-// 🆕 NEW: Auto-set anti-cheat metadata
+// Auto-set anti-cheat metadata
 quizResultSchema.pre('save', function(next) {
     try {
         if (!this.antiCheatMetadata) {
@@ -993,7 +928,9 @@ quizResultSchema.pre('save', function(next) {
     }
 });
 
-// 🚨 NEW: Exam Session Methods
+// ==================== SCHEMA METHODS ====================
+
+// Quiz session methods
 quizSchema.methods.startExamSession = async function(durationMinutes, startedBy) {
     this.examSessionMode = true;
     this.examSessionDuration = durationMinutes;
@@ -1047,7 +984,7 @@ quizSchema.methods.getSessionTimeRemaining = function() {
     }
     const now = new Date();
     const remaining = Math.max(0, this.examSessionEndTime - now);
-    return Math.floor(remaining / 1000); // Return seconds
+    return Math.floor(remaining / 1000);
 };
 
 quizSchema.methods.isSessionExpired = function() {
@@ -1057,7 +994,7 @@ quizSchema.methods.isSessionExpired = function() {
     return new Date() > this.examSessionEndTime;
 };
 
-// 🆕 NEW: Join Code Methods
+// Join code methods
 classJoinCodeSchema.methods.isExpired = function() {
     return new Date() > this.expiresAt;
 };
@@ -1088,7 +1025,7 @@ classJoinCodeSchema.statics.generateUniqueCode = async function() {
     throw new Error('Unable to generate unique join code after maximum attempts');
 };
 
-// 🆕 NEW: Join Request Methods
+// Join request methods
 classJoinRequestSchema.methods.approve = async function(approvedBy) {
     this.status = 'approved';
     this.processedAt = new Date();
@@ -1111,7 +1048,7 @@ classJoinRequestSchema.statics.findPendingForTeacher = function(teacherId) {
     }).sort({ requestedAt: -1 });
 };
 
-// 🆕 NEW: Security summary virtual
+// Security summary virtual
 quizResultSchema.virtual('securitySummary').get(function() {
     const metadata = this.antiCheatMetadata || {};
     return {
@@ -1136,14 +1073,13 @@ const quizCollection = mongoose.model("QuizCollection", quizSchema);
 const quizResultCollection = mongoose.model("QuizResultCollection", quizResultSchema);
 const explanationCacheCollection = mongoose.model("ExplanationCache", explanationCacheSchema);
 
-
 // Class management collections
 const classCollection = mongoose.model("ClassCollection", classSchema);
 const classStudentCollection = mongoose.model("ClassStudentCollection", classStudentSchema);
 
-// 🆕 NEW: Join System Collections
-const classJoinCodeCollection = mongoose.model("ClassJoinCodeCollection", classJoinCodeSchema);
-const classJoinRequestCollection = mongoose.model("ClassJoinRequestCollection", classJoinRequestSchema);
+// Join system collections
+const classJoinCodeCollection = quizAIConnection.model("ClassJoinCodeCollection", classJoinCodeSchema);
+const classJoinRequestCollection = quizAIConnection.model("ClassJoinRequestCollection", classJoinRequestSchema);
 
 // ==================== EXPORT ALL COLLECTIONS ====================
 
@@ -1162,7 +1098,7 @@ module.exports = {
     classCollection,
     classStudentCollection,
     
-    // 🆕 NEW: Join system collections
+    // Join system collections
     classJoinCodeCollection,
     classJoinRequestCollection
 }
