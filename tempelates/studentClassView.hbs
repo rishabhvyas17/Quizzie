@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,8 +8,8 @@
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        /* Reset and Base Styles */
         * {
             margin: 0;
             padding: 0;
@@ -16,35 +17,38 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: #f8fafc;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #eef1f8;
             color: #334155;
             line-height: 1.6;
         }
 
-        /* Header Styles */
+        /* ===== HEADER ===== */
         .header {
             background: white;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            padding: 1rem 0;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.06);
+            padding: 0.75rem 0;
             position: sticky;
             top: 0;
             z-index: 100;
         }
 
         .header-content {
-            max-width: 1200px;
+            max-width: 1260px;
             margin: 0 auto;
-            padding: 0 1rem;
+            padding: 0 1.5rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
         .logo {
-            font-size: 1.75rem;
-            font-weight: bold;
-            color: #3b82f6;
+            font-size: 1.6rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #7c5cfc, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
         }
 
         .profile-section {
@@ -56,71 +60,75 @@
         .profile-avatar {
             width: 40px;
             height: 40px;
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            background: linear-gradient(135deg, #7c5cfc, #a78bfa);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-weight: bold;
-            font-size: 1rem;
+            font-weight: 700;
+            font-size: 0.9rem;
+            box-shadow: 0 0 0 3px #eef1f8, 0 0 0 5px #c4b5fd;
         }
 
         .profile-info h3 {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 600;
             color: #1e293b;
         }
 
         .profile-info p {
-            font-size: 0.75rem;
-            color: #64748b;
+            font-size: 0.7rem;
+            color: #94a3b8;
         }
 
         .logout-btn {
-            background-color: #ef4444;
-            color: white;
+            background: #fee2e2;
+            color: #ef4444;
             border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            font-weight: 500;
+            padding: 0.45rem 1rem;
+            border-radius: 10px;
+            font-weight: 600;
             cursor: pointer;
-            transition: background-color 0.2s ease, transform 0.1s ease;
-            font-size: 0.85rem;
+            transition: all 0.2s ease;
+            font-size: 0.8rem;
             text-decoration: none;
-            margin-left: 1rem;
+            margin-left: 0.5rem;
         }
 
         .logout-btn:hover {
-            background-color: #dc2626;
+            background: #ef4444;
+            color: white;
             transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
         }
 
-        /* Main Content */
+        /* ===== MAIN ===== */
         .main-content {
-            max-width: 1200px;
+            max-width: 1260px;
             margin: 0 auto;
-            padding: 2rem 1rem;
+            padding: 2rem 1.5rem;
         }
 
-        /* Breadcrumb Navigation */
+        /* ===== BREADCRUMB ===== */
         .breadcrumb {
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            margin-bottom: 2rem;
-            font-size: 0.9rem;
-            color: #64748b;
+            margin-bottom: 1.5rem;
+            font-size: 0.85rem;
+            color: #94a3b8;
         }
 
         .breadcrumb a {
-            color: #3b82f6;
+            color: #7c5cfc;
             text-decoration: none;
             transition: color 0.2s ease;
+            font-weight: 500;
         }
 
         .breadcrumb a:hover {
-            color: #2563eb;
+            color: #6d28d9;
         }
 
         .breadcrumb-separator {
@@ -128,154 +136,176 @@
         }
 
         .breadcrumb-current {
-            font-weight: 500;
+            font-weight: 600;
             color: #1e293b;
         }
 
-        /* Class Header */
+        /* ===== CLASS HEADER ===== */
         .class-header {
             background: white;
-            border-radius: 12px;
+            border-radius: 20px;
             padding: 2rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            margin-bottom: 2rem;
-            border-left: 4px solid #3b82f6;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+            border: 1px solid rgba(0, 0, 0, 0.04);
+            margin-bottom: 1.5rem;
         }
 
         .class-title {
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            margin-bottom: 1rem;
+            margin-bottom: 0.75rem;
         }
 
         .subject-emoji {
-            font-size: 2.5rem;
+            font-size: 2rem;
+            width: 52px;
+            height: 52px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #f0ecff;
+            border-radius: 14px;
         }
 
         .class-subject {
-            font-size: 2rem;
-            font-weight: bold;
+            font-size: 1.75rem;
+            font-weight: 800;
             color: #1e293b;
+            letter-spacing: -0.5px;
         }
 
         .class-name {
-            font-size: 1.25rem;
-            color: #3b82f6;
-            font-weight: 500;
-            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+            color: #7c5cfc;
+            font-weight: 600;
+            margin-bottom: 0.35rem;
         }
 
         .class-meta {
             display: flex;
-            gap: 2rem;
-            font-size: 0.9rem;
-            color: #64748b;
+            gap: 1.5rem;
+            font-size: 0.85rem;
+            color: #94a3b8;
         }
 
         .class-meta-item {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.4rem;
         }
 
-        /* Class Stats Section */
+        /* ===== STATS ===== */
         .class-stats-section {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
         }
 
         .stat-card {
             background: white;
-            border-radius: 12px;
+            border-radius: 20px;
             padding: 1.5rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+            border: 1px solid rgba(0, 0, 0, 0.04);
+            transition: transform 0.3s cubic-bezier(.4, 0, .2, 1), box-shadow 0.3s ease;
         }
 
         .stat-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(124, 92, 252, 0.1);
         }
 
-        .stat-card.blue { border-left: 4px solid #3b82f6; }
-        .stat-card.green { border-left: 4px solid #10b981; }
-        .stat-card.purple { border-left: 4px solid #8b5cf6; }
-        .stat-card.orange { border-left: 4px solid #f59e0b; }
+        .stat-card.blue,
+        .stat-card.green,
+        .stat-card.purple,
+        .stat-card.orange {
+            border-left: none;
+        }
 
         .stat-value {
             font-size: 2rem;
-            font-weight: bold;
-            margin-bottom: 0.5rem;
+            font-weight: 800;
+            margin-bottom: 0.2rem;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.4rem;
+            letter-spacing: -0.5px;
         }
 
-        .stat-card.blue .stat-value { color: #3b82f6; }
-        .stat-card.green .stat-value { color: #10b981; }
-        .stat-card.purple .stat-value { color: #8b5cf6; }
-        .stat-card.orange .stat-value { color: #f59e0b; }
+        .stat-card.blue .stat-value {
+            color: #7c5cfc;
+        }
+
+        .stat-card.green .stat-value {
+            color: #10b981;
+        }
+
+        .stat-card.purple .stat-value {
+            color: #a855f7;
+        }
+
+        .stat-card.orange .stat-value {
+            color: #f59e0b;
+        }
 
         .stat-label {
             color: #64748b;
-            font-size: 0.9rem;
+            font-size: 0.82rem;
             font-weight: 500;
         }
 
         .stat-comparison {
-            font-size: 0.8rem;
-            color: #64748b;
-            margin-top: 0.25rem;
+            font-size: 0.72rem;
+            color: #94a3b8;
+            margin-top: 0.2rem;
         }
 
-        /* Tab Navigation */
+        /* ===== TABS ===== */
         .tab-navigation {
             display: flex;
-            gap: 1rem;
-            margin-bottom: 2rem;
-            border-bottom: 1px solid #e2e8f0;
+            gap: 0.25rem;
+            margin-bottom: 0;
             background: white;
-            padding: 0 1rem;
-            border-radius: 12px 12px 0 0;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 6px;
+            border-radius: 16px 16px 0 0;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
         }
 
         .tab-button {
             background: none;
             border: none;
-            padding: 1rem 1.5rem;
-            color: #64748b;
-            font-weight: 500;
+            padding: 0.75rem 1.25rem;
+            color: #94a3b8;
+            font-weight: 600;
             cursor: pointer;
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s ease;
-            font-size: 0.95rem;
+            border-bottom: none;
+            border-radius: 12px;
+            transition: all 0.25s ease;
+            font-size: 0.88rem;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.4rem;
         }
 
         .tab-button.active {
-            color: #3b82f6;
-            border-bottom-color: #3b82f6;
-            background: rgba(59, 130, 246, 0.05);
+            color: white;
+            background: #1e1e2e;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
         }
 
         .tab-button:hover:not(.active) {
-            color: #3b82f6;
-            background: rgba(59, 130, 246, 0.03);
+            color: #7c5cfc;
+            background: #f7f5ff;
         }
 
-        /* Tab Content */
         .tab-content {
             display: none;
             background: white;
-            border-radius: 0 0 12px 12px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            min-height: 500px;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+            min-height: 400px;
         }
 
         .tab-content.active {
@@ -283,41 +313,41 @@
         }
 
         .tab-content-inner {
-            padding: 2rem;
+            padding: 1.75rem;
         }
 
-        /* Quiz Lists */
+        /* ===== QUIZZES ===== */
         .quiz-section {
-            margin-bottom: 2rem;
+            margin-bottom: 1.75rem;
         }
 
         .quiz-section-title {
-            font-size: 1.25rem;
-            font-weight: bold;
+            font-size: 1.1rem;
+            font-weight: 700;
             color: #1e293b;
-            margin-bottom: 1rem;
+            margin-bottom: 0.85rem;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.4rem;
         }
 
         .quiz-grid {
             display: grid;
-            gap: 1rem;
+            gap: 0.75rem;
         }
 
         .quiz-item {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 1.5rem;
-            transition: all 0.2s ease;
+            background: #fafbfe;
+            border: 1px solid #ede9fe;
+            border-radius: 16px;
+            padding: 1.25rem;
+            transition: all 0.25s ease;
         }
 
         .quiz-item:hover {
-            border-color: #3b82f6;
+            border-color: #c4b5fd;
             background: white;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 16px rgba(124, 92, 252, 0.08);
         }
 
         .quiz-item.completed {
@@ -325,14 +355,14 @@
         }
 
         .quiz-item.available {
-            border-left: 4px solid #3b82f6;
+            border-left: 4px solid #7c5cfc;
         }
 
         .quiz-header {
             display: flex;
             justify-content: between;
             align-items: flex-start;
-            margin-bottom: 1rem;
+            margin-bottom: 0.75rem;
         }
 
         .quiz-info {
@@ -340,165 +370,173 @@
         }
 
         .quiz-title {
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: 600;
             color: #1e293b;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.3rem;
         }
 
         .quiz-meta {
-            font-size: 0.85rem;
-            color: #64748b;
+            font-size: 0.8rem;
+            color: #94a3b8;
             display: flex;
-            gap: 1rem;
+            gap: 0.85rem;
             flex-wrap: wrap;
         }
 
         .quiz-status {
-            margin-left: 1rem;
+            margin-left: 0.75rem;
         }
 
         .status-badge {
-            padding: 0.25rem 0.75rem;
+            padding: 0.2rem 0.7rem;
             border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 500;
+            font-size: 0.72rem;
+            font-weight: 600;
         }
 
         .status-badge.completed {
-            background: #dcfce7;
-            color: #166534;
+            background: #ecfdf5;
+            color: #065f46;
         }
 
         .status-badge.available {
-            background: #dbeafe;
-            color: #1e40af;
+            background: #f0ecff;
+            color: #6d28d9;
         }
 
         .quiz-score {
             margin-top: 0.5rem;
-            padding: 0.75rem;
+            padding: 0.65rem;
             background: white;
-            border-radius: 6px;
-            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            border: 1px solid #ede9fe;
         }
 
         .score-display {
-            font-size: 1.1rem;
-            font-weight: bold;
+            font-size: 1rem;
+            font-weight: 700;
             color: #10b981;
-            margin-bottom: 0.25rem;
+            margin-bottom: 0.15rem;
         }
 
         .quiz-actions {
-            margin-top: 1rem;
+            margin-top: 0.85rem;
             display: flex;
-            gap: 0.75rem;
+            gap: 0.6rem;
         }
 
+        /* ===== BUTTONS ===== */
         .btn {
-            background: #3b82f6;
+            background: linear-gradient(135deg, #7c5cfc, #a78bfa);
             color: white;
             border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            font-weight: 500;
+            padding: 0.55rem 1.15rem;
+            border-radius: 12px;
+            font-weight: 600;
             cursor: pointer;
-            transition: background-color 0.2s ease, transform 0.1s ease;
-            font-size: 0.85rem;
+            transition: all 0.25s ease;
+            font-size: 0.82rem;
             text-decoration: none;
             display: inline-block;
             text-align: center;
+            box-shadow: 0 2px 8px rgba(124, 92, 252, 0.2);
         }
 
         .btn:hover {
-            background: #2563eb;
-            transform: translateY(-1px);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(124, 92, 252, 0.35);
         }
 
         .btn-secondary {
-            background: #6b7280;
+            background: #e2e8f0;
+            color: #475569;
+            box-shadow: none;
         }
 
         .btn-secondary:hover {
-            background: #4b5563;
+            background: #cbd5e1;
+            box-shadow: none;
         }
 
         .btn-sm {
-            padding: 0.4rem 0.8rem;
-            font-size: 0.8rem;
+            padding: 0.4rem 0.85rem;
+            font-size: 0.75rem;
+            border-radius: 10px;
         }
 
-        /* Charts Section */
+        /* ===== CHARTS ===== */
         .charts-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 2rem;
-            margin-bottom: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
         }
 
         .chart-card {
             background: white;
-            border-radius: 12px;
+            border-radius: 20px;
             padding: 1.5rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+            border: 1px solid rgba(0, 0, 0, 0.04);
         }
 
         .chart-title {
-            font-size: 1.1rem;
-            font-weight: bold;
+            font-size: 1rem;
+            font-weight: 700;
             color: #1e293b;
-            margin-bottom: 1rem;
+            margin-bottom: 0.85rem;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.4rem;
         }
 
         .chart-container {
             position: relative;
-            height: 300px;
+            height: 280px;
         }
 
-        /* Performance Stats Grid */
+        /* ===== PERFORMANCE STATS ===== */
         .performance-stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
         }
 
         .performance-stat {
-            background: #f8fafc;
+            background: #f7f5ff;
             padding: 1rem;
-            border-radius: 8px;
+            border-radius: 14px;
             text-align: center;
         }
 
         .performance-stat-value {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #3b82f6;
-            margin-bottom: 0.25rem;
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: #7c5cfc;
+            margin-bottom: 0.15rem;
         }
 
         .performance-stat-label {
-            font-size: 0.85rem;
-            color: #64748b;
+            font-size: 0.78rem;
+            color: #94a3b8;
         }
 
-        /* Rankings Section */
+        /* ===== RANKINGS ===== */
         .rankings-list {
             background: white;
-            border-radius: 12px;
+            border-radius: 20px;
             overflow: hidden;
+            border: 1px solid rgba(0, 0, 0, 0.04);
         }
 
         .ranking-item {
             display: flex;
             align-items: center;
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid #e2e8f0;
-            transition: background-color 0.2s ease;
+            padding: 0.85rem 1.25rem;
+            border-bottom: 1px solid #f0f2f7;
+            transition: background 0.2s ease;
         }
 
         .ranking-item:last-child {
@@ -506,30 +544,44 @@
         }
 
         .ranking-item:hover {
-            background: #f8fafc;
+            background: #fafbfe;
         }
 
         .ranking-item.current-student {
-            background: rgba(59, 130, 246, 0.05);
-            border-left: 4px solid #3b82f6;
+            background: #f7f5ff;
+            border-left: 4px solid #7c5cfc;
         }
 
         .rank-badge {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
-            margin-right: 1rem;
+            font-weight: 700;
+            margin-right: 0.85rem;
             color: white;
+            font-size: 0.85rem;
         }
 
-        .rank-1 { background: #ffd700; color: #1e293b; }
-        .rank-2 { background: #c0c0c0; color: #1e293b; }
-        .rank-3 { background: #cd7f32; color: white; }
-        .rank-other { background: #64748b; }
+        .rank-1 {
+            background: linear-gradient(135deg, #ffd700, #ffb800);
+            color: #1e293b;
+        }
+
+        .rank-2 {
+            background: linear-gradient(135deg, #c0c0c0, #a8a8a8);
+            color: #1e293b;
+        }
+
+        .rank-3 {
+            background: linear-gradient(135deg, #cd7f32, #b87333);
+        }
+
+        .rank-other {
+            background: #94a3b8;
+        }
 
         .ranking-info {
             flex: 1;
@@ -538,12 +590,13 @@
         .student-name {
             font-weight: 600;
             color: #1e293b;
-            margin-bottom: 0.25rem;
+            margin-bottom: 0.15rem;
+            font-size: 0.9rem;
         }
 
         .student-stats {
-            font-size: 0.85rem;
-            color: #64748b;
+            font-size: 0.78rem;
+            color: #94a3b8;
         }
 
         .ranking-score {
@@ -551,59 +604,64 @@
         }
 
         .total-points {
-            font-size: 1.1rem;
-            font-weight: bold;
+            font-size: 1rem;
+            font-weight: 700;
             color: #10b981;
         }
 
         .score-breakdown {
-            font-size: 0.8rem;
-            color: #64748b;
+            font-size: 0.72rem;
+            color: #94a3b8;
         }
 
-        /* Loading States */
+        /* ===== LOADING / EMPTY ===== */
         .loading {
             text-align: center;
             padding: 3rem;
-            color: #64748b;
+            color: #94a3b8;
         }
 
         .loading-spinner {
-            border: 4px solid #e2e8f0;
-            border-top: 4px solid #3b82f6;
+            border: 3px solid #ede9fe;
+            border-top: 3px solid #7c5cfc;
             border-radius: 50%;
             width: 40px;
             height: 40px;
-            animation: spin 1s linear infinite;
+            animation: spin 0.8s linear infinite;
             margin: 0 auto 1rem;
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
-        /* Empty States */
         .empty-state {
             text-align: center;
             padding: 3rem;
-            color: #64748b;
+            color: #94a3b8;
         }
 
         .empty-state h3 {
-            font-size: 1.25rem;
+            font-size: 1.15rem;
             margin-bottom: 0.5rem;
             color: #1e293b;
         }
 
-        /* Mobile Responsiveness */
+        /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
             .main-content {
-                padding: 1rem 0.5rem;
+                padding: 1rem 0.75rem;
             }
 
             .class-header {
                 padding: 1.5rem;
+                border-radius: 16px;
             }
 
             .class-title {
@@ -613,22 +671,22 @@
             }
 
             .class-subject {
-                font-size: 1.5rem;
+                font-size: 1.4rem;
             }
 
             .class-meta {
                 flex-direction: column;
-                gap: 0.5rem;
+                gap: 0.35rem;
             }
 
             .class-stats-section {
-                grid-template-columns: 1fr;
-                gap: 1rem;
+                grid-template-columns: repeat(2, 1fr);
             }
 
             .tab-navigation {
                 overflow-x: auto;
                 white-space: nowrap;
+                border-radius: 14px 14px 0 0;
             }
 
             .charts-grid {
@@ -637,7 +695,7 @@
 
             .quiz-header {
                 flex-direction: column;
-                gap: 0.5rem;
+                gap: 0.4rem;
             }
 
             .quiz-status {
@@ -655,331 +713,360 @@
 
         @media (max-width: 480px) {
             .chart-container {
-                height: 250px;
+                height: 230px;
             }
 
             .tab-content-inner {
                 padding: 1rem;
             }
+
+            .class-stats-section {
+                grid-template-columns: 1fr;
+            }
         }
 
-        /* Live Quiz Notifications Styles */
-.live-quiz-section {
-    margin-bottom: 3rem;
-}
+        /* ===== LIVE QUIZ ===== */
+        .live-quiz-section {
+            margin-bottom: 2rem;
+        }
 
-.live-quiz-alert {
-    background: linear-gradient(135deg, #fee2e2, #fef2f2);
-    border: 2px solid #ef4444;
-    border-radius: 16px;
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-    animation: liveQuizPulse 2s infinite;
-    box-shadow: 0 8px 32px rgba(239, 68, 68, 0.2);
-}
+        .live-quiz-alert {
+            background: linear-gradient(135deg, #f0ecff, #faf5ff);
+            border: 2px solid #7c5cfc;
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            animation: liveQuizPulse 2.5s infinite;
+            box-shadow: 0 8px 32px rgba(124, 92, 252, 0.15);
+        }
 
-.alert-content {
-    display: grid;
-    grid-template-columns: auto 1fr auto auto;
-    gap: 1.5rem;
-    align-items: center;
-}
+        .alert-content {
+            display: grid;
+            grid-template-columns: auto 1fr auto auto;
+            gap: 1.25rem;
+            align-items: center;
+        }
 
-.alert-icon {
-    font-size: 2rem;
-    animation: pulse 1.5s infinite;
-}
+        .alert-icon {
+            font-size: 1.75rem;
+            animation: pulse 1.5s infinite;
+        }
 
-.alert-text {
-    flex: 1;
-}
+        .alert-text {
+            flex: 1;
+        }
 
-.alert-title {
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: #dc2626;
-    margin-bottom: 0.25rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
+        .alert-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #6d28d9;
+            margin-bottom: 0.2rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
 
-.alert-message {
-    color: #7f1d1d;
-    font-size: 0.9rem;
-    margin: 0;
-}
+        .alert-message {
+            color: #5b21b6;
+            font-size: 0.85rem;
+            margin: 0;
+        }
 
-.alert-timer {
-    text-align: center;
-    padding: 0.75rem;
-    background: white;
-    border-radius: 12px;
-    border: 2px solid #ef4444;
-    min-width: 120px;
-}
+        .alert-timer {
+            text-align: center;
+            padding: 0.75rem 1rem;
+            background: white;
+            border-radius: 14px;
+            border: 2px solid #c4b5fd;
+            min-width: 110px;
+        }
 
-.timer-label {
-    font-size: 0.7rem;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 0.25rem;
-}
+        .timer-label {
+            font-size: 0.65rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.2rem;
+        }
 
-.timer-display {
-    font-size: 1.8rem;
-    font-weight: bold;
-    color: #ef4444;
-    font-family: 'Courier New', monospace;
-    line-height: 1;
-}
+        .timer-display {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #7c5cfc;
+            font-family: 'Courier New', monospace;
+            line-height: 1;
+        }
 
-.take-live-quiz-btn {
-    background: linear-gradient(135deg, #ef4444, #dc2626);
-    color: white;
-    border: none;
-    padding: 1rem 2rem;
-    border-radius: 12px;
-    font-weight: bold;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-}
+        .take-live-quiz-btn {
+            background: linear-gradient(135deg, #7c5cfc, #a78bfa);
+            color: white;
+            border: none;
+            padding: 0.85rem 1.75rem;
+            border-radius: 14px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 14px rgba(124, 92, 252, 0.3);
+        }
 
-.take-live-quiz-btn:hover {
-    background: linear-gradient(135deg, #dc2626, #b91c1c);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
-}
+        .take-live-quiz-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(124, 92, 252, 0.4);
+        }
 
-.live-quiz-card {
-    display: none !important; /* Hidden - live quiz cards removed */
-}
+        .live-quiz-card {
+            display: none !important;
+        }
 
-.live-quiz-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 6px;
-    height: 100%;
-    background: #ef4444;
-    animation: liveIndicator 2s infinite;
-}
+        .live-quiz-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background: #7c5cfc;
+            animation: liveIndicator 2s infinite;
+        }
 
-.live-quiz-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 1rem;
-}
+        .live-quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
 
-.live-quiz-info h3 {
-    color: #dc2626;
-    font-size: 1.3rem;
-    font-weight: bold;
-    margin-bottom: 0.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
+        .live-quiz-info h3 {
+            color: #6d28d9;
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 0.4rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
 
-.live-badge {
-    background: #ef4444;
-    color: white;
-    padding: 0.25rem 0.75rem;
-    border-radius: 20px;
-    font-size: 0.7rem;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    animation: pulse 2s infinite;
-}
+        .live-badge {
+            background: #7c5cfc;
+            color: white;
+            padding: 0.2rem 0.65rem;
+            border-radius: 20px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            animation: pulse 2s infinite;
+        }
 
-.live-quiz-meta {
-    color: #7f1d1d;
-    font-size: 0.9rem;
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
-}
+        .live-quiz-meta {
+            color: #5b21b6;
+            font-size: 0.85rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
 
-.live-quiz-timer {
-    text-align: center;
-    background: white;
-    border: 2px solid #ef4444;
-    border-radius: 12px;
-    padding: 1rem;
-    min-width: 120px;
-}
+        .live-quiz-timer {
+            text-align: center;
+            background: white;
+            border: 2px solid #c4b5fd;
+            border-radius: 14px;
+            padding: 0.85rem;
+            min-width: 110px;
+        }
 
-.timer-value {
-    font-size: 2rem;
-    font-weight: bold;
-    color: #ef4444;
-    font-family: 'Courier New', monospace;
-    display: block;
-    line-height: 1;
-}
+        .timer-value {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: #7c5cfc;
+            font-family: 'Courier New', monospace;
+            display: block;
+            line-height: 1;
+        }
 
-.timer-text {
-    font-size: 0.7rem;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-top: 0.25rem;
-}
+        .timer-text {
+            font-size: 0.65rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 0.2rem;
+        }
 
-.live-quiz-actions {
-    display: flex;
-    gap: 1rem;
-    margin-top: 1.5rem;
-}
+        .live-quiz-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.25rem;
+        }
 
-.btn-live {
-    background: linear-gradient(135deg, #ef4444, #dc2626);
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    flex: 1;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-}
+        .btn-live {
+            background: linear-gradient(135deg, #7c5cfc, #a78bfa);
+            color: white;
+            border: none;
+            padding: 0.7rem 1.5rem;
+            border-radius: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            flex: 1;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            box-shadow: 0 4px 14px rgba(124, 92, 252, 0.3);
+        }
 
-.btn-live:hover {
-    background: linear-gradient(135deg, #dc2626, #b91c1c);
-    transform: translateY(-1px);
-    color: white;
-}
+        .btn-live:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(124, 92, 252, 0.4);
+            color: white;
+        }
 
-/* Notification Toast Styles */
-.notification-toast {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: linear-gradient(135deg, #ef4444, #dc2626);
-    color: white;
-    padding: 1.5rem;
-    border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(239, 68, 68, 0.3);
-    z-index: 1000;
-    max-width: 400px;
-    animation: slideInRight 0.5s ease-out;
-}
+        /* ===== NOTIFICATION TOAST ===== */
+        .notification-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #7c5cfc, #6d28d9);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 20px;
+            box-shadow: 0 12px 40px rgba(124, 92, 252, 0.35);
+            z-index: 1000;
+            max-width: 380px;
+            animation: slideInRight 0.4s cubic-bezier(.4, 0, .2, 1);
+        }
 
-.toast-header {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 0.75rem;
-}
+        .toast-header {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 0.6rem;
+        }
 
-.toast-icon {
-    font-size: 1.5rem;
-    animation: pulse 1.5s infinite;
-}
+        .toast-icon {
+            font-size: 1.35rem;
+            animation: pulse 1.5s infinite;
+        }
 
-.toast-title {
-    font-weight: bold;
-    font-size: 1.1rem;
-}
+        .toast-title {
+            font-weight: 700;
+            font-size: 1rem;
+        }
 
-.toast-message {
-    font-size: 0.9rem;
-    line-height: 1.4;
-    margin-bottom: 1rem;
-}
+        .toast-message {
+            font-size: 0.85rem;
+            line-height: 1.4;
+            margin-bottom: 0.85rem;
+            opacity: 0.9;
+        }
 
-.toast-actions {
-    display: flex;
-    gap: 0.75rem;
-}
+        .toast-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
 
-.toast-btn {
-    padding: 0.5rem 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
-    cursor: pointer;
-    font-size: 0.8rem;
-    transition: all 0.2s ease;
-}
+        .toast-btn {
+            padding: 0.45rem 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.12);
+            color: white;
+            cursor: pointer;
+            font-size: 0.78rem;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
 
-.toast-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-}
+        .toast-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
 
-.toast-btn.primary {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.5);
-}
+        .toast-btn.primary {
+            background: rgba(255, 255, 255, 0.22);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
 
-/* Animations */
-@keyframes liveQuizPulse {
-    0%, 100% { box-shadow: 0 8px 32px rgba(239, 68, 68, 0.2); }
-    50% { box-shadow: 0 8px 32px rgba(239, 68, 68, 0.4); }
-}
+        /* ===== ANIMATIONS ===== */
+        @keyframes liveQuizPulse {
 
-@keyframes liveIndicator {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-}
+            0%,
+            100% {
+                box-shadow: 0 8px 32px rgba(124, 92, 252, 0.15);
+            }
 
-@keyframes slideInRight {
-    from {
-        opacity: 0;
-        transform: translateX(100%);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
+            50% {
+                box-shadow: 0 8px 32px rgba(124, 92, 252, 0.3);
+            }
+        }
 
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
-}
+        @keyframes liveIndicator {
 
-/* Mobile Responsiveness */
-@media (max-width: 768px) {
-    .alert-content {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-        text-align: center;
-    }
-    
-    .live-quiz-header {
-        flex-direction: column;
-        gap: 1rem;
-        text-align: center;
-    }
-    
-    .live-quiz-meta {
-        justify-content: center;
-    }
-    
-    .notification-toast {
-        left: 20px;
-        right: 20px;
-        max-width: none;
-    }
-    
-    .toast-actions {
-        flex-direction: column;
-    }
-}
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.6;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .alert-content {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+                text-align: center;
+            }
+
+            .live-quiz-header {
+                flex-direction: column;
+                gap: 0.75rem;
+                text-align: center;
+            }
+
+            .live-quiz-meta {
+                justify-content: center;
+            }
+
+            .notification-toast {
+                left: 16px;
+                right: 16px;
+                max-width: none;
+                border-radius: 16px;
+            }
+
+            .toast-actions {
+                flex-direction: column;
+            }
+        }
     </style>
 </head>
+
 <body>
     <!-- Header Section -->
     <header class="header">
@@ -1040,7 +1127,7 @@
                 <div class="stat-label">Quizzes Completed</div>
                 <div class="stat-comparison" id="completionRate">-% completion rate</div>
             </div>
-            
+
             <div class="stat-card green">
                 <div class="stat-value">
                     <span id="classAverage">-%</span>
@@ -1048,13 +1135,13 @@
                 <div class="stat-label">Your Class Average</div>
                 <div class="stat-comparison" id="avgComparison">vs class avg: -%</div>
             </div>
-            
+
             <div class="stat-card purple">
                 <div class="stat-value" id="classRank">#-</div>
                 <div class="stat-label">Your Class Rank</div>
                 <div class="stat-comparison" id="rankComparison">out of - students</div>
             </div>
-            
+
             <div class="stat-card orange">
                 <div class="stat-value" id="availableQuizzes">-</div>
                 <div class="stat-label">Available Quizzes</div>
@@ -1145,7 +1232,7 @@
         let charts = {};
 
         // Initialize page
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             console.log('🏫 Class view initializing for:', classId);
             initializePage();
             loadClassOverview();
@@ -1163,7 +1250,7 @@
         // Get subject emoji
         function getSubjectEmoji(subject) {
             const subjectLower = subject.toLowerCase();
-            
+
             if (subjectLower.includes('math')) return '📐';
             if (subjectLower.includes('physic')) return '⚛️';
             if (subjectLower.includes('chemistry') || subjectLower.includes('chem')) return '🧪';
@@ -1177,7 +1264,7 @@
             if (subjectLower.includes('economics')) return '💰';
             if (subjectLower.includes('psychology')) return '🧠';
             if (subjectLower.includes('philosophy')) return '💭';
-            
+
             return '📖';
         }
 
@@ -1186,7 +1273,7 @@
             try {
                 const response = await fetch(`/api/student/class/${classId}/overview`);
                 const data = await response.json();
-                
+
                 if (data.success) {
                     classData = data.data;
                     updateClassHeader();
@@ -1206,7 +1293,7 @@
         function updateClassHeader() {
             const classInfo = classData.classInfo;
             const emoji = getSubjectEmoji(classInfo.subject);
-            
+
             document.getElementById('subjectEmoji').textContent = emoji;
             document.getElementById('classSubject').textContent = classInfo.subject;
             document.getElementById('className').textContent = classInfo.name;
@@ -1214,7 +1301,7 @@
             document.getElementById('totalStudents').textContent = classInfo.totalStudents;
             document.getElementById('enrolledDate').textContent = new Date(classData.studentProgress.enrolledDate).toLocaleDateString();
             document.getElementById('breadcrumbCurrent').textContent = classInfo.subject;
-            
+
             // Update page title
             document.title = `${classInfo.subject} - ${classInfo.name} | Quizzie`;
         }
@@ -1222,7 +1309,7 @@
         // Update class stats
         function updateClassStats() {
             const progress = classData.studentProgress;
-            
+
             document.getElementById('completedQuizzes').textContent = progress.completedQuizzes;
             document.getElementById('totalQuizzes').textContent = progress.totalQuizzes;
             document.getElementById('completionRate').textContent = progress.completionRate + '% completion rate';
@@ -1235,7 +1322,7 @@
             try {
                 const response = await fetch(`/api/student/class/${classId}/all-quizzes`);
                 const data = await response.json();
-                
+
                 if (data.success) {
                     displayAllQuizzes(data.data);
                     console.log('✅ All quizzes loaded');
@@ -1252,7 +1339,7 @@
         // Display all quizzes
         function displayAllQuizzes(quizData) {
             const container = document.getElementById('quizzesContainer');
-            
+
             if (quizData.allQuizzes.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
@@ -1296,11 +1383,11 @@
             container.innerHTML = html;
         }
 
-        
+
         // Create quiz card HTML (UPDATED - Redirect to Quiz Info Page)
         function createQuizCard(quiz) {
             const isCompleted = quiz.status === 'completed';
-            
+
             return `
                 <div class="quiz-item ${quiz.status}">
                     <div class="quiz-header">
@@ -1329,10 +1416,10 @@
                     ` : ''}
                     
                     <div class="quiz-actions">
-                        ${isCompleted ? 
-                            `<button class="btn btn-sm" onclick="viewDetailedResults('${quiz.studentResult.resultId}', '${quiz.lectureTitle}')">📊 View Results</button>` :
-                            `<button class="btn btn-sm" onclick="takeQuiz('${quiz._id}', '${quiz.lectureTitle}')">🎯 Take Quiz</button>`
-                        }
+                        ${isCompleted ?
+                    `<button class="btn btn-sm" onclick="viewDetailedResults('${quiz.studentResult.resultId}', '${quiz.lectureTitle}')">📊 View Results</button>` :
+                    `<button class="btn btn-sm" onclick="takeQuiz('${quiz._id}', '${quiz.lectureTitle}')">🎯 Take Quiz</button>`
+                }
                     </div>
                 </div>
             `;
@@ -1392,7 +1479,7 @@
         async function loadPerformanceData() {
             try {
                 console.log('📊 Loading performance data for class:', classId);
-                
+
                 const [performanceResponse, analyticsResponse] = await Promise.all([
                     fetch(`/api/student/class/${classId}/performance`),
                     fetch(`/api/student/class/${classId}/analytics`)
@@ -1404,7 +1491,7 @@
                 if (!performanceResponse.ok) {
                     throw new Error(`Performance API error: ${performanceResponse.status}`);
                 }
-                
+
                 if (!analyticsResponse.ok) {
                     throw new Error(`Analytics API error: ${analyticsResponse.status}`);
                 }
@@ -1418,7 +1505,7 @@
                 if (performanceData.success && analyticsData.success) {
                     updatePerformanceStats(performanceData.data);
                     createCharts(analyticsData.data);
-                    
+
                     // Load ranking info with error handling
                     try {
                         await loadRankingForStats();
@@ -1426,7 +1513,7 @@
                         console.warn('⚠️ Could not load ranking info:', rankError);
                         // Continue without ranking info
                     }
-                    
+
                     console.log('✅ Performance data loaded successfully');
                 } else {
                     console.error('❌ API returned error:', {
@@ -1445,7 +1532,7 @@
         // Create charts
         function createCharts(data) {
             const chartData = data.chartData;
-            
+
             // Score Trends Chart (matching screenshot)
             const scoreTrendCtx = document.getElementById('scoreTrendChart');
             if (scoreTrendCtx && !charts.scoreTrendChart) {
@@ -1460,7 +1547,7 @@
                                 beginAtZero: true,
                                 max: 100,
                                 ticks: {
-                                    callback: function(value) {
+                                    callback: function (value) {
                                         return value + '%';
                                     }
                                 }
@@ -1506,7 +1593,7 @@
                             y: {
                                 beginAtZero: true,
                                 ticks: {
-                                    callback: function(value) {
+                                    callback: function (value) {
                                         return value + ' min';
                                     }
                                 }
@@ -1527,7 +1614,7 @@
             try {
                 const response = await fetch(`/api/student/class/${classId}/rankings`);
                 const data = await response.json();
-                
+
                 if (data.success) {
                     displayRankings(data.data);
                     console.log('✅ Rankings loaded');
@@ -1557,7 +1644,7 @@
                     showPerformanceError('Invalid performance data received');
                     return;
                 }
-                
+
                 container.innerHTML = `
                     <div class="performance-stat">
                         <div class="performance-stat-value">${metrics.totalQuizzes || 0}</div>
@@ -1576,7 +1663,7 @@
                         <div class="performance-stat-label">Avg Time</div>
                     </div>
                 `;
-                
+
                 console.log('✅ Performance stats updated');
             } catch (error) {
                 console.error('❌ Error updating performance stats:', error);
@@ -1589,34 +1676,34 @@
         async function loadRankingForStats() {
             try {
                 const response = await fetch(`/api/student/class/${classId}/rankings`);
-                
+
                 if (!response.ok) {
                     throw new Error(`Rankings API error: ${response.status}`);
                 }
-                
+
                 const data = await response.json();
-                
+
                 if (data.success && data.data.currentStudent) {
                     const rank = data.data.currentStudent.rank;
                     const total = data.data.totalStudents;
-                    
+
                     // Update rank in stats cards if elements exist
                     const classRankElement = document.getElementById('classRank');
                     const rankComparisonElement = document.getElementById('rankComparison');
                     const avgComparisonElement = document.getElementById('avgComparison');
-                    
+
                     if (classRankElement) {
                         classRankElement.textContent = `#${rank}`;
                     }
-                    
+
                     if (rankComparisonElement) {
                         rankComparisonElement.textContent = `out of ${total} students`;
                     }
-                    
+
                     if (avgComparisonElement && data.data.currentStudent.averageScore) {
                         avgComparisonElement.textContent = `vs class avg: ${data.data.currentStudent.averageScore}%`;
                     }
-                    
+
                     console.log('✅ Ranking info updated:', { rank, total });
                 } else {
                     console.warn('⚠️ No ranking data available or student not ranked yet');
@@ -1629,7 +1716,7 @@
         // Display rankings
         function displayRankings(data) {
             const container = document.getElementById('rankingsContainer');
-            
+
             if (data.rankings.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
@@ -1643,7 +1730,7 @@
             const rankingsHTML = data.rankings.map(student => {
                 const isCurrentStudent = student.studentId === '{{userId}}';
                 const rankClass = student.rank <= 3 ? `rank-${student.rank}` : 'rank-other';
-                
+
                 return `
                     <div class="ranking-item ${isCurrentStudent ? 'current-student' : ''}">
                         <div class="rank-badge ${rankClass}">${student.rank}</div>
@@ -1678,7 +1765,7 @@
         // Quiz actions - UPDATED to redirect to quiz info page
         function takeQuiz(quizId, quizTitle) {
             console.log(`🎯 Redirecting to quiz info: ${quizId} - ${quizTitle}`);
-            
+
             // Redirect to quiz info page instead of directly to quiz
             let quizInfoUrl = `/quiz-info/${quizId}`;
             if (classId) {
@@ -1727,52 +1814,52 @@
         }
 
         // Global variables for live quiz system
-const studentId = '{{{studentId}}}'; // Student ID from server
-let liveQuizSocket = null;
-let liveQuizTimers = {};
-let currentLiveQuizzes = [];
+        const studentId = '{{{studentId}}}'; // Student ID from server
+        let liveQuizSocket = null;
+        let liveQuizTimers = {};
+        let currentLiveQuizzes = [];
 
-// Initialize live quiz socket connection
-function initializeLiveQuizSocket() {
-    if (typeof io !== 'undefined') {
-        liveQuizSocket = io();
-        
-        // Join student rooms for notifications
-        liveQuizSocket.emit('join-student-rooms', studentId);
-        
-        // Listen for live quiz notifications
-        liveQuizSocket.on('live-quiz-notification', function(notification) {
-            console.log('🔴 Live quiz notification received:', notification);
-            handleLiveQuizNotification(notification);
-        });
-        
-        console.log('⚡ Live quiz socket initialized for student');
-    } else {
-        console.warn('⚠️ Socket.io not available');
-    }
-}
+        // Initialize live quiz socket connection
+        function initializeLiveQuizSocket() {
+            if (typeof io !== 'undefined') {
+                liveQuizSocket = io();
 
-// Handle live quiz notifications
-function handleLiveQuizNotification(notification) {
-    switch (notification.type) {
-        case 'live_quiz_started':
-            showLiveQuizNotification(notification);
-            loadLiveQuizzes(); // Refresh live quizzes
-            break;
-            
-        case 'live_quiz_ended':
-        case 'live_quiz_expired':
-            showLiveQuizEndedNotification(notification);
-            loadLiveQuizzes(); // Refresh live quizzes
-            break;
-    }
-}
+                // Join student rooms for notifications
+                liveQuizSocket.emit('join-student-rooms', studentId);
 
-// Show live quiz started notification
-function showLiveQuizNotification(notification) {
-    const toast = document.createElement('div');
-    toast.className = 'notification-toast';
-    toast.innerHTML = `
+                // Listen for live quiz notifications
+                liveQuizSocket.on('live-quiz-notification', function (notification) {
+                    console.log('🔴 Live quiz notification received:', notification);
+                    handleLiveQuizNotification(notification);
+                });
+
+                console.log('⚡ Live quiz socket initialized for student');
+            } else {
+                console.warn('⚠️ Socket.io not available');
+            }
+        }
+
+        // Handle live quiz notifications
+        function handleLiveQuizNotification(notification) {
+            switch (notification.type) {
+                case 'live_quiz_started':
+                    showLiveQuizNotification(notification);
+                    loadLiveQuizzes(); // Refresh live quizzes
+                    break;
+
+                case 'live_quiz_ended':
+                case 'live_quiz_expired':
+                    showLiveQuizEndedNotification(notification);
+                    loadLiveQuizzes(); // Refresh live quizzes
+                    break;
+            }
+        }
+
+        // Show live quiz started notification
+        function showLiveQuizNotification(notification) {
+            const toast = document.createElement('div');
+            toast.className = 'notification-toast';
+            toast.innerHTML = `
         <div class="toast-header">
             <span class="toast-icon">🔴</span>
             <span class="toast-title">LIVE QUIZ STARTED!</span>
@@ -1791,26 +1878,26 @@ function showLiveQuizNotification(notification) {
             </button>
         </div>
     `;
-    
-    document.body.appendChild(toast);
-    
-    // Auto-remove after 10 seconds
-    setTimeout(() => {
-        if (toast.parentNode) {
-            toast.remove();
-        }
-    }, 10000);
-    
-    // Play notification sound if supported
-    playNotificationSound();
-}
 
-// Show live quiz ended notification
-function showLiveQuizEndedNotification(notification) {
-    const toast = document.createElement('div');
-    toast.className = 'notification-toast';
-    toast.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
-    toast.innerHTML = `
+            document.body.appendChild(toast);
+
+            // Auto-remove after 10 seconds
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.remove();
+                }
+            }, 10000);
+
+            // Play notification sound if supported
+            playNotificationSound();
+        }
+
+        // Show live quiz ended notification
+        function showLiveQuizEndedNotification(notification) {
+            const toast = document.createElement('div');
+            toast.className = 'notification-toast';
+            toast.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
+            toast.innerHTML = `
         <div class="toast-header">
             <span class="toast-icon">⏰</span>
             <span class="toast-title">LIVE QUIZ ENDED</span>
@@ -1825,52 +1912,52 @@ function showLiveQuizEndedNotification(notification) {
             </button>
         </div>
     `;
-    
-    document.body.appendChild(toast);
-    
-    // Auto-remove after 5 seconds
-    setTimeout(() => {
-        if (toast.parentNode) {
-            toast.remove();
-        }
-    }, 5000);
-}
 
-// Load live quizzes for student dashboard
-async function loadLiveQuizzes() {
-    try {
-        const response = await fetch('/api/student/live-quizzes');
-        const data = await response.json();
-        
-        if (data.success) {
-            currentLiveQuizzes = data.liveQuizzes;
-            displayLiveQuizzes(data.liveQuizzes);
-            
-            // Check for class-specific live quiz if on class page
-            if (window.location.pathname.includes('/student/class/')) {
-                checkClassLiveQuiz();
+            document.body.appendChild(toast);
+
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.remove();
+                }
+            }, 5000);
+        }
+
+        // Load live quizzes for student dashboard
+        async function loadLiveQuizzes() {
+            try {
+                const response = await fetch('/api/student/live-quizzes');
+                const data = await response.json();
+
+                if (data.success) {
+                    currentLiveQuizzes = data.liveQuizzes;
+                    displayLiveQuizzes(data.liveQuizzes);
+
+                    // Check for class-specific live quiz if on class page
+                    if (window.location.pathname.includes('/student/class/')) {
+                        checkClassLiveQuiz();
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Error loading live quizzes:', error);
             }
         }
-    } catch (error) {
-        console.error('❌ Error loading live quizzes:', error);
-    }
-}
 
-// Display live quizzes on dashboard
-function displayLiveQuizzes(liveQuizzes) {
-    const section = document.getElementById('liveQuizSection');
-    const container = document.getElementById('liveQuizzesContainer');
-    
-    if (!section || !container) return;
-    
-    if (liveQuizzes.length === 0) {
-        section.style.display = 'none';
-        return;
-    }
-    
-    section.style.display = 'block';
-    
-    const liveQuizzesHTML = liveQuizzes.map(quiz => `
+        // Display live quizzes on dashboard
+        function displayLiveQuizzes(liveQuizzes) {
+            const section = document.getElementById('liveQuizSection');
+            const container = document.getElementById('liveQuizzesContainer');
+
+            if (!section || !container) return;
+
+            if (liveQuizzes.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = 'block';
+
+            const liveQuizzesHTML = liveQuizzes.map(quiz => `
         <div class="live-quiz-card" data-quiz-id="${quiz.quizId}">
             <div class="live-quiz-header">
                 <div class="live-quiz-info">
@@ -1896,190 +1983,191 @@ function displayLiveQuizzes(liveQuizzes) {
             </div>
         </div>
     `).join('');
-    
-    container.innerHTML = liveQuizzesHTML;
-    
-    // Start timers for each live quiz
-    liveQuizzes.forEach(quiz => {
-        startLiveQuizTimer(quiz.quizId, quiz.remainingTime);
-    });
-}
 
-// Check for class-specific live quiz (for class view page)
-async function checkClassLiveQuiz() {
-    if (!classId) return;
+            container.innerHTML = liveQuizzesHTML;
 
-    try {
-        const response = await fetch(`/api/classes/${classId}/live-quiz`);
-        const data = await response.json();
-        
-        if (data.success && data.hasLiveQuiz) {
-            showLiveQuizAlert(data.liveQuiz);
-        } else {
-            hideLiveQuizAlert();
+            // Start timers for each live quiz
+            liveQuizzes.forEach(quiz => {
+                startLiveQuizTimer(quiz.quizId, quiz.remainingTime);
+            });
         }
-    } catch (error) {
-        console.error('❌ Error checking class live quiz:', error);
-    }
-}
 
-// Show live quiz alert banner (for class view)
-function showLiveQuizAlert(liveQuiz) {
-    const alert = document.getElementById('liveQuizAlert');
-    const message = document.getElementById('liveQuizMessage');
-    const button = document.getElementById('takeLiveQuizBtn');
-    
-    if (!alert) return;
-    
-    message.textContent = `${liveQuiz.quizTitle} is currently active. ${liveQuiz.totalQuestions} questions, ${liveQuiz.durationMinutes} minutes total.`;
-    button.setAttribute('data-quiz-id', liveQuiz.quizId);
-    
-    alert.style.display = 'block';
-    
-    // Start countdown timer
-    startLiveQuizTimer('liveQuizCountdown', liveQuiz.remainingTime);
-}
+        // Check for class-specific live quiz (for class view page)
+        async function checkClassLiveQuiz() {
+            if (!classId) return;
 
-// Hide live quiz alert banner
-function hideLiveQuizAlert() {
-    const alert = document.getElementById('liveQuizAlert');
-    if (alert) {
-        alert.style.display = 'none';
-    }
-    
-    // Clear timer
-    if (liveQuizTimers['liveQuizCountdown']) {
-        clearInterval(liveQuizTimers['liveQuizCountdown']);
-        delete liveQuizTimers['liveQuizCountdown'];
-    }
-}
+            try {
+                const response = await fetch(`/api/classes/${classId}/live-quiz`);
+                const data = await response.json();
 
-// Start live quiz timer
-function startLiveQuizTimer(elementId, remainingSeconds) {
-    // Clear existing timer
-    if (liveQuizTimers[elementId]) {
-        clearInterval(liveQuizTimers[elementId]);
-    }
-    
-    let timeLeft = remainingSeconds;
-    
-    function updateTimer() {
-        const minutes = Math.floor(timeLeft / 60);
-        const seconds = timeLeft % 60;
-        const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        
-        const timerElement = document.getElementById(elementId) || document.getElementById(`timer-${elementId}`);
-        if (timerElement) {
-            timerElement.textContent = timeString;
-            
-            // Change color based on remaining time
-            if (timeLeft <= 60) {
-                timerElement.style.color = '#ef4444';
-            } else if (timeLeft <= 300) {
-                timerElement.style.color = '#f59e0b';
+                if (data.success && data.hasLiveQuiz) {
+                    showLiveQuizAlert(data.liveQuiz);
+                } else {
+                    hideLiveQuizAlert();
+                }
+            } catch (error) {
+                console.error('❌ Error checking class live quiz:', error);
             }
         }
-        
-        if (timeLeft <= 0) {
-            clearInterval(liveQuizTimers[elementId]);
-            delete liveQuizTimers[elementId];
-            
-            // Refresh live quizzes when timer expires
-            setTimeout(() => {
+
+        // Show live quiz alert banner (for class view)
+        function showLiveQuizAlert(liveQuiz) {
+            const alert = document.getElementById('liveQuizAlert');
+            const message = document.getElementById('liveQuizMessage');
+            const button = document.getElementById('takeLiveQuizBtn');
+
+            if (!alert) return;
+
+            message.textContent = `${liveQuiz.quizTitle} is currently active. ${liveQuiz.totalQuestions} questions, ${liveQuiz.durationMinutes} minutes total.`;
+            button.setAttribute('data-quiz-id', liveQuiz.quizId);
+
+            alert.style.display = 'block';
+
+            // Start countdown timer
+            startLiveQuizTimer('liveQuizCountdown', liveQuiz.remainingTime);
+        }
+
+        // Hide live quiz alert banner
+        function hideLiveQuizAlert() {
+            const alert = document.getElementById('liveQuizAlert');
+            if (alert) {
+                alert.style.display = 'none';
+            }
+
+            // Clear timer
+            if (liveQuizTimers['liveQuizCountdown']) {
+                clearInterval(liveQuizTimers['liveQuizCountdown']);
+                delete liveQuizTimers['liveQuizCountdown'];
+            }
+        }
+
+        // Start live quiz timer
+        function startLiveQuizTimer(elementId, remainingSeconds) {
+            // Clear existing timer
+            if (liveQuizTimers[elementId]) {
+                clearInterval(liveQuizTimers[elementId]);
+            }
+
+            let timeLeft = remainingSeconds;
+
+            function updateTimer() {
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+                const timerElement = document.getElementById(elementId) || document.getElementById(`timer-${elementId}`);
+                if (timerElement) {
+                    timerElement.textContent = timeString;
+
+                    // Change color based on remaining time
+                    if (timeLeft <= 60) {
+                        timerElement.style.color = '#ef4444';
+                    } else if (timeLeft <= 300) {
+                        timerElement.style.color = '#f59e0b';
+                    }
+                }
+
+                if (timeLeft <= 0) {
+                    clearInterval(liveQuizTimers[elementId]);
+                    delete liveQuizTimers[elementId];
+
+                    // Refresh live quizzes when timer expires
+                    setTimeout(() => {
+                        loadLiveQuizzes();
+                        if (window.location.pathname.includes('/student/class/')) {
+                            checkClassLiveQuiz();
+                        }
+                    }, 1000);
+                }
+
+                timeLeft--;
+            }
+
+            updateTimer(); // Initial call
+            liveQuizTimers[elementId] = setInterval(updateTimer, 1000);
+        }
+
+        // Go to live quiz
+        function goToLiveQuiz(quizId) {
+            // Check if quiz is still active
+            const currentQuiz = currentLiveQuizzes.find(q => q.quizId === quizId);
+            if (currentQuiz && currentQuiz.remainingTime <= 0) {
+                alert('⏰ This live quiz has expired and is no longer available.');
+                loadLiveQuizzes(); // Refresh the list
+                return;
+            }
+
+            // Build quiz URL with class context if available
+            let quizUrl = `/quiz-info/${quizId}`;
+            if (classId) {
+                quizUrl += `?classId=${classId}&live=true`;
+            } else {
+                quizUrl += `?live=true`;
+            }
+
+            window.location.href = quizUrl;
+        }
+
+        // Take live quiz from alert banner
+        function takeLiveQuiz() {
+            const button = document.getElementById('takeLiveQuizBtn');
+            const quizId = button.getAttribute('data-quiz-id');
+
+            if (quizId) {
+                goToLiveQuiz(quizId);
+            }
+        }
+
+        // Play notification sound
+        function playNotificationSound() {
+            try {
+                // Create audio context for notification sound
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            } catch (error) {
+                console.log('🔇 Audio notification not available');
+            }
+        }
+
+        // Initialize live quiz system when page loads
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initialize socket connection
+            initializeLiveQuizSocket();
+
+            // Load initial live quizzes
+            loadLiveQuizzes();
+
+            // Set up periodic refresh (every 30 seconds)
+            setInterval(() => {
                 loadLiveQuizzes();
                 if (window.location.pathname.includes('/student/class/')) {
                     checkClassLiveQuiz();
                 }
-            }, 1000);
-        }
-        
-        timeLeft--;
-    }
-    
-    updateTimer(); // Initial call
-    liveQuizTimers[elementId] = setInterval(updateTimer, 1000);
-}
+            }, 30000);
 
-// Go to live quiz
-function goToLiveQuiz(quizId) {
-    // Check if quiz is still active
-    const currentQuiz = currentLiveQuizzes.find(q => q.quizId === quizId);
-    if (currentQuiz && currentQuiz.remainingTime <= 0) {
-        alert('⏰ This live quiz has expired and is no longer available.');
-        loadLiveQuizzes(); // Refresh the list
-        return;
-    }
-    
-    // Build quiz URL with class context if available
-    let quizUrl = `/quiz-info/${quizId}`;
-    if (classId) {
-        quizUrl += `?classId=${classId}&live=true`;
-    } else {
-        quizUrl += `?live=true`;
-    }
-    
-    window.location.href = quizUrl;
-}
+            console.log('🔴 Live quiz system initialized for student');
+        });
 
-// Take live quiz from alert banner
-function takeLiveQuiz() {
-    const button = document.getElementById('takeLiveQuizBtn');
-    const quizId = button.getAttribute('data-quiz-id');
-    
-    if (quizId) {
-        goToLiveQuiz(quizId);
-    }
-}
-
-// Play notification sound
-function playNotificationSound() {
-    try {
-        // Create audio context for notification sound
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-        oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
-        
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-        
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.3);
-    } catch (error) {
-        console.log('🔇 Audio notification not available');
-    }
-}
-
-// Initialize live quiz system when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize socket connection
-    initializeLiveQuizSocket();
-    
-    // Load initial live quizzes
-    loadLiveQuizzes();
-    
-    // Set up periodic refresh (every 30 seconds)
-    setInterval(() => {
-        loadLiveQuizzes();
-        if (window.location.pathname.includes('/student/class/')) {
-            checkClassLiveQuiz();
-        }
-    }, 30000);
-    
-    console.log('🔴 Live quiz system initialized for student');
-});
-
-// Clean up timers when leaving page
-window.addEventListener('beforeunload', function() {
-    Object.values(liveQuizTimers).forEach(timer => {
-        clearInterval(timer);
-    });
-});
+        // Clean up timers when leaving page
+        window.addEventListener('beforeunload', function () {
+            Object.values(liveQuizTimers).forEach(timer => {
+                clearInterval(timer);
+            });
+        });
     </script>
 </body>
+
 </html>
