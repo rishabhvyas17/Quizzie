@@ -15,11 +15,9 @@ WORKDIR /app
 COPY package*.json ./
 
 # STEP 4: Install Node.js dependencies.
-# We use --production to only install dependencies needed for runtime,
-# not development dependencies, further reducing image size.
-RUN npm install 
-
-RUN npm install connect-mongo@5.1.0 
+# We use npm ci for reproducible builds from package-lock.json,
+# and --omit=dev to skip devDependencies.
+RUN npm ci --omit=dev
 
 
 # STEP 5: Copy the rest of your application code into the container.
