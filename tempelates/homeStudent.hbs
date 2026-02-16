@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,8 +8,9 @@
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        /* Reset and Base Styles */
+        /* ===== BENTO STYLE RESET & BASE ===== */
         * {
             margin: 0;
             padding: 0;
@@ -16,53 +18,68 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: #f8fafc;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #eef1f8;
             color: #334155;
             line-height: 1.6;
         }
 
-        /* Header Styles */
+        /* ===== HEADER ===== */
         .header {
             background: white;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            padding: 1rem 0;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.06);
+            padding: 0.75rem 0;
             position: sticky;
             top: 0;
             z-index: 100;
         }
 
         .header-content {
-            max-width: 1200px;
+            max-width: 1260px;
             margin: 0 auto;
-            padding: 0 1rem;
+            padding: 0 1.5rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
         .logo {
-            font-size: 1.75rem;
-            font-weight: bold;
-            color: #3b82f6;
+            font-size: 1.6rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #7c5cfc, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
         }
 
         .nav-links {
             display: flex;
-            gap: 2rem;
+            gap: 0.25rem;
             list-style: none;
+            background: #f0f2f7;
+            border-radius: 12px;
+            padding: 4px;
         }
 
         .nav-links a {
             text-decoration: none;
             color: #64748b;
             font-weight: 500;
-            transition: color 0.3s ease;
+            font-size: 0.9rem;
+            padding: 0.5rem 1.25rem;
+            border-radius: 10px;
+            transition: all 0.25s ease;
             cursor: pointer;
         }
 
-        .nav-links a:hover, .nav-links a.active {
-            color: #3b82f6;
+        .nav-links a:hover {
+            color: #7c5cfc;
+        }
+
+        .nav-links a.active {
+            color: white;
+            background: #1e1e2e;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
         }
 
         .profile-section {
@@ -74,192 +91,211 @@
         .profile-avatar {
             width: 40px;
             height: 40px;
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            background: linear-gradient(135deg, #7c5cfc, #a78bfa);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-weight: bold;
-            font-size: 1rem;
+            font-weight: 700;
+            font-size: 0.9rem;
+            box-shadow: 0 0 0 3px #eef1f8, 0 0 0 5px #c4b5fd;
         }
 
         .profile-info h3 {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 600;
             color: #1e293b;
         }
 
         .profile-info p {
-            font-size: 0.75rem;
-            color: #64748b;
+            font-size: 0.7rem;
+            color: #94a3b8;
         }
 
         .logout-btn {
-            background-color: #ef4444;
-            color: white;
+            background: #fee2e2;
+            color: #ef4444;
             border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            font-weight: 500;
+            padding: 0.45rem 1rem;
+            border-radius: 10px;
+            font-weight: 600;
             cursor: pointer;
-            transition: background-color 0.2s ease, transform 0.1s ease;
-            font-size: 0.85rem;
+            transition: all 0.2s ease;
+            font-size: 0.8rem;
             text-decoration: none;
-            margin-left: 1rem;
+            margin-left: 0.5rem;
         }
 
         .logout-btn:hover {
-            background-color: #dc2626;
+            background: #ef4444;
+            color: white;
             transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
         }
 
-        /* Main Content */
+        /* ===== MAIN CONTENT ===== */
         .main-content {
-            max-width: 1200px;
+            max-width: 1260px;
             margin: 0 auto;
-            padding: 2rem 1rem;
+            padding: 2rem 1.5rem;
             min-height: calc(100vh - 200px);
         }
 
         .dashboard-title {
-            font-size: 2rem;
-            font-weight: bold;
+            font-size: 1.75rem;
+            font-weight: 700;
             color: #1e293b;
-            margin-bottom: 2rem;
+            margin-bottom: 1.75rem;
+            letter-spacing: -0.3px;
         }
 
-        /* Stats Section */
+        /* ===== BENTO STATS GRID ===== */
         .stats-section {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 3rem;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
         }
 
         .stat-card {
             background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border-radius: 20px;
+            padding: 1.75rem;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+            transition: transform 0.3s cubic-bezier(.4, 0, .2, 1), box-shadow 0.3s ease;
             position: relative;
+            border: 1px solid rgba(0, 0, 0, 0.04);
+            border-left: none;
         }
 
         .stat-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(124, 92, 252, 0.1);
         }
 
-        .stat-card.blue { border-left: 4px solid #3b82f6; }
-        .stat-card.green { border-left: 4px solid #10b981; }
-        .stat-card.purple { border-left: 4px solid #8b5cf6; }
-        .stat-card.orange { border-left: 4px solid #f59e0b; }
+        .stat-card.blue,
+        .stat-card.green,
+        .stat-card.purple,
+        .stat-card.orange {
+            border-left: none;
+        }
 
         .stat-value {
-            font-size: 2.25rem;
-            font-weight: bold;
-            margin-bottom: 0.5rem;
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.25rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            letter-spacing: -1px;
         }
 
-        .stat-card.blue .stat-value { color: #3b82f6; }
-        .stat-card.green .stat-value { color: #10b981; }
-        .stat-card.purple .stat-value { color: #8b5cf6; }
-        .stat-card.orange .stat-value { color: #f59e0b; }
+        .stat-card.blue .stat-value {
+            color: #7c5cfc;
+        }
+
+        .stat-card.green .stat-value {
+            color: #10b981;
+        }
+
+        .stat-card.purple .stat-value {
+            color: #a855f7;
+        }
+
+        .stat-card.orange .stat-value {
+            color: #f59e0b;
+        }
 
         .stat-label {
             color: #64748b;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 500;
         }
 
         .trend-indicator {
-            font-size: 1.5rem;
-            margin-left: 0.5rem;
+            font-size: 1.25rem;
+            margin-left: 0.25rem;
         }
 
         .comparison {
-            font-size: 0.8rem;
-            color: #64748b;
-            margin-top: 0.25rem;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-top: 0.35rem;
         }
 
-        /* Section Styles */
+        /* ===== SECTIONS ===== */
         .section {
-            margin-bottom: 3rem;
+            margin-bottom: 2.5rem;
         }
 
         .section-title {
-            font-size: 1.5rem;
-            font-weight: bold;
+            font-size: 1.25rem;
+            font-weight: 700;
             color: #1e293b;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
         }
 
-        /* 🆕 NEW: Section Header with Right-Aligned Button */
         .section-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
         }
 
         .section-header h2 {
-            font-size: 1.5rem;
-            font-weight: bold;
+            font-size: 1.25rem;
+            font-weight: 700;
             color: #1e293b;
             margin: 0;
         }
 
-        /* 🆕 NEW: Join Class Button */
+        /* ===== JOIN CLASS BUTTON ===== */
         .join-class-btn {
-            background: #10b981;
+            background: linear-gradient(135deg, #7c5cfc, #a78bfa);
             color: white;
             border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            font-weight: 500;
+            padding: 0.65rem 1.5rem;
+            border-radius: 14px;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 0.9rem;
+            transition: all 0.25s ease;
+            font-size: 0.85rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 14px rgba(124, 92, 252, 0.3);
         }
 
         .join-class-btn:hover {
-            background: #059669;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(124, 92, 252, 0.4);
         }
 
         .join-class-btn .icon {
-            font-size: 1rem;
+            font-size: 0.9rem;
         }
 
-        /* Class Cards */
+        /* ===== BENTO CLASS CARDS ===== */
         .classes-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 1rem;
         }
 
         .class-card {
             background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            border-left: 4px solid #3b82f6;
+            border-radius: 20px;
+            padding: 1.75rem;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+            border: 1px solid rgba(0, 0, 0, 0.04);
+            transition: all 0.3s cubic-bezier(.4, 0, .2, 1);
+            border-left: none;
         }
 
         .class-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            transform: translateY(-4px);
+            box-shadow: 0 16px 40px rgba(124, 92, 252, 0.1);
         }
 
         .class-header {
@@ -267,29 +303,36 @@
         }
 
         .class-subject {
-            font-size: 1.4rem;
-            font-weight: bold;
+            font-size: 1.25rem;
+            font-weight: 700;
             color: #1e293b;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.35rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
 
         .subject-emoji {
-            font-size: 1.6rem;
+            font-size: 1.5rem;
+            width: 42px;
+            height: 42px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #f0ecff;
+            border-radius: 12px;
         }
 
         .class-name {
-            font-size: 1rem;
-            color: #3b82f6;
-            font-weight: 500;
-            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+            color: #7c5cfc;
+            font-weight: 600;
+            margin-bottom: 0.15rem;
         }
 
         .class-teacher {
-            font-size: 0.85rem;
-            color: #64748b;
+            font-size: 0.8rem;
+            color: #94a3b8;
         }
 
         .class-stats {
@@ -298,8 +341,8 @@
             gap: 0.75rem;
             margin: 1rem 0;
             padding: 1rem;
-            background: #f8fafc;
-            border-radius: 8px;
+            background: #f7f5ff;
+            border-radius: 14px;
         }
 
         .class-stat {
@@ -307,31 +350,31 @@
         }
 
         .class-stat-value {
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: #3b82f6;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #7c5cfc;
             display: block;
         }
 
         .class-stat-label {
-            font-size: 0.75rem;
-            color: #64748b;
-            margin-top: 0.25rem;
+            font-size: 0.7rem;
+            color: #94a3b8;
+            margin-top: 0.2rem;
         }
 
         .class-recent-quiz {
             margin-top: 1rem;
             padding: 1rem;
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
+            background: #fafbfe;
+            border: 1px solid #ede9fe;
+            border-radius: 14px;
         }
 
         .recent-quiz-title {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 600;
             color: #1e293b;
-            margin-bottom: 0.75rem;
+            margin-bottom: 0.6rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
@@ -341,7 +384,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 0.75rem;
+            margin-bottom: 0.5rem;
         }
 
         .quiz-info {
@@ -349,19 +392,19 @@
         }
 
         .quiz-title {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 500;
             color: #1e293b;
-            margin-bottom: 0.25rem;
+            margin-bottom: 0.15rem;
         }
 
         .quiz-meta {
-            font-size: 0.75rem;
-            color: #64748b;
+            font-size: 0.72rem;
+            color: #94a3b8;
         }
 
         .quiz-action {
-            margin-left: 1rem;
+            margin-left: 0.75rem;
         }
 
         .class-actions {
@@ -370,60 +413,67 @@
             margin-top: 1rem;
         }
 
+        /* ===== BUTTONS ===== */
         .btn {
-            background: #3b82f6;
+            background: linear-gradient(135deg, #7c5cfc, #a78bfa);
             color: white;
             border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            font-weight: 500;
+            padding: 0.6rem 1.25rem;
+            border-radius: 12px;
+            font-weight: 600;
             cursor: pointer;
-            transition: background-color 0.2s ease, transform 0.1s ease;
+            transition: all 0.25s ease;
             font-size: 0.8rem;
             text-decoration: none;
             display: inline-block;
             text-align: center;
             flex: 1;
+            box-shadow: 0 2px 8px rgba(124, 92, 252, 0.2);
         }
 
         .btn:hover {
-            background: #2563eb;
-            transform: translateY(-1px);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(124, 92, 252, 0.35);
         }
 
         .btn-secondary {
-            background: #6b7280;
+            background: #e2e8f0;
+            color: #475569;
+            box-shadow: none;
         }
 
         .btn-secondary:hover {
-            background: #4b5563;
+            background: #cbd5e1;
+            box-shadow: none;
         }
 
         .btn-success {
-            background: #10b981;
+            background: linear-gradient(135deg, #10b981, #34d399);
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
         }
 
         .btn-success:hover {
-            background: #059669;
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
         }
 
         .btn-sm {
-            padding: 0.4rem 0.8rem;
-            font-size: 0.75rem;
+            padding: 0.4rem 0.85rem;
+            font-size: 0.72rem;
             flex: none;
+            border-radius: 10px;
         }
 
         .no-recent-quiz {
             text-align: center;
             padding: 1rem;
-            color: #64748b;
-            font-size: 0.85rem;
-            background: #f8fafc;
-            border-radius: 6px;
+            color: #94a3b8;
+            font-size: 0.8rem;
+            background: #f7f5ff;
+            border-radius: 12px;
             margin-top: 0.5rem;
         }
 
-        /* 🆕 NEW: Modal Styles */
+        /* ===== MODAL ===== */
         .modal {
             display: none;
             position: fixed;
@@ -432,8 +482,8 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(4px);
+            background-color: rgba(15, 15, 25, 0.5);
+            backdrop-filter: blur(8px);
         }
 
         .modal.show {
@@ -444,22 +494,23 @@
 
         .modal-content {
             background: white;
-            border-radius: 12px;
+            border-radius: 24px;
             padding: 2rem;
             width: 90%;
             max-width: 500px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            animation: modalSlideIn 0.3s ease;
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.2);
+            animation: modalSlideIn 0.35s cubic-bezier(.4, 0, .2, 1);
         }
 
         @keyframes modalSlideIn {
             from {
                 opacity: 0;
-                transform: translateY(-30px);
+                transform: translateY(20px) scale(0.97);
             }
+
             to {
                 opacity: 1;
-                transform: translateY(0);
+                transform: translateY(0) scale(1);
             }
         }
 
@@ -471,27 +522,31 @@
         }
 
         .modal-title {
-            font-size: 1.25rem;
-            font-weight: bold;
+            font-size: 1.2rem;
+            font-weight: 700;
             color: #1e293b;
         }
 
         .close-btn {
-            background: none;
+            background: #f0f2f7;
             border: none;
-            font-size: 1.5rem;
+            font-size: 1.25rem;
             cursor: pointer;
             color: #64748b;
-            padding: 0.25rem;
-            border-radius: 4px;
-            transition: background-color 0.2s ease;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
         }
 
         .close-btn:hover {
-            background: #f1f5f9;
+            background: #e2e8f0;
         }
 
-        /* 🆕 NEW: Form Styles for Modal */
+        /* ===== FORMS ===== */
         .form-group {
             margin-bottom: 1rem;
         }
@@ -501,29 +556,33 @@
             margin-bottom: 0.5rem;
             font-weight: 600;
             color: #374151;
+            font-size: 0.9rem;
         }
 
         .form-input {
             width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: border-color 0.2s ease;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 14px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: all 0.2s ease;
+            background: #fafbfe;
         }
 
         .form-input:focus {
             outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            border-color: #7c5cfc;
+            box-shadow: 0 0 0 4px rgba(124, 92, 252, 0.1);
+            background: white;
         }
 
-        /* 🆕 NEW: Class Preview Styles */
+        /* ===== CLASS PREVIEW ===== */
         .class-preview {
-            background: #f8fafc;
+            background: #f7f5ff;
             padding: 1.5rem;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            border: 1px solid #ede9fe;
         }
 
         .class-preview h3 {
@@ -542,86 +601,92 @@
             text-align: center;
             background: white;
             padding: 0.75rem;
-            border-radius: 6px;
+            border-radius: 12px;
         }
 
         .preview-stat-value {
-            font-weight: bold;
-            color: #3b82f6;
+            font-weight: 700;
+            color: #7c5cfc;
         }
 
         .preview-stat-label {
-            font-size: 0.75rem;
-            color: #64748b;
+            font-size: 0.72rem;
+            color: #94a3b8;
         }
 
-        /* Loading States */
+        /* ===== LOADING ===== */
         .loading {
             text-align: center;
-            padding: 2rem;
-            color: #64748b;
+            padding: 3rem;
+            color: #94a3b8;
         }
 
         .loading-spinner {
-            border: 4px solid #e2e8f0;
-            border-top: 4px solid #3b82f6;
+            border: 3px solid #ede9fe;
+            border-top: 3px solid #7c5cfc;
             border-radius: 50%;
             width: 40px;
             height: 40px;
-            animation: spin 1s linear infinite;
+            animation: spin 0.8s linear infinite;
             margin: 0 auto 1rem;
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
-        /* Empty States */
+        /* ===== EMPTY STATE ===== */
         .empty-state {
             text-align: center;
             padding: 3rem;
-            color: #64748b;
+            color: #94a3b8;
         }
 
         .empty-state h3 {
-            font-size: 1.25rem;
+            font-size: 1.15rem;
             margin-bottom: 0.5rem;
             color: #1e293b;
         }
 
-        /* Alerts */
+        /* ===== ALERTS ===== */
         .alert {
-            padding: 1rem;
-            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            border-radius: 14px;
             margin-bottom: 1rem;
+            font-size: 0.9rem;
         }
 
         .alert-info {
-            background-color: #dbeafe;
+            background: #eff6ff;
             color: #1e40af;
-            border: 1px solid #93c5fd;
+            border: 1px solid #bfdbfe;
         }
 
         .alert-warning {
-            background-color: #fef3c7;
+            background: #fffbeb;
             color: #92400e;
-            border: 1px solid #fcd34d;
+            border: 1px solid #fde68a;
         }
 
         .alert-success {
-            background-color: #dcfce7;
-            color: #16a34a;
-            border: 1px solid #86efac;
+            background: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
         }
 
         .alert-error {
-            background-color: #fee2e2;
-            color: #dc2626;
-            border: 1px solid #fca5a5;
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
         }
 
-        /* Footer Styles */
+        /* ===== FOOTER ===== */
         .footer {
             background: white;
             border-top: 1px solid #e2e8f0;
@@ -629,14 +694,14 @@
         }
 
         .footer-content {
-            max-width: 1200px;
+            max-width: 1260px;
             margin: 0 auto;
-            padding: 0 1rem;
+            padding: 0 1.5rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 0.875rem;
-            color: #64748b;
+            font-size: 0.825rem;
+            color: #94a3b8;
         }
 
         .footer-copyright {
@@ -644,30 +709,33 @@
         }
 
         .footer-link {
-            color: #3b82f6;
+            color: #7c5cfc;
             text-decoration: none;
             font-weight: 500;
             transition: color 0.2s ease;
         }
 
         .footer-link:hover {
-            color: #2563eb;
+            color: #6d28d9;
         }
 
-        /* Mobile Responsiveness */
+        /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
             .header-content {
                 flex-direction: column;
-                gap: 1rem;
+                gap: 0.75rem;
+            }
+
+            .nav-links {
+                gap: 0;
             }
 
             .dashboard-title {
-                font-size: 1.5rem;
+                font-size: 1.35rem;
             }
 
             .stats-section {
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                gap: 1rem;
+                grid-template-columns: repeat(2, 1fr);
             }
 
             .classes-grid {
@@ -681,7 +749,7 @@
             .recent-quiz-item {
                 flex-direction: column;
                 align-items: flex-start;
-                gap: 0.5rem;
+                gap: 0.4rem;
             }
 
             .quiz-action {
@@ -698,10 +766,9 @@
                 flex: none;
             }
 
-            /* 🆕 NEW: Mobile responsiveness for section header */
             .section-header {
                 flex-direction: column;
-                gap: 1rem;
+                gap: 0.75rem;
                 align-items: stretch;
             }
 
@@ -712,13 +779,14 @@
 
             .footer-content {
                 flex-direction: column;
-                gap: 0.75rem;
+                gap: 0.5rem;
                 text-align: center;
             }
 
             .modal-content {
                 width: 95%;
                 padding: 1.5rem;
+                border-radius: 20px;
             }
 
             .class-preview-stats {
@@ -728,332 +796,363 @@
 
         @media (max-width: 480px) {
             .main-content {
-                padding: 1rem 0.5rem;
+                padding: 1rem 0.75rem;
+            }
+
+            .stats-section {
+                grid-template-columns: 1fr;
             }
 
             .stat-card,
             .class-card {
-                padding: 1rem;
+                padding: 1.25rem;
+                border-radius: 16px;
             }
         }
 
-        /* Live Quiz Notifications Styles */
-.live-quiz-section {
-    margin-bottom: 3rem;
-}
+        /* ===== LIVE QUIZ ===== */
+        .live-quiz-section {
+            margin-bottom: 2rem;
+        }
 
-.live-quiz-alert {
-    background: linear-gradient(135deg, #fee2e2, #fef2f2);
-    border: 2px solid #ef4444;
-    border-radius: 16px;
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-    animation: liveQuizPulse 2s infinite;
-    box-shadow: 0 8px 32px rgba(239, 68, 68, 0.2);
-}
+        .live-quiz-alert {
+            background: linear-gradient(135deg, #f0ecff, #faf5ff);
+            border: 2px solid #7c5cfc;
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            animation: liveQuizPulse 2.5s infinite;
+            box-shadow: 0 8px 32px rgba(124, 92, 252, 0.15);
+        }
 
-.alert-content {
-    display: grid;
-    grid-template-columns: auto 1fr auto auto;
-    gap: 1.5rem;
-    align-items: center;
-}
+        .alert-content {
+            display: grid;
+            grid-template-columns: auto 1fr auto auto;
+            gap: 1.25rem;
+            align-items: center;
+        }
 
-.alert-icon {
-    font-size: 2rem;
-    animation: pulse 1.5s infinite;
-}
+        .alert-icon {
+            font-size: 1.75rem;
+            animation: pulse 1.5s infinite;
+        }
 
-.alert-text {
-    flex: 1;
-}
+        .alert-text {
+            flex: 1;
+        }
 
-.alert-title {
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: #dc2626;
-    margin-bottom: 0.25rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
+        .alert-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #6d28d9;
+            margin-bottom: 0.2rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
 
-.alert-message {
-    color: #7f1d1d;
-    font-size: 0.9rem;
-    margin: 0;
-}
+        .alert-message {
+            color: #5b21b6;
+            font-size: 0.85rem;
+            margin: 0;
+        }
 
-.alert-timer {
-    text-align: center;
-    padding: 0.75rem;
-    background: white;
-    border-radius: 12px;
-    border: 2px solid #ef4444;
-    min-width: 120px;
-}
+        .alert-timer {
+            text-align: center;
+            padding: 0.75rem 1rem;
+            background: white;
+            border-radius: 14px;
+            border: 2px solid #c4b5fd;
+            min-width: 110px;
+        }
 
-.timer-label {
-    font-size: 0.7rem;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 0.25rem;
-}
+        .timer-label {
+            font-size: 0.65rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.2rem;
+        }
 
-.timer-display {
-    font-size: 1.8rem;
-    font-weight: bold;
-    color: #ef4444;
-    font-family: 'Courier New', monospace;
-    line-height: 1;
-}
+        .timer-display {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #7c5cfc;
+            font-family: 'Courier New', monospace;
+            line-height: 1;
+        }
 
-.take-live-quiz-btn {
-    background: linear-gradient(135deg, #ef4444, #dc2626);
-    color: white;
-    border: none;
-    padding: 1rem 2rem;
-    border-radius: 12px;
-    font-weight: bold;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-}
+        .take-live-quiz-btn {
+            background: linear-gradient(135deg, #7c5cfc, #a78bfa);
+            color: white;
+            border: none;
+            padding: 0.85rem 1.75rem;
+            border-radius: 14px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 14px rgba(124, 92, 252, 0.3);
+        }
 
-.take-live-quiz-btn:hover {
-    background: linear-gradient(135deg, #dc2626, #b91c1c);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
-}
+        .take-live-quiz-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(124, 92, 252, 0.4);
+        }
 
-.live-quiz-card {
-    display: none !important; /* Hidden - live quiz cards removed */
-}
+        .live-quiz-card {
+            display: none !important;
+        }
 
-.live-quiz-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 6px;
-    height: 100%;
-    background: #ef4444;
-    animation: liveIndicator 2s infinite;
-}
+        .live-quiz-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background: #7c5cfc;
+            animation: liveIndicator 2s infinite;
+        }
 
-.live-quiz-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 1rem;
-}
+        .live-quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
 
-.live-quiz-info h3 {
-    color: #dc2626;
-    font-size: 1.3rem;
-    font-weight: bold;
-    margin-bottom: 0.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
+        .live-quiz-info h3 {
+            color: #6d28d9;
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 0.4rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
 
-.live-badge {
-    background: #ef4444;
-    color: white;
-    padding: 0.25rem 0.75rem;
-    border-radius: 20px;
-    font-size: 0.7rem;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    animation: pulse 2s infinite;
-}
+        .live-badge {
+            background: #7c5cfc;
+            color: white;
+            padding: 0.2rem 0.65rem;
+            border-radius: 20px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            animation: pulse 2s infinite;
+        }
 
-.live-quiz-meta {
-    color: #7f1d1d;
-    font-size: 0.9rem;
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
-}
+        .live-quiz-meta {
+            color: #5b21b6;
+            font-size: 0.85rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
 
-.live-quiz-timer {
-    text-align: center;
-    background: white;
-    border: 2px solid #ef4444;
-    border-radius: 12px;
-    padding: 1rem;
-    min-width: 120px;
-}
+        .live-quiz-timer {
+            text-align: center;
+            background: white;
+            border: 2px solid #c4b5fd;
+            border-radius: 14px;
+            padding: 0.85rem;
+            min-width: 110px;
+        }
 
-.timer-value {
-    font-size: 2rem;
-    font-weight: bold;
-    color: #ef4444;
-    font-family: 'Courier New', monospace;
-    display: block;
-    line-height: 1;
-}
+        .timer-value {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: #7c5cfc;
+            font-family: 'Courier New', monospace;
+            display: block;
+            line-height: 1;
+        }
 
-.timer-text {
-    font-size: 0.7rem;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-top: 0.25rem;
-}
+        .timer-text {
+            font-size: 0.65rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 0.2rem;
+        }
 
-.live-quiz-actions {
-    display: flex;
-    gap: 1rem;
-    margin-top: 1.5rem;
-}
+        .live-quiz-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.25rem;
+        }
 
-.btn-live {
-    background: linear-gradient(135deg, #ef4444, #dc2626);
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    flex: 1;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-}
+        .btn-live {
+            background: linear-gradient(135deg, #7c5cfc, #a78bfa);
+            color: white;
+            border: none;
+            padding: 0.7rem 1.5rem;
+            border-radius: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            flex: 1;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            box-shadow: 0 4px 14px rgba(124, 92, 252, 0.3);
+        }
 
-.btn-live:hover {
-    background: linear-gradient(135deg, #dc2626, #b91c1c);
-    transform: translateY(-1px);
-    color: white;
-}
+        .btn-live:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(124, 92, 252, 0.4);
+            color: white;
+        }
 
-/* Notification Toast Styles */
-.notification-toast {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: linear-gradient(135deg, #ef4444, #dc2626);
-    color: white;
-    padding: 1.5rem;
-    border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(239, 68, 68, 0.3);
-    z-index: 1000;
-    max-width: 400px;
-    animation: slideInRight 0.5s ease-out;
-}
+        /* ===== NOTIFICATION TOAST ===== */
+        .notification-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #7c5cfc, #6d28d9);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 20px;
+            box-shadow: 0 12px 40px rgba(124, 92, 252, 0.35);
+            z-index: 1000;
+            max-width: 380px;
+            animation: slideInRight 0.4s cubic-bezier(.4, 0, .2, 1);
+        }
 
-.toast-header {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 0.75rem;
-}
+        .toast-header {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 0.6rem;
+        }
 
-.toast-icon {
-    font-size: 1.5rem;
-    animation: pulse 1.5s infinite;
-}
+        .toast-icon {
+            font-size: 1.35rem;
+            animation: pulse 1.5s infinite;
+        }
 
-.toast-title {
-    font-weight: bold;
-    font-size: 1.1rem;
-}
+        .toast-title {
+            font-weight: 700;
+            font-size: 1rem;
+        }
 
-.toast-message {
-    font-size: 0.9rem;
-    line-height: 1.4;
-    margin-bottom: 1rem;
-}
+        .toast-message {
+            font-size: 0.85rem;
+            line-height: 1.4;
+            margin-bottom: 0.85rem;
+            opacity: 0.9;
+        }
 
-.toast-actions {
-    display: flex;
-    gap: 0.75rem;
-}
+        .toast-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
 
-.toast-btn {
-    padding: 0.5rem 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
-    cursor: pointer;
-    font-size: 0.8rem;
-    transition: all 0.2s ease;
-}
+        .toast-btn {
+            padding: 0.45rem 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.12);
+            color: white;
+            cursor: pointer;
+            font-size: 0.78rem;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
 
-.toast-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-}
+        .toast-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
 
-.toast-btn.primary {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.5);
-}
+        .toast-btn.primary {
+            background: rgba(255, 255, 255, 0.22);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
 
-/* Animations */
-@keyframes liveQuizPulse {
-    0%, 100% { box-shadow: 0 8px 32px rgba(239, 68, 68, 0.2); }
-    50% { box-shadow: 0 8px 32px rgba(239, 68, 68, 0.4); }
-}
+        /* ===== ANIMATIONS ===== */
+        @keyframes liveQuizPulse {
 
-@keyframes liveIndicator {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-}
+            0%,
+            100% {
+                box-shadow: 0 8px 32px rgba(124, 92, 252, 0.15);
+            }
 
-@keyframes slideInRight {
-    from {
-        opacity: 0;
-        transform: translateX(100%);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
+            50% {
+                box-shadow: 0 8px 32px rgba(124, 92, 252, 0.3);
+            }
+        }
 
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
-}
+        @keyframes liveIndicator {
 
-/* Mobile Responsiveness */
-@media (max-width: 768px) {
-    .alert-content {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-        text-align: center;
-    }
-    
-    .live-quiz-header {
-        flex-direction: column;
-        gap: 1rem;
-        text-align: center;
-    }
-    
-    .live-quiz-meta {
-        justify-content: center;
-    }
-    
-    .notification-toast {
-        left: 20px;
-        right: 20px;
-        max-width: none;
-    }
-    
-    .toast-actions {
-        flex-direction: column;
-    }
-}
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.6;
+            }
+        }
+
+        /* ===== LIVE QUIZ MOBILE ===== */
+        @media (max-width: 768px) {
+            .alert-content {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+                text-align: center;
+            }
+
+            .live-quiz-header {
+                flex-direction: column;
+                gap: 0.75rem;
+                text-align: center;
+            }
+
+            .live-quiz-meta {
+                justify-content: center;
+            }
+
+            .notification-toast {
+                left: 16px;
+                right: 16px;
+                max-width: none;
+                border-radius: 16px;
+            }
+
+            .toast-actions {
+                flex-direction: column;
+            }
+        }
     </style>
 </head>
+
 <body>
     <!-- Header Section -->
     <header class="header">
@@ -1090,7 +1189,7 @@
                 <div class="stat-label">Enrolled Classes</div>
                 <div class="comparison" id="enrollmentInfo">Your courses</div>
             </div>
-            
+
             <div class="stat-card green">
                 <div class="stat-value">
                     <span id="overallAverage">-%</span>
@@ -1099,13 +1198,13 @@
                 <div class="stat-label">Overall Average</div>
                 <div class="comparison" id="averageComparison">All classes combined</div>
             </div>
-            
+
             <div class="stat-card purple">
                 <div class="stat-value" id="totalQuizAttempts">-</div>
                 <div class="stat-label">Total Quiz Attempts</div>
                 <div class="comparison" id="attemptsComparison">Across all classes</div>
             </div>
-            
+
             <div class="stat-card orange">
                 <div class="stat-value" id="activeClassesCount">-</div>
                 <div class="stat-label">Active Classes</div>
@@ -1173,14 +1272,13 @@
                 <h2 class="modal-title">🎓 Join New Class</h2>
                 <button class="close-btn" onclick="hideJoinClassModal()">&times;</button>
             </div>
-            
+
             <!-- Step 1: Enter Join Code -->
             <div id="joinStep1">
                 <div class="form-group">
                     <label class="form-label">Class Join Code</label>
-                    <input type="text" id="joinCode" class="form-input" 
-                           placeholder="Enter 6-digit code (e.g., PHY123)" 
-                           maxlength="6" style="text-transform: uppercase;">
+                    <input type="text" id="joinCode" class="form-input" placeholder="Enter 6-digit code (e.g., PHY123)"
+                        maxlength="6" style="text-transform: uppercase;">
                     <small style="color: #64748b; font-size: 0.85rem; margin-top: 0.5rem; display: block;">
                         💡 Ask your teacher for the class join code (expires in 10 minutes)
                     </small>
@@ -1229,7 +1327,7 @@
         let currentClassData = {};
 
         // Initialize dashboard
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             console.log('🚀 Student dashboard initializing...');
             initializeDashboard();
             loadEnrolledClasses();
@@ -1242,9 +1340,9 @@
             let greeting = 'Good evening';
             if (hour < 12) greeting = 'Good morning';
             else if (hour < 18) greeting = 'Good afternoon';
-            
+
             document.getElementById('dashboardTitle').textContent = `${greeting}, ${studentName}!`;
-            
+
             // Update avatar initials
             const avatar = document.getElementById('profileAvatar');
             const initials = studentName.split(' ').map(name => name.charAt(0)).join('').toUpperCase();
@@ -1254,7 +1352,7 @@
         // Get subject emoji based on subject name
         function getSubjectEmoji(subject) {
             const subjectLower = subject.toLowerCase();
-            
+
             if (subjectLower.includes('math')) return '📐';
             if (subjectLower.includes('physic')) return '⚛️';
             if (subjectLower.includes('chemistry') || subjectLower.includes('chem')) return '🧪';
@@ -1268,7 +1366,7 @@
             if (subjectLower.includes('economics')) return '💰';
             if (subjectLower.includes('psychology')) return '🧠';
             if (subjectLower.includes('philosophy')) return '💭';
-            
+
             return '📖'; // Default emoji
         }
 
@@ -1278,7 +1376,7 @@
                 console.log('🏫 Loading enrolled classes...');
                 const response = await fetch('/api/student/enrolled-classes');
                 const data = await response.json();
-                
+
                 if (data.success) {
                     enrolledClasses = data.classes;
                     displayEnrolledClasses(data.classes);
@@ -1297,7 +1395,7 @@
         // Display enrolled classes
         function displayEnrolledClasses(classes) {
             const container = document.getElementById('classesContainer');
-            
+
             if (classes.length === 0) {
                 showEmptyClasses();
                 return;
@@ -1359,9 +1457,9 @@
             try {
                 const response = await fetch(`/api/student/class/${classId}/recent-quiz`);
                 const data = await response.json();
-                
+
                 const container = document.getElementById(`recentQuiz-${classId}`);
-                
+
                 if (data.success && data.quiz) {
                     const quiz = data.quiz;
                     container.innerHTML = `
@@ -1371,14 +1469,14 @@
                                 <div class="quiz-meta">📝 ${quiz.totalQuestions} questions • ${quiz.timeAgo}</div>
                             </div>
                             <div class="quiz-action">
-                                ${quiz.status === 'taken' ? 
-                                    `<button class="btn btn-sm btn-secondary" onclick="viewQuizResults('${quiz.resultId}', '${quiz.lectureTitle}', '${classId}')">
+                                ${quiz.status === 'taken' ?
+                            `<button class="btn btn-sm btn-secondary" onclick="viewQuizResults('${quiz.resultId}', '${quiz.lectureTitle}', '${classId}')">
                                         📊 View Results
                                     </button>` :
-                                    `<button class="btn btn-sm" onclick="takeQuiz('${quiz._id}', '${quiz.lectureTitle}', '${classId}')">
+                            `<button class="btn btn-sm" onclick="takeQuiz('${quiz._id}', '${quiz.lectureTitle}', '${classId}')">
                                         🎯 Take Quiz
                                     </button>`
-                                }
+                        }
                             </div>
                         </div>
                     `;
@@ -1407,11 +1505,11 @@
                 document.getElementById('overallAverage').textContent = (parseFloat(overallStats.overallAverage) || 0).toFixed(2) + '%';
                 document.getElementById('totalQuizAttempts').textContent = overallStats.totalQuizAttempts;
                 document.getElementById('activeClassesCount').textContent = overallStats.activeClasses;
-                
+
                 document.getElementById('enrollmentInfo').textContent = overallStats.totalClasses === 1 ? '1 course' : `${overallStats.totalClasses} courses`;
                 document.getElementById('averageComparison').textContent = overallStats.totalQuizAttempts > 0 ? `Based on ${overallStats.totalQuizAttempts} attempts` : 'No attempts yet';
                 document.getElementById('attemptsComparison').textContent = `Across ${overallStats.totalClasses} classes`;
-                
+
                 const trendElement = document.getElementById('trendIndicator');
                 const avgScore = parseFloat(overallStats.overallAverage) || 0;
                 if (avgScore >= 80) trendElement.textContent = '📈';
@@ -1422,7 +1520,7 @@
                 let totalQuizzes = 0;
                 let totalScore = 0;
                 let activeClasses = 0;
-                
+
                 classes.forEach(cls => {
                     totalQuizzes += cls.quizzesTaken || 0;
                     if (cls.quizzesTaken > 0) {
@@ -1432,9 +1530,9 @@
                         activeClasses++;
                     }
                 });
-                
+
                 const overallAverage = totalQuizzes > 0 ? (totalScore / totalQuizzes).toFixed(2) : '0.00'; // Changed to .toFixed(2) and default string for consistency
-                
+
                 document.getElementById('enrolledClassesCount').textContent = totalClasses;
                 document.getElementById('overallAverage').textContent = overallAverage + '%';
                 document.getElementById('totalQuizAttempts').textContent = totalQuizzes;
@@ -1451,13 +1549,13 @@
         // 🔄 UPDATED: takeQuiz function - NOW GOES TO QUIZ INFO FIRST!
         function takeQuiz(quizId, quizTitle, classId) {
             console.log(`📋 Going to quiz info first: ${quizId} - ${quizTitle} from class ${classId}`);
-            
+
             // Build quiz info URL with class context
             let quizInfoUrl = `/quiz-info/${quizId}`;
             if (classId) {
                 quizInfoUrl += `?classId=${classId}`;
             }
-            
+
             console.log(`✅ Redirecting to quiz info page: ${quizInfoUrl}`);
             window.location.href = quizInfoUrl;
         }
@@ -1481,7 +1579,7 @@
             document.getElementById('joinStep1').style.display = 'block';
             document.getElementById('joinStep2').style.display = 'none';
             document.getElementById('joinStep3').style.display = 'none';
-            
+
             // Clear form
             document.getElementById('joinCode').value = '';
             currentJoinCode = '';
@@ -1491,7 +1589,7 @@
         // 🔧 FIXED: Step 1 - Validate join code
         async function validateJoinCode() {
             const code = document.getElementById('joinCode').value.trim().toUpperCase();
-            
+
             if (!code || code.length !== 6) {
                 showError('Please enter a valid 6-digit join code.');
                 return;
@@ -1499,9 +1597,9 @@
 
             try {
                 console.log('🔍 Validating join code:', code); // Debug log
-                
+
                 const response = await fetch(`/api/classes/validate-join-code/${code}`);
-                
+
                 // Check if response is OK
                 if (!response.ok) {
                     const errorData = await response.json();
@@ -1509,16 +1607,16 @@
                     showError(errorData.message || 'Server error validating join code.');
                     return;
                 }
-                
+
                 const data = await response.json();
                 console.log('📡 API Response:', data); // Debug log
-                
+
                 if (data.success) {
                     currentJoinCode = code;
                     // 🔧 FIX: Use 'classInfo' instead of 'classData'
                     currentClassData = data.classInfo;
                     showClassPreview(data.classInfo);
-                    
+
                     // Move to step 2
                     document.getElementById('joinStep1').style.display = 'none';
                     document.getElementById('joinStep2').style.display = 'block';
@@ -1536,7 +1634,7 @@
         function showClassPreview(classInfo) {
             const preview = document.getElementById('classPreview');
             const emoji = getSubjectEmoji(classInfo.classSubject);
-            
+
             preview.innerHTML = `
                 <h3 style="color: #1e293b; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
                     <span style="font-size: 1.5rem;">${emoji}</span>
@@ -1589,12 +1687,12 @@
 
                 const data = await response.json();
                 console.log('📡 Submit response:', data);
-                
+
                 if (data.success) {
                     // Show success status
                     document.getElementById('joinStep2').style.display = 'none';
                     document.getElementById('joinStep3').style.display = 'block';
-                    
+
                     document.getElementById('requestStatus').innerHTML = `
                         <div style="text-align: center; padding: 2rem;">
                             <div style="font-size: 3rem; margin-bottom: 1rem;">✅</div>
@@ -1611,14 +1709,14 @@
                             </button>
                         </div>
                     `;
-                    
+
                     // Auto-close after 5 seconds
                     setTimeout(() => {
                         hideJoinClassModal();
                         // Refresh the page to show updated data
                         loadEnrolledClasses();
                     }, 5000);
-                    
+
                 } else {
                     console.error('❌ Submit failed:', data.message);
                     showError(data.message || 'Failed to send join request.');
@@ -1635,10 +1733,10 @@
         }
 
         // Format join code as user types
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const joinCodeInput = document.getElementById('joinCode');
             if (joinCodeInput) {
-                joinCodeInput.addEventListener('input', function(e) {
+                joinCodeInput.addEventListener('input', function (e) {
                     e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
                 });
             }
@@ -1678,9 +1776,9 @@
         // Utility functions
         function showSuccess(message) {
             console.log('✅', message);
-            
+
             document.querySelectorAll('.alert').forEach(alert => alert.remove());
-            
+
             const messageHTML = `
                 <div class="alert alert-success" style="position: fixed; top: 20px; right: 20px; z-index: 1000; max-width: 400px;">
                     <strong>Success!</strong> ${message}
@@ -1688,7 +1786,7 @@
                 </div>
             `;
             document.body.insertAdjacentHTML('afterbegin', messageHTML);
-            
+
             setTimeout(() => {
                 const alert = document.querySelector('.alert-success');
                 if (alert) alert.remove();
@@ -1697,9 +1795,9 @@
 
         function showError(message) {
             console.error('❌', message);
-            
+
             document.querySelectorAll('.alert').forEach(alert => alert.remove());
-            
+
             const messageHTML = `
                 <div class="alert alert-error" style="position: fixed; top: 20px; right: 20px; z-index: 1000; max-width: 400px;">
                     <strong>Error!</strong> ${message}
@@ -1707,7 +1805,7 @@
                 </div>
             `;
             document.body.insertAdjacentHTML('afterbegin', messageHTML);
-            
+
             setTimeout(() => {
                 const alert = document.querySelector('.alert-error');
                 if (alert) alert.remove();
@@ -1715,7 +1813,7 @@
         }
 
         // Close modal when clicking outside
-        window.onclick = function(event) {
+        window.onclick = function (event) {
             const modal = document.getElementById('joinClassModal');
             if (event.target === modal) {
                 hideJoinClassModal();
@@ -1723,7 +1821,7 @@
         }
 
         // Close modal with Escape key
-        document.addEventListener('keydown', function(event) {
+        document.addEventListener('keydown', function (event) {
             if (event.key === 'Escape') {
                 hideJoinClassModal();
             }
@@ -1741,47 +1839,47 @@
         let liveQuizTimers = {};
         let currentLiveQuizzes = [];
 
-// Initialize live quiz socket connection
-function initializeLiveQuizSocket() {
-    if (typeof io !== 'undefined') {
-        liveQuizSocket = io();
-        
-        // Join student rooms for notifications
-        liveQuizSocket.emit('join-student-rooms', studentId);
-        
-        // Listen for live quiz notifications
-        liveQuizSocket.on('live-quiz-notification', function(notification) {
-            console.log('🔴 Live quiz notification received:', notification);
-            handleLiveQuizNotification(notification);
-        });
-        
-        console.log('⚡ Live quiz socket initialized for student');
-    } else {
-        console.warn('⚠️ Socket.io not available');
-    }
-}
+        // Initialize live quiz socket connection
+        function initializeLiveQuizSocket() {
+            if (typeof io !== 'undefined') {
+                liveQuizSocket = io();
 
-// Handle live quiz notifications
-function handleLiveQuizNotification(notification) {
-    switch (notification.type) {
-        case 'live_quiz_started':
-            showLiveQuizNotification(notification);
-            loadLiveQuizzes(); // Refresh live quizzes
-            break;
-            
-        case 'live_quiz_ended':
-        case 'live_quiz_expired':
-            showLiveQuizEndedNotification(notification);
-            loadLiveQuizzes(); // Refresh live quizzes
-            break;
-    }
-}
+                // Join student rooms for notifications
+                liveQuizSocket.emit('join-student-rooms', studentId);
 
-// Show live quiz started notification
-function showLiveQuizNotification(notification) {
-    const toast = document.createElement('div');
-    toast.className = 'notification-toast';
-    toast.innerHTML = `
+                // Listen for live quiz notifications
+                liveQuizSocket.on('live-quiz-notification', function (notification) {
+                    console.log('🔴 Live quiz notification received:', notification);
+                    handleLiveQuizNotification(notification);
+                });
+
+                console.log('⚡ Live quiz socket initialized for student');
+            } else {
+                console.warn('⚠️ Socket.io not available');
+            }
+        }
+
+        // Handle live quiz notifications
+        function handleLiveQuizNotification(notification) {
+            switch (notification.type) {
+                case 'live_quiz_started':
+                    showLiveQuizNotification(notification);
+                    loadLiveQuizzes(); // Refresh live quizzes
+                    break;
+
+                case 'live_quiz_ended':
+                case 'live_quiz_expired':
+                    showLiveQuizEndedNotification(notification);
+                    loadLiveQuizzes(); // Refresh live quizzes
+                    break;
+            }
+        }
+
+        // Show live quiz started notification
+        function showLiveQuizNotification(notification) {
+            const toast = document.createElement('div');
+            toast.className = 'notification-toast';
+            toast.innerHTML = `
         <div class="toast-header">
             <span class="toast-icon">🔴</span>
             <span class="toast-title">LIVE QUIZ STARTED!</span>
@@ -1800,26 +1898,26 @@ function showLiveQuizNotification(notification) {
             </button>
         </div>
     `;
-    
-    document.body.appendChild(toast);
-    
-    // Auto-remove after 10 seconds
-    setTimeout(() => {
-        if (toast.parentNode) {
-            toast.remove();
-        }
-    }, 10000);
-    
-    // Play notification sound if supported
-    playNotificationSound();
-}
 
-// Show live quiz ended notification
-function showLiveQuizEndedNotification(notification) {
-    const toast = document.createElement('div');
-    toast.className = 'notification-toast';
-    toast.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
-    toast.innerHTML = `
+            document.body.appendChild(toast);
+
+            // Auto-remove after 10 seconds
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.remove();
+                }
+            }, 10000);
+
+            // Play notification sound if supported
+            playNotificationSound();
+        }
+
+        // Show live quiz ended notification
+        function showLiveQuizEndedNotification(notification) {
+            const toast = document.createElement('div');
+            toast.className = 'notification-toast';
+            toast.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
+            toast.innerHTML = `
         <div class="toast-header">
             <span class="toast-icon">⏰</span>
             <span class="toast-title">LIVE QUIZ ENDED</span>
@@ -1834,52 +1932,52 @@ function showLiveQuizEndedNotification(notification) {
             </button>
         </div>
     `;
-    
-    document.body.appendChild(toast);
-    
-    // Auto-remove after 5 seconds
-    setTimeout(() => {
-        if (toast.parentNode) {
-            toast.remove();
-        }
-    }, 5000);
-}
 
-// Load live quizzes for student dashboard
-async function loadLiveQuizzes() {
-    try {
-        const response = await fetch('/api/student/live-quizzes');
-        const data = await response.json();
-        
-        if (data.success) {
-            currentLiveQuizzes = data.liveQuizzes;
-            displayLiveQuizzes(data.liveQuizzes);
-            
-            // Check for class-specific live quiz if on class page
-            if (window.location.pathname.includes('/student/class/')) {
-                checkClassLiveQuiz();
+            document.body.appendChild(toast);
+
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.remove();
+                }
+            }, 5000);
+        }
+
+        // Load live quizzes for student dashboard
+        async function loadLiveQuizzes() {
+            try {
+                const response = await fetch('/api/student/live-quizzes');
+                const data = await response.json();
+
+                if (data.success) {
+                    currentLiveQuizzes = data.liveQuizzes;
+                    displayLiveQuizzes(data.liveQuizzes);
+
+                    // Check for class-specific live quiz if on class page
+                    if (window.location.pathname.includes('/student/class/')) {
+                        checkClassLiveQuiz();
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Error loading live quizzes:', error);
             }
         }
-    } catch (error) {
-        console.error('❌ Error loading live quizzes:', error);
-    }
-}
 
-// Display live quizzes on dashboard
-function displayLiveQuizzes(liveQuizzes) {
-    const section = document.getElementById('liveQuizSection');
-    const container = document.getElementById('liveQuizzesContainer');
-    
-    if (!section || !container) return;
-    
-    if (liveQuizzes.length === 0) {
-        section.style.display = 'none';
-        return;
-    }
-    
-    section.style.display = 'block';
-    
-    const liveQuizzesHTML = liveQuizzes.map(quiz => `
+        // Display live quizzes on dashboard
+        function displayLiveQuizzes(liveQuizzes) {
+            const section = document.getElementById('liveQuizSection');
+            const container = document.getElementById('liveQuizzesContainer');
+
+            if (!section || !container) return;
+
+            if (liveQuizzes.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = 'block';
+
+            const liveQuizzesHTML = liveQuizzes.map(quiz => `
         <div class="live-quiz-card" data-quiz-id="${quiz.quizId}">
             <div class="live-quiz-header">
                 <div class="live-quiz-info">
@@ -1905,190 +2003,191 @@ function displayLiveQuizzes(liveQuizzes) {
             </div>
         </div>
     `).join('');
-    
-    container.innerHTML = liveQuizzesHTML;
-    
-    // Start timers for each live quiz
-    liveQuizzes.forEach(quiz => {
-        startLiveQuizTimer(quiz.quizId, quiz.remainingTime);
-    });
-}
 
-// Check for class-specific live quiz (for class view page)
-async function checkClassLiveQuiz() {
-    if (!classId) return;
-    
-    try {
-        const response = await fetch(`/api/class/${classId}/live-quiz`);
-        const data = await response.json();
-        
-        if (data.success && data.hasLiveQuiz) {
-            showLiveQuizAlert(data.liveQuiz);
-        } else {
-            hideLiveQuizAlert();
+            container.innerHTML = liveQuizzesHTML;
+
+            // Start timers for each live quiz
+            liveQuizzes.forEach(quiz => {
+                startLiveQuizTimer(quiz.quizId, quiz.remainingTime);
+            });
         }
-    } catch (error) {
-        console.error('❌ Error checking class live quiz:', error);
-    }
-}
 
-// Show live quiz alert banner (for class view)
-function showLiveQuizAlert(liveQuiz) {
-    const alert = document.getElementById('liveQuizAlert');
-    const message = document.getElementById('liveQuizMessage');
-    const button = document.getElementById('takeLiveQuizBtn');
-    
-    if (!alert) return;
-    
-    message.textContent = `${liveQuiz.quizTitle} is currently active. ${liveQuiz.totalQuestions} questions, ${liveQuiz.durationMinutes} minutes total.`;
-    button.setAttribute('data-quiz-id', liveQuiz.quizId);
-    
-    alert.style.display = 'block';
-    
-    // Start countdown timer
-    startLiveQuizTimer('liveQuizCountdown', liveQuiz.remainingTime);
-}
+        // Check for class-specific live quiz (for class view page)
+        async function checkClassLiveQuiz() {
+            if (!classId) return;
 
-// Hide live quiz alert banner
-function hideLiveQuizAlert() {
-    const alert = document.getElementById('liveQuizAlert');
-    if (alert) {
-        alert.style.display = 'none';
-    }
-    
-    // Clear timer
-    if (liveQuizTimers['liveQuizCountdown']) {
-        clearInterval(liveQuizTimers['liveQuizCountdown']);
-        delete liveQuizTimers['liveQuizCountdown'];
-    }
-}
+            try {
+                const response = await fetch(`/api/class/${classId}/live-quiz`);
+                const data = await response.json();
 
-// Start live quiz timer
-function startLiveQuizTimer(elementId, remainingSeconds) {
-    // Clear existing timer
-    if (liveQuizTimers[elementId]) {
-        clearInterval(liveQuizTimers[elementId]);
-    }
-    
-    let timeLeft = remainingSeconds;
-    
-    function updateTimer() {
-        const minutes = Math.floor(timeLeft / 60);
-        const seconds = timeLeft % 60;
-        const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        
-        const timerElement = document.getElementById(elementId) || document.getElementById(`timer-${elementId}`);
-        if (timerElement) {
-            timerElement.textContent = timeString;
-            
-            // Change color based on remaining time
-            if (timeLeft <= 60) {
-                timerElement.style.color = '#ef4444';
-            } else if (timeLeft <= 300) {
-                timerElement.style.color = '#f59e0b';
+                if (data.success && data.hasLiveQuiz) {
+                    showLiveQuizAlert(data.liveQuiz);
+                } else {
+                    hideLiveQuizAlert();
+                }
+            } catch (error) {
+                console.error('❌ Error checking class live quiz:', error);
             }
         }
-        
-        if (timeLeft <= 0) {
-            clearInterval(liveQuizTimers[elementId]);
-            delete liveQuizTimers[elementId];
-            
-            // Refresh live quizzes when timer expires
-            setTimeout(() => {
+
+        // Show live quiz alert banner (for class view)
+        function showLiveQuizAlert(liveQuiz) {
+            const alert = document.getElementById('liveQuizAlert');
+            const message = document.getElementById('liveQuizMessage');
+            const button = document.getElementById('takeLiveQuizBtn');
+
+            if (!alert) return;
+
+            message.textContent = `${liveQuiz.quizTitle} is currently active. ${liveQuiz.totalQuestions} questions, ${liveQuiz.durationMinutes} minutes total.`;
+            button.setAttribute('data-quiz-id', liveQuiz.quizId);
+
+            alert.style.display = 'block';
+
+            // Start countdown timer
+            startLiveQuizTimer('liveQuizCountdown', liveQuiz.remainingTime);
+        }
+
+        // Hide live quiz alert banner
+        function hideLiveQuizAlert() {
+            const alert = document.getElementById('liveQuizAlert');
+            if (alert) {
+                alert.style.display = 'none';
+            }
+
+            // Clear timer
+            if (liveQuizTimers['liveQuizCountdown']) {
+                clearInterval(liveQuizTimers['liveQuizCountdown']);
+                delete liveQuizTimers['liveQuizCountdown'];
+            }
+        }
+
+        // Start live quiz timer
+        function startLiveQuizTimer(elementId, remainingSeconds) {
+            // Clear existing timer
+            if (liveQuizTimers[elementId]) {
+                clearInterval(liveQuizTimers[elementId]);
+            }
+
+            let timeLeft = remainingSeconds;
+
+            function updateTimer() {
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+                const timerElement = document.getElementById(elementId) || document.getElementById(`timer-${elementId}`);
+                if (timerElement) {
+                    timerElement.textContent = timeString;
+
+                    // Change color based on remaining time
+                    if (timeLeft <= 60) {
+                        timerElement.style.color = '#ef4444';
+                    } else if (timeLeft <= 300) {
+                        timerElement.style.color = '#f59e0b';
+                    }
+                }
+
+                if (timeLeft <= 0) {
+                    clearInterval(liveQuizTimers[elementId]);
+                    delete liveQuizTimers[elementId];
+
+                    // Refresh live quizzes when timer expires
+                    setTimeout(() => {
+                        loadLiveQuizzes();
+                        if (window.location.pathname.includes('/student/class/')) {
+                            checkClassLiveQuiz();
+                        }
+                    }, 1000);
+                }
+
+                timeLeft--;
+            }
+
+            updateTimer(); // Initial call
+            liveQuizTimers[elementId] = setInterval(updateTimer, 1000);
+        }
+
+        // Go to live quiz
+        function goToLiveQuiz(quizId) {
+            // Check if quiz is still active
+            const currentQuiz = currentLiveQuizzes.find(q => q.quizId === quizId);
+            if (currentQuiz && currentQuiz.remainingTime <= 0) {
+                alert('⏰ This live quiz has expired and is no longer available.');
+                loadLiveQuizzes(); // Refresh the list
+                return;
+            }
+
+            // Build quiz URL with class context if available
+            let quizUrl = `/quiz-info/${quizId}`;
+            if (classId) {
+                quizUrl += `?classId=${classId}&live=true`;
+            } else {
+                quizUrl += `?live=true`;
+            }
+
+            window.location.href = quizUrl;
+        }
+
+        // Take live quiz from alert banner
+        function takeLiveQuiz() {
+            const button = document.getElementById('takeLiveQuizBtn');
+            const quizId = button.getAttribute('data-quiz-id');
+
+            if (quizId) {
+                goToLiveQuiz(quizId);
+            }
+        }
+
+        // Play notification sound
+        function playNotificationSound() {
+            try {
+                // Create audio context for notification sound
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            } catch (error) {
+                console.log('🔇 Audio notification not available');
+            }
+        }
+
+        // Initialize live quiz system when page loads
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initialize socket connection
+            initializeLiveQuizSocket();
+
+            // Load initial live quizzes
+            loadLiveQuizzes();
+
+            // Set up periodic refresh (every 30 seconds)
+            setInterval(() => {
                 loadLiveQuizzes();
                 if (window.location.pathname.includes('/student/class/')) {
                     checkClassLiveQuiz();
                 }
-            }, 1000);
-        }
-        
-        timeLeft--;
-    }
-    
-    updateTimer(); // Initial call
-    liveQuizTimers[elementId] = setInterval(updateTimer, 1000);
-}
+            }, 30000);
 
-// Go to live quiz
-function goToLiveQuiz(quizId) {
-    // Check if quiz is still active
-    const currentQuiz = currentLiveQuizzes.find(q => q.quizId === quizId);
-    if (currentQuiz && currentQuiz.remainingTime <= 0) {
-        alert('⏰ This live quiz has expired and is no longer available.');
-        loadLiveQuizzes(); // Refresh the list
-        return;
-    }
-    
-    // Build quiz URL with class context if available
-    let quizUrl = `/quiz-info/${quizId}`;
-    if (classId) {
-        quizUrl += `?classId=${classId}&live=true`;
-    } else {
-        quizUrl += `?live=true`;
-    }
-    
-    window.location.href = quizUrl;
-}
+            console.log('🔴 Live quiz system initialized for student');
+        });
 
-// Take live quiz from alert banner
-function takeLiveQuiz() {
-    const button = document.getElementById('takeLiveQuizBtn');
-    const quizId = button.getAttribute('data-quiz-id');
-    
-    if (quizId) {
-        goToLiveQuiz(quizId);
-    }
-}
-
-// Play notification sound
-function playNotificationSound() {
-    try {
-        // Create audio context for notification sound
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-        oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
-        
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-        
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.3);
-    } catch (error) {
-        console.log('🔇 Audio notification not available');
-    }
-}
-
-// Initialize live quiz system when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize socket connection
-    initializeLiveQuizSocket();
-    
-    // Load initial live quizzes
-    loadLiveQuizzes();
-    
-    // Set up periodic refresh (every 30 seconds)
-    setInterval(() => {
-        loadLiveQuizzes();
-        if (window.location.pathname.includes('/student/class/')) {
-            checkClassLiveQuiz();
-        }
-    }, 30000);
-    
-    console.log('🔴 Live quiz system initialized for student');
-});
-
-// Clean up timers when leaving page
-window.addEventListener('beforeunload', function() {
-    Object.values(liveQuizTimers).forEach(timer => {
-        clearInterval(timer);
-    });
-});
+        // Clean up timers when leaving page
+        window.addEventListener('beforeunload', function () {
+            Object.values(liveQuizTimers).forEach(timer => {
+                clearInterval(timer);
+            });
+        });
     </script>
 </body>
+
 </html>
