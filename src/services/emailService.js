@@ -1,23 +1,13 @@
 // backend/src/services/emailService.js
 
 const SibApiV3Sdk = require('sib-api-v3-sdk');
-// --- CRITICAL DEBUG LOGS ---
-console.log('DEBUG: emailService.js loaded.');
-console.log('DEBUG: process.env.BREVO_API_KEY (in emailService):', process.env.BREVO_API_KEY ? '*****' + process.env.BREVO_API_KEY.substring(process.env.BREVO_API_KEY.length - 5) : 'NOT SET'); // Logs last 5 chars for security
-console.log('DEBUG: process.env.SENDER_EMAIL (in emailService):', process.env.SENDER_EMAIL);
-// --- END CRITICAL DEBUG LOGS ---
-// IMPORTANT: Configure API key once globally for the SDK's default client.
-// This should ideally be done at application startup, but placing it here
-// ensures it's configured before any email is sent.
-var defaultClient = SibApiV3Sdk.ApiClient.instance;
-var apiKey = defaultClient.authentications['api-key'];
-apiKey.apiKey = process.env.BREVO_API_KEY; // Set your API key from environment variables
+
+// Configure API key globally for the SDK's default client
+const defaultClient = SibApiV3Sdk.ApiClient.instance;
+const apiKeyAuth = defaultClient.authentications['api-key'];
+apiKeyAuth.apiKey = process.env.BREVO_API_KEY;
 
 const sendEmail = async ({ to, subject, html, text }) => {
-    console.log('DEBUG: Attempting to send email...');
-    console.log('DEBUG: SENDER_EMAIL used:', process.env.SENDER_EMAIL);
-    console.log('DEBUG: Recipient:', to);
-    console.log('DEBUG: Subject:', subject);
 
     try {
         const sendSmtpEmail = {
@@ -31,7 +21,7 @@ const sendEmail = async ({ to, subject, html, text }) => {
         // Create the TransactionalEmailsApi instance.
         // It will now automatically use the API key configured on defaultClient.
         const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
-        
+
         // REMOVE THE LINE BELOW - IT IS INCORRECT AND CAUSING THE ERROR
         // apiInstance.setApiKey(SibApiV3Sdk.TransactionalEmailsApi.ApiKey.General, process.env.BREVO_API_KEY);
 

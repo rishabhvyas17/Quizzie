@@ -1,4 +1,5 @@
-// mongodb.js - FIXED VERSION with resolved validation and index issues
+// mongodb.js - Schema definitions and model exports
+// NOTE: Database connection is handled by config/database.js — do not connect here.
 
 const mongoose = require("mongoose");
 // Use the MONGODB_URI environment variable for a single connection
@@ -16,6 +17,7 @@ mongoose.connect(process.env.MONGODB_URI, {
     })
 
 
+
 // ==================== FIXED SCHEMAS ====================
 
 // For Student - FIXED validation issues
@@ -26,12 +28,7 @@ const studentSchema = new mongoose.Schema({
     },
     firstName: {
         type: String,
-        required: true, // Required for proper name handling
-        trim: true
-    },
-    lastName: {
-        type: String,
-        required: false, // <--- CHANGE THIS TO false
+        required: true,
         trim: true
     },
     lastName: {
@@ -93,12 +90,7 @@ const teacherSchema = new mongoose.Schema({
     },
     firstName: {
         type: String,
-        required: true, // Required for proper name handling
-        trim: true
-    },
-    lastName: {
-        type: String,
-        required: false, // <--- CHANGE THIS TO false
+        required: true,
         trim: true
     },
     lastName: {
@@ -664,7 +656,7 @@ const quizResultSchema = new mongoose.Schema({
         },
         submissionSource: {
             type: String,
-            enum: ['Manual', 'Auto-Submit', 'Timer-Submit', 'Session-Auto-Submit'],
+            enum: ['Manual', 'Auto-Submit', 'Timer-Submit', 'Session-Auto-Submit', 'Exam-Timer-Submit'],
             default: 'Manual'
         },
         violationDetails: [{
@@ -1074,6 +1066,7 @@ const quizResultCollection = mongoose.model("QuizResultCollection", quizResultSc
 const explanationCacheCollection = mongoose.model("ExplanationCache", explanationCacheSchema);
 
 // Class management collections
+// FIX: Changed quizAIConnection.model to mongoose.model
 const classCollection = mongoose.model("ClassCollection", classSchema);
 const classStudentCollection = mongoose.model("ClassStudentCollection", classStudentSchema);
 
