@@ -8,6 +8,7 @@
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -237,6 +238,9 @@
             font-size: 1.1rem;
             font-weight: 700;
             color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .card-badge {
@@ -246,6 +250,76 @@
             padding: 0.3rem 0.75rem;
             border-radius: 8px;
             font-weight: 500;
+        }
+
+        .card-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-action-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            border: none;
+            background: var(--bg);
+            color: var(--secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .card-action-btn:hover {
+            background: #e2e8f0;
+            color: var(--primary);
+        }
+
+        .card-action-btn.add-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .help-tooltip {
+            position: relative;
+        }
+
+        .help-tooltip .tooltip-content {
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: var(--primary);
+            color: white;
+            padding: 1rem;
+            border-radius: 12px;
+            font-size: 0.78rem;
+            line-height: 1.6;
+            width: 260px;
+            box-shadow: 0 8px 24px rgba(20, 39, 78, 0.25);
+            transition: all 0.25s;
+            z-index: 50;
+            pointer-events: none;
+        }
+
+        .help-tooltip .tooltip-content::before {
+            content: '';
+            position: absolute;
+            top: -6px;
+            right: 12px;
+            width: 12px;
+            height: 12px;
+            background: var(--primary);
+            transform: rotate(45deg);
+        }
+
+        .help-tooltip:hover .tooltip-content {
+            visibility: visible;
+            opacity: 1;
         }
 
         /* === STATISTICS CARD === */
@@ -1320,8 +1394,10 @@
                 </ul>
             </nav>
             <div class="header-right">
-                <button class="header-icon" title="Search">🔍</button>
-                <button class="header-icon" title="Notifications">🔔</button>
+                <button class="header-icon" title="Search"><i data-lucide="search"
+                        style="width:18px;height:18px"></i></button>
+                <button class="header-icon" title="Notifications"><i data-lucide="bell"
+                        style="width:18px;height:18px"></i></button>
                 <div class="profile-section">
                     <div class="profile-avatar" id="profileAvatar"></div>
                     <div class="profile-info">
@@ -1341,7 +1417,7 @@
         <!-- Live Quiz Alert Banner -->
         <div id="liveQuizAlert" class="live-quiz-alert">
             <div class="alert-content">
-                <div class="alert-icon">🔴</div>
+                <div class="alert-icon"><i data-lucide="radio" style="width:28px;height:28px;color:#ef4444"></i></div>
                 <div class="alert-text">
                     <h3 class="alert-title">LIVE QUIZ IN PROGRESS</h3>
                     <p class="alert-message" id="liveQuizMessage">A live quiz is currently active in this class.</p>
@@ -1351,8 +1427,10 @@
                     <div class="timer-display" id="liveQuizCountdown">--:--</div>
                 </div>
                 <div class="alert-action">
-                    <button class="take-live-quiz-btn" id="takeLiveQuizBtn" onclick="takeLiveQuiz()">🚀 Take Quiz
-                        Now</button>
+                    <button class="take-live-quiz-btn" id="takeLiveQuizBtn" onclick="takeLiveQuiz()"><i
+                            data-lucide="rocket"
+                            style="width:16px;height:16px;display:inline;vertical-align:middle;margin-right:4px"></i>
+                        Take Quiz Now</button>
                 </div>
             </div>
         </div>
@@ -1362,7 +1440,8 @@
             <!-- 1. Statistics Card (top-left) -->
             <div class="bento-card card-statistics">
                 <div class="card-header">
-                    <span class="card-title">📊 Statistics</span>
+                    <span class="card-title"><i data-lucide="bar-chart-3" style="width:20px;height:20px"></i>
+                        Statistics</span>
                     <span class="card-badge">Last 7 days</span>
                 </div>
                 <div class="stats-hero">
@@ -1388,17 +1467,20 @@
                 </div>
                 <div class="mini-stats">
                     <div class="mini-stat">
-                        <div class="mini-stat-icon blue">📝</div>
+                        <div class="mini-stat-icon blue"><i data-lucide="pencil-line"
+                                style="width:16px;height:16px"></i></div>
                         <div class="mini-stat-value" id="inProgressCount">0</div>
                         <div class="mini-stat-label">In progress</div>
                     </div>
                     <div class="mini-stat">
-                        <div class="mini-stat-icon green">✅</div>
+                        <div class="mini-stat-icon green"><i data-lucide="check-circle"
+                                style="width:16px;height:16px"></i></div>
                         <div class="mini-stat-value" id="completedCount">0</div>
                         <div class="mini-stat-label">Completed</div>
                     </div>
                     <div class="mini-stat">
-                        <div class="mini-stat-icon orange">📅</div>
+                        <div class="mini-stat-icon orange"><i data-lucide="calendar-clock"
+                                style="width:16px;height:16px"></i></div>
                         <div class="mini-stat-value" id="upcomingCount">0</div>
                         <div class="mini-stat-label">Upcoming</div>
                     </div>
@@ -1408,7 +1490,25 @@
             <!-- 3. Live & Recent Classes (top-right) -->
             <div class="bento-card card-liveclass">
                 <div class="card-header">
-                    <span class="card-title">Classes</span>
+                    <span class="card-title"><i data-lucide="book-open" style="width:20px;height:20px"></i>
+                        Classes</span>
+                    <div class="card-actions">
+                        <div class="help-tooltip">
+                            <button class="card-action-btn" title="How to join a class">
+                                <i data-lucide="help-circle" style="width:16px;height:16px"></i>
+                            </button>
+                            <div class="tooltip-content">
+                                <strong>How to join a class:</strong><br>
+                                1. Get a join code from your teacher<br>
+                                2. Click the + button<br>
+                                3. Enter the 6-digit code<br>
+                                4. Wait for teacher approval
+                            </div>
+                        </div>
+                        <button class="card-action-btn add-btn" title="Join New Class" onclick="showJoinClassModal()">
+                            <i data-lucide="plus" style="width:18px;height:18px"></i>
+                        </button>
+                    </div>
                 </div>
                 <div id="liveClassContent">
                     <div class="loading">
@@ -1421,7 +1521,7 @@
             <!-- 4. Rankings (bottom-left) -->
             <div class="bento-card card-rankings">
                 <div class="card-header">
-                    <span class="card-title">🏆 Rankings</span>
+                    <span class="card-title"><i data-lucide="trophy" style="width:20px;height:20px"></i> Rankings</span>
                 </div>
                 <ul class="ranking-list" id="rankingsList">
                     <li class="loading">
@@ -1434,7 +1534,8 @@
             <!-- 5. Recent Tests (bottom-right) -->
             <div class="bento-card card-recent-tests">
                 <div class="card-header">
-                    <span class="card-title">📋 Recent Tests</span>
+                    <span class="card-title"><i data-lucide="clipboard-list" style="width:20px;height:20px"></i> Recent
+                        Tests</span>
                     <div class="tests-nav">
                         <button class="tests-nav-btn" onclick="scrollTests(-1)">‹</button>
                         <span class="tests-today">Today</span>
@@ -1450,21 +1551,7 @@
             </div>
         </div>
 
-        <!-- My Classes Section -->
-        <section class="section" style="margin-bottom:2.5rem;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
-                <h2 style="font-size:1.25rem;font-weight:700;color:var(--primary);">📚 My Classes</h2>
-                <button class="join-class-btn" onclick="showJoinClassModal()">
-                    <span class="icon">➕</span> Join New Class
-                </button>
-            </div>
-            <div id="classesContainer">
-                <div class="loading">
-                    <div class="loading-spinner"></div>
-                    <p>🔄 Loading your enrolled classes...</p>
-                </div>
-            </div>
-        </section>
+        <!-- Classes are now shown in the bento grid Classes card -->
     </main>
 
     <!-- Footer -->
@@ -1479,7 +1566,9 @@
     <div id="joinClassModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 class="modal-title">🎓 Join New Class</h2>
+                <h2 class="modal-title"><i data-lucide="graduation-cap"
+                        style="width:20px;height:20px;display:inline;vertical-align:middle;margin-right:4px"></i> Join
+                    New Class</h2>
                 <button class="close-btn" onclick="hideJoinClassModal()">&times;</button>
             </div>
             <div id="joinStep1">
@@ -1487,7 +1576,10 @@
                     <label class="form-label">Class Join Code</label>
                     <input type="text" id="joinCode" class="form-input" placeholder="Enter 6-digit code (e.g., PHY123)"
                         maxlength="6" style="text-transform:uppercase;">
-                    <small style="color:var(--muted);font-size:0.85rem;margin-top:0.5rem;display:block;">💡 Ask your
+                    <small style="color:var(--muted);font-size:0.85rem;margin-top:0.5rem;display:block;"><i
+                            data-lucide="lightbulb"
+                            style="width:14px;height:14px;display:inline;vertical-align:middle;margin-right:2px"></i>
+                        Ask your
                         teacher for the class join code (expires in 10 minutes)</small>
                 </div>
                 <div style="display:flex;gap:1rem;margin-top:1.5rem;">
@@ -1520,7 +1612,8 @@
 
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function () {
-            console.log('🚀 Student dashboard initializing...');
+            console.log('Student dashboard initializing...');
+            lucide.createIcons();
             initializeDashboard();
             loadEnrolledClasses();
         });
@@ -1608,18 +1701,18 @@
         function renderLiveClassCard(classes) {
             const container = document.getElementById('liveClassContent');
             if (classes.length === 0) {
-                container.innerHTML = '<div class="empty-state"><p>No classes enrolled yet</p></div>';
+                container.innerHTML = '<div class="empty-state"><p>No classes enrolled yet. Click + to join!</p></div>';
                 return;
             }
-            const cls = classes[0]; // Show first/most active class
+            const cls = classes[0];
             const progress = cls.quizzesTaken > 0 ? Math.min(100, Math.round((cls.averageScore || 0))) : 0;
             container.innerHTML = `
                 <div class="class-desc" style="font-weight:600;color:var(--primary);margin-bottom:0.35rem;">${cls.classSubject}</div>
-                <div class="class-desc">${cls.className} • ${cls.teacherName}</div>
+                <div class="class-desc">${cls.className} &bull; ${cls.teacherName}</div>
                 <div class="class-participants">
                     <div class="avatar-stack">
                         <span>${cls.teacherName?.charAt(0) || 'T'}</span>
-                        <span>👤</span>
+                        <span><i data-lucide="user" style="width:12px;height:12px"></i></span>
                         <span>+</span>
                     </div>
                     <span class="participants-label">Participants</span>
@@ -1631,6 +1724,7 @@
                 </div>
                 <button class="continue-btn" onclick="goToClass('${cls.classId}','${cls.className}')">Continue learning</button>
             `;
+            lucide.createIcons();
         }
 
         async function renderRankings() {
@@ -1643,7 +1737,7 @@
                     const top5 = data.rankedStudents.slice(0, 5);
                     container.innerHTML = top5.map((student, i) => `
                         <li class="ranking-item">
-                            <div class="ranking-icon ${i < 3 ? ['r1','r2','r3'][i] : 'r3'}">${i < 3 ? ['🥇','🥈','🥉'][i] : (i+1)}</div>
+                            <div class="ranking-icon ${i < 3 ? ['r1', 'r2', 'r3'][i] : 'r3'}">${i + 1}</div>
                             <div class="ranking-info">
                                 <div class="ranking-name">${student.name || 'Student'}</div>
                                 <div class="ranking-detail">${student.totalQuizzes || 0} quizzes taken</div>
@@ -1655,7 +1749,7 @@
                     container.innerHTML = '<li class="empty-state" style="padding:1rem;"><p>No ranking data yet</p></li>';
                 }
             } catch (error) {
-                console.error('❌ Error loading rankings:', error);
+                console.error('Error loading rankings:', error);
                 document.getElementById('rankingsList').innerHTML = '<li class="empty-state" style="padding:1rem;"><p>Unable to load rankings</p></li>';
             }
         }
@@ -1703,77 +1797,15 @@
                 const data = await response.json();
                 if (data.success) {
                     enrolledClasses = data.classes;
-                    displayEnrolledClasses(data.classes);
-                    updateDashboardStats(data.classes, data.overallStats);
-                    // Render bento cards
                     renderStatisticsChart(data.classes);
                     renderAverageMarks(data.overallStats, data.classes);
                     renderLiveClassCard(data.classes);
                     renderRecentTests(data.classes);
                     renderRankings();
-                } else {
-                    showEmptyClasses();
                 }
             } catch (error) {
-                console.error('❌ Error loading enrolled classes:', error);
-                showErrorClasses();
+                console.error('Error loading enrolled classes:', error);
             }
-        }
-
-        function displayEnrolledClasses(classes) {
-            const container = document.getElementById('classesContainer');
-            if (classes.length === 0) { showEmptyClasses(); return; }
-            const classesHTML = classes.map(classItem => `
-                <div class="bento-card" style="padding:1.5rem;">
-                    <div style="margin-bottom:1rem;">
-                        <h3 style="font-size:1.15rem;font-weight:700;color:var(--primary);display:flex;align-items:center;gap:0.5rem;">
-                            <span style="font-size:1.3rem;width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;background:var(--bg);border-radius:10px;">${getSubjectEmoji(classItem.classSubject)}</span>
-                            ${classItem.classSubject}
-                        </h3>
-                        <p style="font-size:0.9rem;color:var(--primary);font-weight:600;margin:0.25rem 0">${classItem.className}</p>
-                        <p style="font-size:0.8rem;color:var(--muted)">👨‍🏫 ${classItem.teacherName}</p>
-                    </div>
-                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;padding:1rem;background:var(--bg);border-radius:14px;margin-bottom:1rem;">
-                        <div style="text-align:center"><span style="font-size:1.1rem;font-weight:700;color:var(--primary);display:block">${classItem.quizzesTaken || 0}</span><span style="font-size:0.7rem;color:var(--muted)">Quizzes Taken</span></div>
-                        <div style="text-align:center"><span style="font-size:1.1rem;font-weight:700;color:var(--primary);display:block">${(parseFloat(classItem.averageScore) || 0).toFixed(1)}%</span><span style="font-size:0.7rem;color:var(--muted)">Average</span></div>
-                        <div style="text-align:center"><span style="font-size:1.1rem;font-weight:700;color:var(--primary);display:block">${classItem.availableQuizzes || 0}</span><span style="font-size:0.7rem;color:var(--muted)">Available</span></div>
-                    </div>
-                    <div style="background:var(--bg);border-radius:14px;padding:0.75rem;margin-bottom:1rem;">
-                        <div style="font-size:0.8rem;font-weight:600;color:var(--primary);margin-bottom:0.5rem">🎯 Most Recent Quiz</div>
-                        <div id="recentQuiz-${classItem.classId}"><div class="loading" style="padding:0.5rem">Loading...</div></div>
-                    </div>
-                    <button class="btn" style="width:100%;" onclick="goToClass('${classItem.classId}','${classItem.className}')">📚 Go to Class</button>
-                </div>
-            `).join('');
-            container.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:1.25rem;">${classesHTML}</div>`;
-            classes.forEach(c => loadMostRecentQuiz(c.classId));
-        }
-
-        async function loadMostRecentQuiz(classId) {
-            try {
-                const response = await fetch(`/api/student/class/${classId}/recent-quiz`);
-                const data = await response.json();
-                const container = document.getElementById(`recentQuiz-${classId}`);
-                if (data.success && data.quiz) {
-                    const quiz = data.quiz;
-                    container.innerHTML = `
-                        <div style="display:flex;justify-content:space-between;align-items:center;">
-                            <div><div style="font-size:0.82rem;font-weight:500;color:var(--primary)">${quiz.lectureTitle}</div><div style="font-size:0.7rem;color:var(--muted)">📝 ${quiz.totalQuestions} questions • ${quiz.timeAgo}</div></div>
-                            <div>${quiz.status === 'taken'
-                                ? `<button class="btn btn-sm btn-secondary" onclick="viewQuizResults('${quiz.resultId}','${quiz.lectureTitle}','${classId}')">📊 Results</button>`
-                                : `<button class="btn btn-sm" onclick="takeQuiz('${quiz._id}','${quiz.lectureTitle}','${classId}')">🎯 Take</button>`
-                            }</div>
-                        </div>`;
-                } else {
-                    container.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:0.8rem;padding:0.5rem;">📚 No quizzes yet</div>';
-                }
-            } catch (error) {
-                document.getElementById(`recentQuiz-${classId}`).innerHTML = '<div style="color:var(--muted);font-size:0.8rem">❌ Error</div>';
-            }
-        }
-
-        function updateDashboardStats(classes, overallStats) {
-            // Stats are now rendered by bento card functions
         }
 
         function viewQuizResults(resultId, quizTitle, classId) {
@@ -1830,19 +1862,19 @@
         }
 
         function showClassPreview(classInfo) {
-            const emoji = getSubjectEmoji(classInfo.classSubject);
             document.getElementById('classPreview').innerHTML = `
-                <h3 style="color:var(--primary);display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem"><span style="font-size:1.5rem">${emoji}</span>${classInfo.classSubject}</h3>
+                <h3 style="color:var(--primary);display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem"><i data-lucide="book-open" style="width:20px;height:20px"></i>${classInfo.classSubject}</h3>
                 <p style="color:var(--secondary);font-weight:500;margin-bottom:0.5rem">${classInfo.className}</p>
-                <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1rem">👨‍🏫 ${classInfo.teacherName}</p>
+                <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1rem"><i data-lucide="user" style="width:14px;height:14px;display:inline;vertical-align:middle;margin-right:4px"></i>${classInfo.teacherName}</p>
                 <div class="class-preview-stats">
                     <div class="preview-stat"><div class="preview-stat-value">${classInfo.studentCount || 0}</div><div class="preview-stat-label">Students</div></div>
                     <div class="preview-stat"><div class="preview-stat-value">${classInfo.quizCount || 0}</div><div class="preview-stat-label">Quizzes</div></div>
                     <div class="preview-stat"><div class="preview-stat-value">${Math.floor((classInfo.remainingTime || 0) / 60)}m</div><div class="preview-stat-label">Time Left</div></div>
                 </div>
                 <div style="background:rgba(20,39,78,0.05);padding:1rem;border-radius:6px;margin-top:1rem;border:1px solid rgba(20,39,78,0.1)">
-                    <p style="color:var(--primary);font-size:0.9rem;margin:0"><strong>📝 Join Request:</strong> Your request will be sent to the teacher for approval.</p>
+                    <p style="color:var(--primary);font-size:0.9rem;margin:0"><strong>Join Request:</strong> Your request will be sent to the teacher for approval.</p>
                 </div>`;
+            lucide.createIcons();
         }
 
         async function submitJoinRequest() {
@@ -1857,11 +1889,12 @@
                     document.getElementById('joinStep3').style.display = 'block';
                     document.getElementById('requestStatus').innerHTML = `
                         <div style="text-align:center;padding:2rem">
-                            <div style="font-size:3rem;margin-bottom:1rem">✅</div>
+                            <div style="margin-bottom:1rem"><i data-lucide="check-circle" style="width:48px;height:48px;color:#10b981"></i></div>
                             <h3 style="color:#10b981;margin-bottom:1rem">Request Sent!</h3>
                             <p style="color:var(--muted);margin-bottom:1.5rem">Your join request for <strong>${currentClassData.classSubject}</strong> has been sent to <strong>${currentClassData.teacherName}</strong>.</p>
                             <button class="btn" onclick="hideJoinClassModal()" style="width:100%">Close</button>
                         </div>`;
+                    lucide.createIcons();
                     setTimeout(() => { hideJoinClassModal(); loadEnrolledClasses(); }, 5000);
                 } else { showError(data.message || 'Failed to send join request.'); }
             } catch (e) { showError('Network error. Please try again.'); }
@@ -1877,33 +1910,14 @@
             if (input) input.addEventListener('input', e => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); });
         });
 
-        // ==================== ERROR/EMPTY STATES ====================
-
-        function showEmptyClasses() {
-            document.getElementById('classesContainer').innerHTML = `
-                <div class="empty-state">
-                    <h3>🏫 No Classes Enrolled</h3>
-                    <p>Use the "Join New Class" button to join a class with a code from your teacher.</p>
-                    <div class="alert alert-info" style="margin-top:1rem;text-align:left">
-                        <strong>How to join:</strong><br>1. Get a join code from your teacher<br>2. Click "Join New Class"<br>3. Enter the 6-digit code<br>4. Wait for approval
-                    </div>
-                </div>`;
-        }
-
-        function showErrorClasses() {
-            document.getElementById('classesContainer').innerHTML = `
-                <div class="empty-state">
-                    <h3>❌ Error Loading Classes</h3>
-                    <p>Please try refreshing the page.</p>
-                    <button class="btn" onclick="loadEnrolledClasses()" style="margin-top:1rem">Try Again</button>
-                </div>`;
-        }
+        // ==================== ALERTS ====================
 
         function showSuccess(msg) {
             document.querySelectorAll('.alert').forEach(a => a.remove());
             document.body.insertAdjacentHTML('afterbegin', `<div class="alert alert-success" style="position:fixed;top:20px;right:20px;z-index:1000;max-width:400px"><strong>Success!</strong> ${msg}<button onclick="this.parentElement.remove()" style="float:right;background:none;border:none;font-size:18px;cursor:pointer">&times;</button></div>`);
             setTimeout(() => { const a = document.querySelector('.alert-success'); if (a) a.remove(); }, 8000);
         }
+
 
         function showError(msg) {
             document.querySelectorAll('.alert').forEach(a => a.remove());
@@ -1945,8 +1959,9 @@
         function showLiveQuizNotification(notification) {
             const toast = document.createElement('div');
             toast.className = 'notification-toast';
-            toast.innerHTML = `<div class="toast-header"><span class="toast-icon">🔴</span><span class="toast-title">LIVE QUIZ STARTED!</span></div><div class="toast-message"><strong>${notification.quizTitle}</strong><br>${notification.className}<br>Duration: ${notification.durationMinutes} minutes</div><div class="toast-actions"><button class="toast-btn primary" onclick="goToLiveQuiz('${notification.quizId}')">🚀 Take Quiz</button><button class="toast-btn" onclick="this.closest('.notification-toast').remove()">Dismiss</button></div>`;
+            toast.innerHTML = `<div class="toast-header"><span class="toast-icon"><i data-lucide="radio" style="width:18px;height:18px;color:#ef4444"></i></span><span class="toast-title">LIVE QUIZ STARTED!</span></div><div class="toast-message"><strong>${notification.quizTitle}</strong><br>${notification.className}<br>Duration: ${notification.durationMinutes} minutes</div><div class="toast-actions"><button class="toast-btn primary" onclick="goToLiveQuiz('${notification.quizId}')"><i data-lucide="rocket" style="width:14px;height:14px;display:inline;vertical-align:middle;margin-right:2px"></i> Take Quiz</button><button class="toast-btn" onclick="this.closest('.notification-toast').remove()">Dismiss</button></div>`;
             document.body.appendChild(toast);
+            lucide.createIcons();
             setTimeout(() => { if (toast.parentNode) toast.remove(); }, 10000);
             playNotificationSound();
         }
@@ -1955,8 +1970,9 @@
             const toast = document.createElement('div');
             toast.className = 'notification-toast';
             toast.style.background = 'linear-gradient(135deg,#f59e0b,#d97706)';
-            toast.innerHTML = `<div class="toast-header"><span class="toast-icon">⏰</span><span class="toast-title">LIVE QUIZ ENDED</span></div><div class="toast-message"><strong>${notification.quizTitle}</strong><br>The live quiz session has ended.</div><div class="toast-actions"><button class="toast-btn" onclick="this.closest('.notification-toast').remove()">OK</button></div>`;
+            toast.innerHTML = `<div class="toast-header"><span class="toast-icon"><i data-lucide="clock" style="width:18px;height:18px"></i></span><span class="toast-title">LIVE QUIZ ENDED</span></div><div class="toast-message"><strong>${notification.quizTitle}</strong><br>The live quiz session has ended.</div><div class="toast-actions"><button class="toast-btn" onclick="this.closest('.notification-toast').remove()">OK</button></div>`;
             document.body.appendChild(toast);
+            lucide.createIcons();
             setTimeout(() => { if (toast.parentNode) toast.remove(); }, 5000);
         }
 
@@ -1965,7 +1981,7 @@
                 const response = await fetch('/api/student/live-quizzes');
                 const data = await response.json();
                 if (data.success) { currentLiveQuizzes = data.liveQuizzes; }
-            } catch (e) { console.error('❌ Error loading live quizzes:', e); }
+            } catch (e) { console.error('Error loading live quizzes:', e); }
         }
 
         function showLiveQuizAlert(liveQuiz) {
@@ -1992,7 +2008,7 @@
                 const m = Math.floor(timeLeft / 60), s = timeLeft % 60;
                 const el = document.getElementById(elementId) || document.getElementById(`timer-${elementId}`);
                 if (el) {
-                    el.textContent = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+                    el.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
                     if (timeLeft <= 60) el.style.color = '#ef4444';
                     else if (timeLeft <= 300) el.style.color = '#f59e0b';
                 }
@@ -2005,7 +2021,7 @@
 
         function goToLiveQuiz(quizId) {
             const q = currentLiveQuizzes.find(q => q.quizId === quizId);
-            if (q && q.remainingTime <= 0) { alert('⏰ This live quiz has expired.'); loadLiveQuizzes(); return; }
+            if (q && q.remainingTime <= 0) { alert('This live quiz has expired.'); loadLiveQuizzes(); return; }
             window.location.href = `/quiz-info/${quizId}?live=true`;
         }
 
@@ -2025,7 +2041,7 @@
                 gain.gain.setValueAtTime(0.3, ctx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
                 osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.3);
-            } catch (e) {}
+            } catch (e) { }
         }
 
         document.addEventListener('DOMContentLoaded', function () {
