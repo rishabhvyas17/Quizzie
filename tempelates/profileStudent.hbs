@@ -416,17 +416,18 @@
             <div class="logo">Quizzie</div>
             <nav>
                 <ul class="nav-links">
-                    <li><a href="/homeStudent">My Classes</a></li>
+                    <li><a href="/homeStudent">Dashboard</a></li>
+                    <li><a href="/myClasses">My Classes</a></li>
                     <li><a class="active">My Profile</a></li>
                 </ul>
             </nav>
-            <div class="profile-section">
-                <div class="profile-avatar">{{initials}}</div>
-                <div class="profile-info">
-                    <h3>{{userName}}</h3>
-                    <p>{{userType}}</p>
-                </div>
-                <a href="/logout" class="logout-btn">Logout</a>
+            <div class="header-right">
+                <a href="/comingSoon" class="kohert-btn" title="Kohert">Kohert</a>
+                <button class="header-icon" title="Notifications"><i data-lucide="bell"
+                        style="width:18px;height:18px"></i></button>
+                <a href="/profileStudent" class="header-profile" title="My Profile">
+                    <span class="profile-initials">SK</span>
+                </a>
             </div>
         </div>
     </header>

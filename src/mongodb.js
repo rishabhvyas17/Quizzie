@@ -2,6 +2,20 @@
 // NOTE: Database connection is handled by config/database.js — do not connect here.
 
 const mongoose = require("mongoose");
+// Use the MONGODB_URI environment variable for a single connection
+mongoose.connect(process.env.MONGODB_URI, {
+    serverSelectionTimeoutMS: 30000, // 30 seconds for initial connection
+    socketTimeoutMS: 45000,
+    connectTimeoutMS: 30000
+})
+    .then(() => {
+        console.log("✅ Successfully connected to MongoDB Atlas");
+    })
+    .catch((error) => {
+        console.error("❌ Failed to connect to MongoDB Atlas:", error);
+        process.exit(1);
+    })
+
 
 
 // ==================== FIXED SCHEMAS ====================
@@ -496,7 +510,7 @@ const quizSchema = new mongoose.Schema({
         },
         explanations: {
             A: { type: String, default: "" },
-            B: { type: String, default: "" }, 
+            B: { type: String, default: "" },
             C: { type: String, default: "" },
             D: { type: String, default: "" }
         },
@@ -765,34 +779,34 @@ classJoinRequestSchema.index({ classId: 1, status: 1 });
 classJoinRequestSchema.index({ studentId: 1, status: 1 });
 classJoinRequestSchema.index({ teacherId: 1, status: 1 });
 classJoinRequestSchema.index({ requestedAt: -1 });
-classJoinRequestSchema.index({ 
-    studentId: 1, 
-    classId: 1 
-}, { 
-    unique: true, 
-    partialFilterExpression: { status: { $in: ['pending', 'approved'] } } 
+classJoinRequestSchema.index({
+    studentId: 1,
+    classId: 1
+}, {
+    unique: true,
+    partialFilterExpression: { status: { $in: ['pending', 'approved'] } }
 });
 
-explanationCacheSchema.index({ 
-    questionText: 1, 
-    correctAnswer: 1, 
+explanationCacheSchema.index({
+    questionText: 1,
+    correctAnswer: 1,
     wrongAnswer: 1,
-    lectureId: 1 
+    lectureId: 1
 });
 
 // ==================== SCHEMA MIDDLEWARE ====================
 
 // Update class stats when students are added/removed
-classStudentSchema.post('save', async function() {
+classStudentSchema.post('save', async function () {
     try {
         const ClassCollection = this.constructor.model('ClassCollection');
         const classDoc = await ClassCollection.findById(this.classId);
         if (classDoc) {
-            const activeStudents = await this.constructor.countDocuments({ 
-                classId: this.classId, 
-                isActive: true 
+            const activeStudents = await this.constructor.countDocuments({
+                classId: this.classId,
+                isActive: true
             });
-            await ClassCollection.findByIdAndUpdate(this.classId, { 
+            await ClassCollection.findByIdAndUpdate(this.classId, {
                 studentCount: activeStudents,
                 updatedAt: new Date()
             });
@@ -803,14 +817,14 @@ classStudentSchema.post('save', async function() {
 });
 
 // Update class stats when lectures are added
-lectureSchema.post('save', async function() {
+lectureSchema.post('save', async function () {
     try {
         if (this.classId) {
             const ClassCollection = this.constructor.db.model('ClassCollection');
-            const lectureCount = await this.constructor.countDocuments({ 
-                classId: this.classId 
+            const lectureCount = await this.constructor.countDocuments({
+                classId: this.classId
             });
-            await ClassCollection.findByIdAndUpdate(this.classId, { 
+            await ClassCollection.findByIdAndUpdate(this.classId, {
                 lectureCount: lectureCount,
                 updatedAt: new Date()
             });
@@ -821,14 +835,14 @@ lectureSchema.post('save', async function() {
 });
 
 // Update class and quiz stats when quizzes are added
-quizSchema.post('save', async function() {
+quizSchema.post('save', async function () {
     try {
         if (this.classId) {
             const ClassCollection = this.constructor.db.model('ClassCollection');
-            const quizCount = await this.constructor.countDocuments({ 
-                classId: this.classId 
+            const quizCount = await this.constructor.countDocuments({
+                classId: this.classId
             });
-            await ClassCollection.findByIdAndUpdate(this.classId, { 
+            await ClassCollection.findByIdAndUpdate(this.classId, {
                 quizCount: quizCount,
                 updatedAt: new Date()
             });
@@ -839,32 +853,32 @@ quizSchema.post('save', async function() {
 });
 
 // Update quiz stats when results are submitted
-quizResultSchema.post('save', async function() {
+quizResultSchema.post('save', async function () {
     try {
         const QuizCollection = this.constructor.db.model('QuizCollection');
         const allResults = await this.constructor.find({ quizId: this.quizId });
-        
+
         const totalAttempts = allResults.length;
-        const averageScore = totalAttempts > 0 
+        const averageScore = totalAttempts > 0
             ? parseFloat((allResults.reduce((sum, result) => sum + result.percentage, 0) / totalAttempts).toFixed(1))
             : 0;
-        const highestScore = totalAttempts > 0 
+        const highestScore = totalAttempts > 0
             ? parseFloat(Math.max(...allResults.map(result => result.percentage)).toFixed(1))
             : 0;
-        
+
         await QuizCollection.findByIdAndUpdate(this.quizId, {
             totalAttempts,
             averageScore,
             highestScore
         });
-        
+
         if (this.classId) {
             const ClassCollection = this.constructor.db.model('ClassCollection');
             const classResults = await this.constructor.find({ classId: this.classId });
-            
+
             if (classResults.length > 0) {
                 const classAverageScore = parseFloat((classResults.reduce((sum, result) => sum + result.percentage, 0) / classResults.length).toFixed(1));
-                await ClassCollection.findByIdAndUpdate(this.classId, { 
+                await ClassCollection.findByIdAndUpdate(this.classId, {
                     averageScore: classAverageScore,
                     updatedAt: new Date()
                 });
@@ -876,7 +890,7 @@ quizResultSchema.post('save', async function() {
 });
 
 // Auto-set anti-cheat metadata
-quizResultSchema.pre('save', function(next) {
+quizResultSchema.pre('save', function (next) {
     try {
         if (!this.antiCheatMetadata) {
             this.antiCheatMetadata = {
@@ -890,7 +904,7 @@ quizResultSchema.pre('save', function(next) {
                 monitoringEndTime: new Date()
             };
         }
-        
+
         if (this.antiCheatMetadata.violationCount === 0) {
             this.antiCheatMetadata.securityStatus = 'Clean';
         } else if (this.antiCheatMetadata.violationCount === 1) {
@@ -898,7 +912,7 @@ quizResultSchema.pre('save', function(next) {
         } else if (this.antiCheatMetadata.violationCount >= 2) {
             this.antiCheatMetadata.securityStatus = this.antiCheatMetadata.wasAutoSubmitted ? 'Auto-Submit' : 'Violation';
         }
-        
+
         next();
     } catch (error) {
         console.error('❌ Error in quizResult pre-save middleware:', error);
@@ -909,7 +923,7 @@ quizResultSchema.pre('save', function(next) {
 // ==================== SCHEMA METHODS ====================
 
 // Quiz session methods
-quizSchema.methods.startExamSession = async function(durationMinutes, startedBy) {
+quizSchema.methods.startExamSession = async function (durationMinutes, startedBy) {
     this.examSessionMode = true;
     this.examSessionDuration = durationMinutes;
     this.examSessionStartTime = new Date();
@@ -920,11 +934,11 @@ quizSchema.methods.startExamSession = async function(durationMinutes, startedBy)
     return await this.save();
 };
 
-quizSchema.methods.addSessionParticipant = async function(studentId, studentName) {
+quizSchema.methods.addSessionParticipant = async function (studentId, studentName) {
     const existingParticipant = this.examSessionParticipants.find(
         p => p.studentId.toString() === studentId.toString()
     );
-    
+
     if (!existingParticipant) {
         this.examSessionParticipants.push({
             studentId,
@@ -937,11 +951,11 @@ quizSchema.methods.addSessionParticipant = async function(studentId, studentName
     return this;
 };
 
-quizSchema.methods.markParticipantSubmitted = async function(studentId, autoSubmitted = false) {
+quizSchema.methods.markParticipantSubmitted = async function (studentId, autoSubmitted = false) {
     const participant = this.examSessionParticipants.find(
         p => p.studentId.toString() === studentId.toString()
     );
-    
+
     if (participant) {
         participant.hasSubmitted = true;
         participant.submittedAt = new Date();
@@ -951,12 +965,12 @@ quizSchema.methods.markParticipantSubmitted = async function(studentId, autoSubm
     return this;
 };
 
-quizSchema.methods.endExamSession = async function() {
+quizSchema.methods.endExamSession = async function () {
     this.examSessionActive = false;
     return await this.save();
 };
 
-quizSchema.methods.getSessionTimeRemaining = function() {
+quizSchema.methods.getSessionTimeRemaining = function () {
     if (!this.examSessionActive || !this.examSessionEndTime) {
         return 0;
     }
@@ -965,7 +979,7 @@ quizSchema.methods.getSessionTimeRemaining = function() {
     return Math.floor(remaining / 1000);
 };
 
-quizSchema.methods.isSessionExpired = function() {
+quizSchema.methods.isSessionExpired = function () {
     if (!this.examSessionActive || !this.examSessionEndTime) {
         return false;
     }
@@ -973,45 +987,45 @@ quizSchema.methods.isSessionExpired = function() {
 };
 
 // Join code methods
-classJoinCodeSchema.methods.isExpired = function() {
+classJoinCodeSchema.methods.isExpired = function () {
     return new Date() > this.expiresAt;
 };
 
-classJoinCodeSchema.methods.canBeUsed = function() {
+classJoinCodeSchema.methods.canBeUsed = function () {
     return this.isActive && !this.isExpired() && this.usageCount < this.maxUsage;
 };
 
-classJoinCodeSchema.statics.generateUniqueCode = async function() {
+classJoinCodeSchema.statics.generateUniqueCode = async function () {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let attempts = 0;
     const maxAttempts = 10;
-    
+
     while (attempts < maxAttempts) {
         let code = '';
         for (let i = 0; i < 6; i++) {
             code += characters.charAt(Math.floor(Math.random() * characters.length));
         }
-        
+
         const existing = await this.findOne({ joinCode: code, isActive: true });
         if (!existing) {
             return code;
         }
-        
+
         attempts++;
     }
-    
+
     throw new Error('Unable to generate unique join code after maximum attempts');
 };
 
 // Join request methods
-classJoinRequestSchema.methods.approve = async function(approvedBy) {
+classJoinRequestSchema.methods.approve = async function (approvedBy) {
     this.status = 'approved';
     this.processedAt = new Date();
     this.processedBy = approvedBy;
     return await this.save();
 };
 
-classJoinRequestSchema.methods.reject = async function(rejectedBy, reason) {
+classJoinRequestSchema.methods.reject = async function (rejectedBy, reason) {
     this.status = 'rejected';
     this.processedAt = new Date();
     this.processedBy = rejectedBy;
@@ -1019,7 +1033,7 @@ classJoinRequestSchema.methods.reject = async function(rejectedBy, reason) {
     return await this.save();
 };
 
-classJoinRequestSchema.statics.findPendingForTeacher = function(teacherId) {
+classJoinRequestSchema.statics.findPendingForTeacher = function (teacherId) {
     return this.find({
         teacherId: teacherId,
         status: 'pending'
@@ -1027,15 +1041,15 @@ classJoinRequestSchema.statics.findPendingForTeacher = function(teacherId) {
 };
 
 // Security summary virtual
-quizResultSchema.virtual('securitySummary').get(function() {
+quizResultSchema.virtual('securitySummary').get(function () {
     const metadata = this.antiCheatMetadata || {};
     return {
         isClean: metadata.violationCount === 0,
         hasViolations: metadata.violationCount > 0,
         wasCompromised: metadata.violationCount >= 2,
         submissionType: metadata.submissionSource || 'Manual',
-        riskLevel: metadata.violationCount === 0 ? 'Low' : 
-                  metadata.violationCount === 1 ? 'Medium' : 'High'
+        riskLevel: metadata.violationCount === 0 ? 'Low' :
+            metadata.violationCount === 1 ? 'Medium' : 'High'
     };
 });
 
@@ -1057,7 +1071,6 @@ const classCollection = mongoose.model("ClassCollection", classSchema);
 const classStudentCollection = mongoose.model("ClassStudentCollection", classStudentSchema);
 
 // Join system collections
-// FIX: Changed quizAIConnection.model to mongoose.model
 const classJoinCodeCollection = mongoose.model("ClassJoinCodeCollection", classJoinCodeSchema);
 const classJoinRequestCollection = mongoose.model("ClassJoinRequestCollection", classJoinRequestSchema);
 
@@ -1067,17 +1080,17 @@ module.exports = {
     // User authentication collections
     studentCollection,
     teacherCollection,
-    
+
     // Lecture and quiz system collections
     lectureCollection,
     quizCollection,
     quizResultCollection,
     explanationCacheCollection,
-    
+
     // Class management collections
     classCollection,
     classStudentCollection,
-    
+
     // Join system collections
     classJoinCodeCollection,
     classJoinRequestCollection

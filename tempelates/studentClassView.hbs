@@ -51,10 +51,16 @@
             letter-spacing: -0.5px;
         }
 
-        .profile-section {
+        .nav-links a.active {
+            color: #1e293b;
+            background: #eef1f8;
+            font-weight: 600;
+        }
+
+        .header-right {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 0.5rem;
         }
 
         .profile-avatar {
@@ -1072,13 +1078,20 @@
     <header class="header">
         <div class="header-content">
             <div class="logo">Quizzie</div>
-            <div class="profile-section">
-                <div class="profile-avatar" id="profileAvatar"></div>
-                <div class="profile-info">
-                    <h3>{{userName}}</h3>
-                    <p>student</p>
-                </div>
-                <a href="/logout" class="logout-btn">Logout</a>
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="/homeStudent">Dashboard</a></li>
+                    <li><a href="/myClasses">My Classes</a></li>
+                    <li><a href="/profileStudent">My Profile</a></li>
+                </ul>
+            </nav>
+            <div class="header-right">
+                <a href="/comingSoon" class="kohert-btn" title="Kohert">Kohert</a>
+                <button class="header-icon" title="Notifications"><i data-lucide="bell"
+                        style="width:18px;height:18px"></i></button>
+                <a href="/profileStudent" class="header-profile" title="My Profile">
+                    <span class="profile-initials">SK</span>
+                </a>
             </div>
         </div>
     </header>
@@ -1087,7 +1100,7 @@
     <main class="main-content">
         <!-- Breadcrumb Navigation -->
         <nav class="breadcrumb">
-            <a href="/homeStudent">📚 My Classes</a>
+            <a href="/myClasses">My Classes</a>
             <span class="breadcrumb-separator">›</span>
             <span class="breadcrumb-current" id="breadcrumbCurrent">Loading...</span>
         </nav>
@@ -1226,9 +1239,9 @@
 
     <script>
         // Global variables
-        const classId = '{{classId}}';
-        const studentName = '{{userName}}';
-        let classData = {};
+        const studentName = '{{{userName}}}';
+        let classData = null;
+        const classId = window.location.pathname.split('/').pop();
         let charts = {};
 
         // Initialize page
@@ -1237,6 +1250,7 @@
             initializePage();
             loadClassOverview();
             loadAllQuizzes();
+            setProfileInitials();
         });
 
         // Initialize page elements

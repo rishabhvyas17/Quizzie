@@ -1,4 +1,5 @@
 // src/index.js - UNIFIED QuizAI Server with All Features Combined
+require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
