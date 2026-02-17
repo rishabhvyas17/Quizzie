@@ -32,6 +32,9 @@
             background: var(--bg);
             color: var(--primary);
             line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         /* === HEADER === */
@@ -61,33 +64,31 @@
         }
 
         .nav-links {
-            display: flex;
-            gap: 0.25rem;
             list-style: none;
-            background: var(--bg);
-            border-radius: 12px;
-            padding: 4px;
+            display: flex;
+            gap: 0.5rem;
         }
 
         .nav-links a {
             text-decoration: none;
             color: var(--muted);
             font-weight: 500;
-            font-size: 0.9rem;
-            padding: 0.5rem 1.25rem;
+            font-size: 0.85rem;
+            padding: 0.5rem 1rem;
             border-radius: 10px;
-            transition: all 0.25s;
+            transition: all 0.2s;
             cursor: pointer;
         }
 
         .nav-links a:hover {
-            color: var(--secondary);
+            color: var(--primary);
+            background: var(--bg);
         }
 
         .nav-links a.active {
-            color: var(--white);
-            background: var(--primary);
-            box-shadow: 0 2px 8px rgba(20, 39, 78, 0.2);
+            color: var(--primary);
+            background: var(--bg);
+            font-weight: 600;
         }
 
         .header-right {
@@ -115,57 +116,49 @@
             background: #e2e8f0;
         }
 
-        .profile-avatar {
+        .kohert-btn {
+            background: linear-gradient(135deg, #14274E 0%, #394867 100%);
+            color: white !important;
+            padding: 0.5rem 1.25rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-decoration: none;
+            box-shadow: 0 4px 12px rgba(20, 39, 78, 0.2);
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .kohert-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(20, 39, 78, 0.3);
+            background: linear-gradient(135deg, #1f3a6e 0%, #4b5d85 100%);
+        }
+
+        .header-profile {
             width: 40px;
             height: 40px;
-            background: var(--primary);
             border-radius: 50%;
+            background: linear-gradient(135deg, #394867 0%, #14274E 100%);
+            color: white;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
             font-weight: 700;
             font-size: 0.9rem;
-            box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--muted);
-            cursor: pointer;
-        }
-
-        .profile-section {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .profile-info h3 {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--primary);
-        }
-
-        .profile-info p {
-            font-size: 0.7rem;
-            color: var(--muted);
-        }
-
-        .logout-btn {
-            background: #fee2e2;
-            color: #ef4444;
-            border: none;
-            padding: 0.45rem 1rem;
-            border-radius: 10px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 0.8rem;
             text-decoration: none;
-            margin-left: 0.5rem;
+            margin-left: 0.75rem;
+            border: 2px solid #F1F6F9;
+            box-shadow: 0 2px 8px rgba(20, 39, 78, 0.15);
+            transition: all 0.2s;
         }
 
-        .logout-btn:hover {
-            background: #ef4444;
-            color: white;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        .header-profile:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(20, 39, 78, 0.25);
         }
 
         /* === MAIN === */
@@ -173,7 +166,8 @@
             max-width: 1300px;
             margin: 0 auto;
             padding: 2rem 1.5rem;
-            min-height: calc(100vh - 200px);
+            flex: 1;
+            width: 100%;
         }
 
         .dashboard-title {
@@ -445,17 +439,93 @@
             color: var(--muted);
         }
 
-        /* === LIVE & RECENT CLASSES === */
+        /* === LIVE & RECENT CLASSES (SWIPEABLE) === */
+        .class-swipe-container {
+            position: relative;
+            overflow: hidden;
+            border-radius: 12px;
+        }
+
+        .class-slides {
+            display: flex;
+            transition: transform 0.35s cubic-bezier(.4, 0, .2, 1);
+            width: 200%;
+        }
+
+        .class-slide {
+            width: 50%;
+            min-height: 180px;
+            flex-shrink: 0;
+        }
+
+        .slide-dots {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 0.75rem;
+        }
+
+        .slide-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--muted);
+            opacity: 0.35;
+            cursor: pointer;
+            transition: all 0.25s;
+            border: none;
+            padding: 0;
+        }
+
+        .slide-dot.active {
+            opacity: 1;
+            background: var(--primary);
+            width: 18px;
+            border-radius: 4px;
+        }
+
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #ef4444;
+            background: #fef2f2;
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+        }
+
+        .live-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #ef4444;
+            animation: livePulse 1.5s infinite;
+        }
+
+        @keyframes livePulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+        }
+
         .class-tabs {
             display: flex;
             gap: 0.5rem;
-            margin-bottom: 1rem;
+            margin-bottom: 0.75rem;
         }
 
         .class-tab {
-            padding: 0.35rem 0.75rem;
+            padding: 0.3rem 0.7rem;
             border-radius: 8px;
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             font-weight: 600;
             border: none;
             cursor: pointer;
@@ -550,6 +620,57 @@
             background: var(--secondary);
             transform: translateY(-1px);
             box-shadow: 0 4px 14px rgba(20, 39, 78, 0.25);
+        }
+
+        .recent-class-item {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            padding: 0.65rem 0;
+            border-bottom: 1px solid rgba(155, 164, 180, 0.12);
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 8px;
+        }
+
+        .recent-class-item:last-child {
+            border-bottom: none;
+        }
+
+        .recent-class-item:hover {
+            background: var(--bg);
+            padding-left: 0.5rem;
+        }
+
+        .recent-class-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            flex-shrink: 0;
+        }
+
+        .recent-class-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .recent-class-name {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .recent-class-teacher {
+            font-size: 0.7rem;
+            color: var(--muted);
         }
 
         /* === RANKINGS === */
@@ -1390,22 +1511,17 @@
             <nav>
                 <ul class="nav-links">
                     <li><a class="active">Dashboard</a></li>
+                    <li><a href="/myClasses">My Classes</a></li>
                     <li><a href="/profileStudent">My Profile</a></li>
                 </ul>
             </nav>
             <div class="header-right">
-                <button class="header-icon" title="Search"><i data-lucide="search"
-                        style="width:18px;height:18px"></i></button>
+                <a href="/comingSoon" class="kohert-btn" title="Kohert">Kohert</a>
                 <button class="header-icon" title="Notifications"><i data-lucide="bell"
                         style="width:18px;height:18px"></i></button>
-                <div class="profile-section">
-                    <div class="profile-avatar" id="profileAvatar"></div>
-                    <div class="profile-info">
-                        <h3>{{userName}}</h3>
-                        <p>{{userType}}</p>
-                    </div>
-                    <a href="/logout" class="logout-btn">Logout</a>
-                </div>
+                <a href="/profileStudent" class="header-profile" title="My Profile">
+                    <span class="profile-initials">SK</span>
+                </a>
             </div>
         </div>
     </header>
@@ -1487,7 +1603,7 @@
                 </div>
             </div>
 
-            <!-- 3. Live & Recent Classes (top-right) -->
+            <!-- 3. Live & Recent Classes (top-right, SWIPEABLE) -->
             <div class="bento-card card-liveclass">
                 <div class="card-header">
                     <span class="card-title"><i data-lucide="book-open" style="width:20px;height:20px"></i>
@@ -1510,11 +1626,26 @@
                         </button>
                     </div>
                 </div>
-                <div id="liveClassContent">
-                    <div class="loading">
-                        <div class="loading-spinner"></div>
-                        <p>Loading...</p>
+                <!-- Swipeable Container -->
+                <div class="class-swipe-container" id="classSwipeContainer">
+                    <div class="class-slides" id="classSlides">
+                        <div class="class-slide" id="liveSlide">
+                            <div class="loading">
+                                <div class="loading-spinner"></div>
+                                <p>Loading...</p>
+                            </div>
+                        </div>
+                        <div class="class-slide" id="recentSlide">
+                            <div class="loading">
+                                <div class="loading-spinner"></div>
+                                <p>Loading...</p>
+                            </div>
+                        </div>
                     </div>
+                </div>
+                <div class="slide-dots">
+                    <button class="slide-dot active" onclick="goToSlide(0)"></button>
+                    <button class="slide-dot" onclick="goToSlide(1)"></button>
                 </div>
             </div>
 
@@ -1609,6 +1740,17 @@
         let currentJoinCode = '';
         let currentClassData = {};
         let statsChart = null;
+        let currentSlide = 0;
+
+        function goToSlide(n) {
+            currentSlide = n;
+            const slides = document.getElementById('classSlides');
+            const dots = document.querySelectorAll('.slide-dot');
+            if (slides) slides.style.transform = `translateX(-${n * 50}%)`;
+            dots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === n);
+            });
+        }
 
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function () {
@@ -1616,7 +1758,43 @@
             lucide.createIcons();
             initializeDashboard();
             loadEnrolledClasses();
+            initSwipeHandlers();
+            setProfileInitials();
         });
+
+        function setProfileInitials() {
+            const name = studentName || 'Student';
+            const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+            document.querySelectorAll('.profile-initials').forEach(el => el.textContent = initials);
+        }
+
+        function initSwipeHandlers() {
+            const container = document.getElementById('classSwipeContainer');
+            let startX = 0;
+            let endX = 0;
+
+            if (!container) return;
+
+            container.addEventListener('touchstart', (e) => {
+                startX = e.changedTouches[0].screenX;
+            }, { passive: true });
+
+            container.addEventListener('touchend', (e) => {
+                endX = e.changedTouches[0].screenX;
+                handleSwipe();
+            }, { passive: true });
+
+            function handleSwipe() {
+                const threshold = 50;
+                if (startX - endX > threshold) {
+                    // Swipe left -> Next slide (Live -> Recent)
+                    if (currentSlide < 1) goToSlide(currentSlide + 1);
+                } else if (endX - startX > threshold) {
+                    // Swipe right -> Previous slide (Recent -> Live)
+                    if (currentSlide > 0) goToSlide(currentSlide - 1);
+                }
+            }
+        }
 
         function initializeDashboard() {
             const hour = new Date().getHours();
@@ -1624,26 +1802,6 @@
             if (hour < 12) greeting = 'Good morning';
             else if (hour < 18) greeting = 'Good afternoon';
             document.getElementById('dashboardTitle').textContent = `${greeting}, ${studentName}!`;
-            const avatar = document.getElementById('profileAvatar');
-            const initials = studentName.split(' ').map(name => name.charAt(0)).join('').toUpperCase();
-            avatar.textContent = initials;
-        }
-
-        function getSubjectEmoji(subject) {
-            const s = subject.toLowerCase();
-            if (s.includes('math')) return '📐';
-            if (s.includes('physic')) return '⚛️';
-            if (s.includes('chemistry') || s.includes('chem')) return '🧪';
-            if (s.includes('biology') || s.includes('bio')) return '🧬';
-            if (s.includes('english') || s.includes('literature')) return '📚';
-            if (s.includes('history')) return '📜';
-            if (s.includes('geography')) return '🌍';
-            if (s.includes('computer') || s.includes('programming')) return '💻';
-            if (s.includes('art')) return '🎨';
-            if (s.includes('music')) return '🎵';
-            if (s.includes('economics')) return '💰';
-            if (s.includes('psychology')) return '🧠';
-            return '📖';
         }
 
         // ==================== BENTO CARD RENDERERS ====================
@@ -1699,31 +1857,55 @@
         }
 
         function renderLiveClassCard(classes) {
-            const container = document.getElementById('liveClassContent');
+            const liveContainer = document.getElementById('liveSlide');
+            const recentContainer = document.getElementById('recentSlide');
+            const dotsContainer = document.querySelector('.slide-dots');
+
             if (classes.length === 0) {
-                container.innerHTML = '<div class="empty-state"><p>No classes enrolled yet. Click + to join!</p></div>';
+                const emptyState = '<div class="empty-state"><p>No classes enrolled yet. Click + to join!</p></div>';
+                if (liveContainer) liveContainer.innerHTML = emptyState;
+                if (recentContainer) recentContainer.innerHTML = emptyState;
+                if (dotsContainer) dotsContainer.style.display = 'none';
                 return;
             }
+
+            // 1. Render First Slide (Live Class Proxy)
             const cls = classes[0];
             const progress = cls.quizzesTaken > 0 ? Math.min(100, Math.round((cls.averageScore || 0))) : 0;
-            container.innerHTML = `
-                <div class="class-desc" style="font-weight:600;color:var(--primary);margin-bottom:0.35rem;">${cls.classSubject}</div>
-                <div class="class-desc">${cls.className} &bull; ${cls.teacherName}</div>
-                <div class="class-participants">
-                    <div class="avatar-stack">
-                        <span>${cls.teacherName?.charAt(0) || 'T'}</span>
-                        <span><i data-lucide="user" style="width:12px;height:12px"></i></span>
-                        <span>+</span>
+
+            if (liveContainer) {
+                liveContainer.innerHTML = `
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.35rem;">
+                        <span class="live-indicator"><span class="live-dot"></span>LIVE</span>
+                        <span class="class-desc" style="margin:0;font-size:0.7rem;">${cls.classSubject}</span>
                     </div>
-                    <span class="participants-label">Participants</span>
-                </div>
-                <div class="course-progress">
-                    <span class="course-progress-label">Course progress</span>
-                    <div class="progress-bar-track" style="flex:1"><div class="progress-bar-fill progress-fill-green" style="width:${progress}%"></div></div>
-                    <span class="course-progress-value">${progress}%</span>
-                </div>
-                <button class="continue-btn" onclick="goToClass('${cls.classId}','${cls.className}')">Continue learning</button>
-            `;
+                    <div class="class-desc" style="font-weight:600;color:var(--primary);margin-bottom:0.2rem;font-size:0.9rem;">${cls.className}</div>
+                    <div class="class-desc" style="margin-bottom:0.75rem;">${cls.teacherName}</div>
+                    
+                    <div class="course-progress">
+                        <div class="progress-bar-track" style="flex:1"><div class="progress-bar-fill progress-fill-green" style="width:${progress}%"></div></div>
+                        <span class="course-progress-value" style="font-size:0.75rem;">${progress}%</span>
+                    </div>
+                    <button class="continue-btn" onclick="goToClass('${cls.classId}','${cls.className}')">Join Live Class</button>
+                `;
+            }
+
+            // 2. Render Second Slide (Recent Classes List)
+            if (recentContainer) {
+                const recentClasses = classes.slice(0, 3);
+                const recentListHtml = recentClasses.map(c => `
+                    <div class="recent-class-item" onclick="goToClass('${c.classId}','${c.className}')">
+                        <div class="recent-class-icon">${c.classSubject.charAt(0)}</div>
+                        <div class="recent-class-info">
+                            <div class="recent-class-name">${c.className}</div>
+                            <div class="recent-class-teacher">${c.teacherName}</div>
+                        </div>
+                        <i data-lucide="chevron-right" style="width:14px;height:14px;color:var(--muted);"></i>
+                    </div>
+                `).join('');
+                recentContainer.innerHTML = `<div style="padding:0.25rem 0;">${recentListHtml}</div>`;
+            }
+
             lucide.createIcons();
         }
 

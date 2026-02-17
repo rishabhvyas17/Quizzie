@@ -53,6 +53,28 @@ router.get('/homeStudent', isAuthenticated, async (req, res) => {
     }
 });
 
+// My Classes page
+router.get('/myClasses', isAuthenticated, async (req, res) => {
+    try {
+        res.render("myClasses", {
+            userType: req.session.userType || "student",
+            userName: req.session.userName || "Student",
+            studentId: req.session.userId
+        });
+    } catch (error) {
+        console.error('Error loading My Classes page:', error);
+        res.redirect('/homeStudent?message=Failed to load My Classes.');
+    }
+});
+
+// Coming Soon page
+router.get('/comingSoon', isAuthenticated, (req, res) => {
+    res.render("comingSoon", {
+        userType: req.session.userType || "student",
+        userName: req.session.userName || "Student"
+    });
+});
+
 // Student profile page
 router.get('/profileStudent', isAuthenticated, async (req, res) => {
     if (req.session.userType !== 'student') {
@@ -62,8 +84,8 @@ router.get('/profileStudent', isAuthenticated, async (req, res) => {
     try {
         // Fetch student with new firstName and lastName fields, AND enrollment
         const student = await studentCollection.findById(req.session.userId)
-                                .select('name email isVerified firstName lastName enrollment')
-                                .lean();
+            .select('name email isVerified firstName lastName enrollment')
+            .lean();
         if (!student) {
             return res.redirect('/login?error=' + encodeURIComponent('Student profile not found. Please log in again.'));
         }
@@ -321,7 +343,7 @@ router.get('/take_quiz/:quizId', isAuthenticated, async (req, res) => {
 
         if (existingResult) {
             const message = `You have already completed: ${quiz.lectureTitle}`;
-            const redirectUrl = classId ? 
+            const redirectUrl = classId ?
                 `/student/class/${classId}?message=${encodeURIComponent(message)}` :
                 `/quiz-results?alreadyTaken=true&quizTitle=${encodeURIComponent(quiz.lectureTitle)}`;
 
