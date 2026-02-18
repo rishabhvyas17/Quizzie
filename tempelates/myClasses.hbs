@@ -30,8 +30,10 @@
             background: var(--bg);
             color: var(--primary);
             min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
             flex-direction: column;
+            overflow-x: hidden;
         }
 
         /* === HEADER === */
@@ -637,6 +639,7 @@
             background: var(--white);
             border-top: 1px solid rgba(155, 164, 180, 0.2);
             padding: 1.5rem 0;
+            flex-shrink: 0;
         }
 
         .footer-content {
@@ -679,15 +682,196 @@
             border: 1px solid #fca5a5;
         }
 
+        /* === HAMBURGER MENU === */
+        .hamburger-btn {
+            display: none;
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: var(--bg);
+            border: none;
+            color: var(--secondary);
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .hamburger-btn:hover {
+            background: #e2e8f0;
+            color: var(--primary);
+        }
+
+        .mobile-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(20, 39, 78, 0.4);
+            backdrop-filter: blur(2px);
+            z-index: 998;
+        }
+
+        .mobile-overlay.open {
+            display: block;
+        }
+
+        .mobile-nav {
+            position: fixed;
+            top: 0;
+            right: -65%;
+            width: 65%;
+            max-width: 300px;
+            height: 100%;
+            background: var(--white);
+            z-index: 999;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            box-shadow: -4px 0 24px rgba(20, 39, 78, 0.15);
+            transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow-y: auto;
+        }
+
+        .mobile-nav.open {
+            right: 0;
+        }
+
+        .mobile-nav-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(155, 164, 180, 0.15);
+        }
+
+        .mobile-nav-header .logo {
+            font-size: 1.3rem;
+        }
+
+        .mobile-nav-close {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            background: var(--bg);
+            border: none;
+            color: var(--secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .mobile-nav-close:hover {
+            background: #fee2e2;
+            color: #ef4444;
+        }
+
+        .mobile-nav a {
+            text-decoration: none;
+            color: var(--secondary);
+            font-weight: 500;
+            font-size: 0.95rem;
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .mobile-nav a:hover,
+        .mobile-nav a.active {
+            color: var(--primary);
+            background: var(--bg);
+            font-weight: 600;
+        }
+
+        .mobile-nav-divider {
+            height: 1px;
+            background: rgba(155, 164, 180, 0.15);
+            margin: 0.5rem 0;
+        }
+
+        .mobile-nav-bottom {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(155, 164, 180, 0.15);
+        }
+
+        .mobile-nav .drawer-kohert {
+            background: linear-gradient(135deg, #14274E 0%, #394867 100%) !important;
+            color: white !important;
+            padding: 0.65rem 1.25rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-decoration: none;
+            box-shadow: 0 4px 12px rgba(20, 39, 78, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .mobile-nav .drawer-kohert:hover {
+            background: linear-gradient(135deg, #1f3a6e 0%, #4b5d85 100%) !important;
+        }
+
+        .notification-toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--primary);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            z-index: 1001;
+            box-shadow: 0 4px 20px rgba(20, 39, 78, 0.3);
+            transition: transform 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .notification-toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .mobile-kohert {
+            display: none;
+        }
+
         /* === RESPONSIVE === */
         @media(max-width:768px) {
             .header-content {
-                flex-direction: column;
-                gap: 0.75rem;
+                flex-direction: row;
+                flex-wrap: nowrap;
             }
 
-            .nav-links {
-                gap: 0;
+            .header-content nav {
+                display: none;
+            }
+
+            .header-right .kohert-btn:not(.mobile-kohert),
+            .header-right .header-profile,
+            .header-right .header-icon {
+                display: none;
+            }
+
+            .hamburger-btn {
+                display: flex;
+            }
+
+            .header-right .mobile-kohert {
+                display: inline-flex;
             }
 
             .page-header {
@@ -764,14 +948,37 @@
             </nav>
             <div class="header-right">
                 <a href="/comingSoon" class="kohert-btn" title="Kohert">Kohert</a>
+                <a href="/comingSoon" class="kohert-btn mobile-kohert" title="Kohert">Kohert</a>
                 <button class="header-icon" title="Notifications"><i data-lucide="bell"
                         style="width:18px;height:18px"></i></button>
+                <button class="hamburger-btn" onclick="toggleMobileNav()" title="Menu" id="hamburgerBtn">
+                    <i data-lucide="menu" style="width:20px;height:20px"></i>
+                </button>
                 <a href="/profileStudent" class="header-profile" title="My Profile">
                     <span class="profile-initials">SK</span>
                 </a>
             </div>
         </div>
     </header>
+
+    <!-- Mobile Overlay -->
+    <div class="mobile-overlay" id="mobileOverlay" onclick="closeMobileNav()"></div>
+
+    <!-- Mobile Side Drawer -->
+    <div class="mobile-nav" id="mobileNav">
+        <div class="mobile-nav-header">
+            <div class="logo">Quizzie</div>
+            <button class="mobile-nav-close" onclick="closeMobileNav()">
+                <i data-lucide="x" style="width:18px;height:18px"></i>
+            </button>
+        </div>
+        <a href="/homeStudent"><i data-lucide="layout-dashboard" style="width:18px;height:18px"></i> Dashboard</a>
+        <a href="/myClasses" class="active"><i data-lucide="book-open" style="width:18px;height:18px"></i> My
+            Classes</a>
+        <a href="/profileStudent"><i data-lucide="user" style="width:18px;height:18px"></i> My Profile</a>
+        <div class="mobile-nav-divider"></div>
+        <a href="/notifications"><i data-lucide="bell" style="width:18px;height:18px"></i> Notifications</a>
+    </div>
 
     <!-- Main Content -->
     <main class="main-content">
@@ -1031,6 +1238,35 @@
             document.querySelectorAll('.alert').forEach(a => a.remove());
             document.body.insertAdjacentHTML('afterbegin', `<div class="alert alert-error" style="position:fixed;top:20px;right:20px;z-index:1000;max-width:400px"><strong>Error!</strong> ${msg}<button onclick="this.parentElement.remove()" style="float:right;background:none;border:none;font-size:18px;cursor:pointer">&times;</button></div>`);
             setTimeout(() => { const a = document.querySelector('.alert-error'); if (a) a.remove(); }, 10000);
+        }
+        // Mobile sidebar toggle
+        function toggleMobileNav() {
+            document.getElementById('mobileNav').classList.add('open');
+            document.getElementById('mobileOverlay').classList.add('open');
+            document.body.style.overflow = 'hidden';
+            lucide.createIcons();
+        }
+
+        function closeMobileNav() {
+            document.getElementById('mobileNav').classList.remove('open');
+            document.getElementById('mobileOverlay').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        function showNotificationToast() {
+            closeMobileNav();
+            let toast = document.getElementById('notifToast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'notifToast';
+                toast.className = 'notification-toast';
+                toast.textContent = '🔔 Notifications coming soon!';
+                document.body.appendChild(toast);
+            }
+            setTimeout(() => toast.classList.add('show'), 50);
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2500);
         }
     </script>
 </body>

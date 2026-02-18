@@ -17,6 +17,7 @@ const {
 // Import email services
 const { sendEmail } = require('../services/emailService');
 const { renderEmailTemplate } = require('../utils/templateRenderer');
+const StudentController = require('../controllers/studentController');
 
 // Constants
 const VERIFICATION_TOKEN_EXPIRY = 24 * 60 * 60 * 1000;
@@ -73,6 +74,24 @@ router.get('/comingSoon', isAuthenticated, (req, res) => {
         userType: req.session.userType || "student",
         userName: req.session.userName || "Student"
     });
+});
+
+// Notifications page
+router.get('/notifications', isAuthenticated, (req, res) => {
+    res.render("notifications", {
+        userType: req.session.userType || "student",
+        userName: req.session.userName || "Student"
+    });
+});
+
+// Notifications API
+router.get('/api/student/notifications', isAuthenticated, async (req, res) => {
+    try {
+        // Notifications system - returns empty for now
+        res.json({ success: true, notifications: [] });
+    } catch (error) {
+        res.json({ success: true, notifications: [] });
+    }
 });
 
 // Student profile page
@@ -665,5 +684,16 @@ router.get('/quiz-info/:quizId', isAuthenticated, async (req, res) => {
         res.status(500).redirect('/homeStudent?message=Failed to load quiz information.');
     }
 });
+
+// ==================== PROFILE FEATURE ROUTES ====================
+
+// Change Password
+router.post('/student/change-password', isAuthenticated, StudentController.changePassword);
+
+// Update Notification Settings
+router.post('/student/notification-settings', isAuthenticated, StudentController.updateNotificationSettings);
+
+// Download Student Data
+router.get('/student/download-data', isAuthenticated, StudentController.downloadData);
 
 module.exports = router;

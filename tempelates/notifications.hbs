@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Coming Soon - Quizzie</title>
+    <title>Notifications - Quizzie</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -159,118 +159,146 @@
             box-shadow: 0 4px 12px rgba(20, 39, 78, 0.25);
         }
 
-        /* === COMING SOON === */
-        .coming-soon-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        /* === NOTIFICATIONS === */
+        .main-content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
             flex: 1;
-            padding: 2rem;
-        }
-
-        .coming-soon-card {
-            background: var(--white);
-            border-radius: 28px;
-            padding: 3.5rem;
-            text-align: center;
-            max-width: 520px;
             width: 100%;
-            box-shadow: 0 4px 24px rgba(20, 39, 78, 0.06);
-            border: 1px solid rgba(155, 164, 180, 0.15);
         }
 
-        .icon-container {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--bg) 0%, rgba(20, 39, 78, 0.08) 100%);
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
             display: flex;
             align-items: center;
-            justify-content: center;
-            margin: 0 auto 2rem;
-            animation: float 3s ease-in-out infinite;
+            gap: 0.5rem;
         }
 
-        .icon-container i,
-        .icon-container svg {
-            color: var(--primary);
-        }
-
-        @keyframes float {
-
-            0%,
-            100% {
-                transform: translateY(0px);
-            }
-
-            50% {
-                transform: translateY(-10px);
-            }
-        }
-
-        .coming-soon-title {
-            font-size: 2rem;
-            font-weight: 800;
-            color: var(--primary);
+        .notif-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 1.25rem 1.5rem;
             margin-bottom: 0.75rem;
-            letter-spacing: -0.5px;
-        }
-
-        .coming-soon-subtitle {
-            font-size: 1rem;
-            color: var(--secondary);
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-        }
-
-        .coming-soon-desc {
-            font-size: 0.9rem;
-            color: var(--muted);
-            line-height: 1.7;
-            margin-bottom: 2rem;
-        }
-
-        .feature-chips {
+            box-shadow: 0 2px 8px rgba(20, 39, 78, 0.04);
+            border: 1px solid rgba(155, 164, 180, 0.12);
             display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
+            align-items: flex-start;
+            gap: 1rem;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .notif-card:hover {
+            box-shadow: 0 4px 16px rgba(20, 39, 78, 0.08);
+            transform: translateY(-1px);
+        }
+
+        .notif-card.unread {
+            border-left: 3px solid var(--primary);
+        }
+
+        .notif-icon {
+            width: 42px;
+            height: 42px;
+            min-width: 42px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
             justify-content: center;
-            margin-bottom: 2rem;
         }
 
-        .feature-chip {
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-            padding: 0.45rem 0.85rem;
-            background: var(--bg);
-            border-radius: 20px;
-            font-size: 0.78rem;
-            font-weight: 500;
-            color: var(--secondary);
+        .notif-icon.quiz {
+            background: #dbeafe;
+            color: #2563eb;
         }
 
-        .back-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 0.8rem 1.5rem;
-            border-radius: 14px;
+        .notif-icon.class {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        .notif-icon.grade {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .notif-icon.system {
+            background: #f3e8ff;
+            color: #7c3aed;
+        }
+
+        .notif-icon.join {
+            background: #e0f2fe;
+            color: #0284c7;
+        }
+
+        .notif-body {
+            flex: 1;
+        }
+
+        .notif-title {
             font-weight: 600;
             font-size: 0.9rem;
-            cursor: pointer;
-            transition: all 0.25s;
-            text-decoration: none;
-            box-shadow: 0 2px 8px rgba(20, 39, 78, 0.15);
+            color: var(--primary);
+            margin-bottom: 0.25rem;
         }
 
-        .back-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(20, 39, 78, 0.25);
-            background: var(--secondary);
+        .notif-desc {
+            font-size: 0.82rem;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        .notif-time {
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-top: 0.35rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .notif-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--primary);
+            flex-shrink: 0;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: var(--white);
+            border-radius: 20px;
+            border: 1px solid rgba(155, 164, 180, 0.12);
+        }
+
+        .empty-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            color: var(--muted);
+        }
+
+        .empty-state h3 {
+            font-size: 1.15rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            color: var(--muted);
+            font-size: 0.9rem;
         }
 
         /* === FOOTER === */
@@ -278,6 +306,7 @@
             background: var(--white);
             border-top: 1px solid rgba(155, 164, 180, 0.2);
             padding: 1.5rem 0;
+            margin-top: auto;
             flex-shrink: 0;
         }
 
@@ -418,53 +447,6 @@
             margin: 0.5rem 0;
         }
 
-        .mobile-nav-bottom {
-            margin-top: 1rem;
-            padding-top: 1rem;
-            border-top: 1px solid rgba(155, 164, 180, 0.15);
-        }
-
-        .mobile-nav .drawer-kohert {
-            background: linear-gradient(135deg, #14274E 0%, #394867 100%) !important;
-            color: white !important;
-            padding: 0.65rem 1.25rem;
-            border-radius: 12px;
-            font-weight: 600;
-            font-size: 0.9rem;
-            text-decoration: none;
-            box-shadow: 0 4px 12px rgba(20, 39, 78, 0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .mobile-nav .drawer-kohert:hover {
-            background: linear-gradient(135deg, #1f3a6e 0%, #4b5d85 100%) !important;
-        }
-
-        .notification-toast {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background: var(--primary);
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            z-index: 1001;
-            box-shadow: 0 4px 20px rgba(20, 39, 78, 0.3);
-            transition: transform 0.3s ease;
-            white-space: nowrap;
-        }
-
-        .notification-toast.show {
-            transform: translateX(-50%) translateY(0);
-        }
-
         .mobile-kohert {
             display: none;
         }
@@ -493,13 +475,16 @@
                 display: inline-flex;
             }
 
-            .coming-soon-card {
-                padding: 2.5rem 1.5rem;
-                border-radius: 20px;
+            .main-content {
+                padding: 1.25rem 1rem;
             }
 
-            .coming-soon-title {
-                font-size: 1.6rem;
+            .page-title {
+                font-size: 1.25rem;
+            }
+
+            .notif-card {
+                padding: 1rem 1.15rem;
             }
 
             .footer-content {
@@ -507,6 +492,38 @@
                 gap: 0.5rem;
                 text-align: center;
             }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .notif-card {
+            animation: fadeInUp 0.4s ease-out both;
+        }
+
+        .notif-card:nth-child(2) {
+            animation-delay: 0.05s;
+        }
+
+        .notif-card:nth-child(3) {
+            animation-delay: 0.1s;
+        }
+
+        .notif-card:nth-child(4) {
+            animation-delay: 0.15s;
+        }
+
+        .notif-card:nth-child(5) {
+            animation-delay: 0.2s;
         }
     </style>
 </head>
@@ -553,37 +570,18 @@
         <a href="/myClasses"><i data-lucide="book-open" style="width:18px;height:18px"></i> My Classes</a>
         <a href="/profileStudent"><i data-lucide="user" style="width:18px;height:18px"></i> My Profile</a>
         <div class="mobile-nav-divider"></div>
-        <a href="/notifications"><i data-lucide="bell" style="width:18px;height:18px"></i> Notifications</a>
+        <a href="/notifications" class="active"><i data-lucide="bell" style="width:18px;height:18px"></i>
+            Notifications</a>
     </div>
 
-    <!-- Coming Soon Content -->
-    <div class="coming-soon-container">
-        <div class="coming-soon-card">
-            <div class="icon-container">
-                <i data-lucide="rocket" style="width:44px;height:44px"></i>
-            </div>
-            <h1 class="coming-soon-title">Coming Soon!</h1>
-            <p class="coming-soon-subtitle">We're building something amazing</p>
-            <p class="coming-soon-desc">
-                This feature is currently under development. Stay tuned for exciting new updates that will enhance your
-                learning experience!
-            </p>
-            <div class="feature-chips">
-                <span class="feature-chip"><i data-lucide="sparkles" style="width:14px;height:14px"></i> AI
-                    Quizzes</span>
-                <span class="feature-chip"><i data-lucide="message-circle" style="width:14px;height:14px"></i> Class
-                    Chat</span>
-                <span class="feature-chip"><i data-lucide="trophy" style="width:14px;height:14px"></i>
-                    Achievements</span>
-                <span class="feature-chip"><i data-lucide="calendar" style="width:14px;height:14px"></i> Schedule</span>
-                <span class="feature-chip"><i data-lucide="download" style="width:14px;height:14px"></i> Study
-                    Materials</span>
-            </div>
-            <a href="/homeStudent" class="back-btn">
-                <i data-lucide="arrow-left" style="width:18px;height:18px"></i> Back to Dashboard
-            </a>
+    <!-- Main Content -->
+    <main class="main-content">
+        <h1 class="page-title"><i data-lucide="bell" style="width:24px;height:24px"></i> Notifications</h1>
+
+        <div id="notifContainer">
+            <!-- Notifications loaded by JS -->
         </div>
-    </div>
+    </main>
 
     <!-- Footer -->
     <footer class="footer">
@@ -595,9 +593,11 @@
 
     <script>
         const studentName = '{{{userName}}}';
+
         document.addEventListener('DOMContentLoaded', function () {
             lucide.createIcons();
             setProfileInitials();
+            loadNotifications();
         });
 
         function setProfileInitials() {
@@ -619,20 +619,71 @@
             document.body.style.overflow = '';
         }
 
-        function showNotificationToast() {
-            closeMobileNav();
-            let toast = document.getElementById('notifToast');
-            if (!toast) {
-                toast = document.createElement('div');
-                toast.id = 'notifToast';
-                toast.className = 'notification-toast';
-                toast.textContent = '🔔 Notifications coming soon!';
-                document.body.appendChild(toast);
+        async function loadNotifications() {
+            const container = document.getElementById('notifContainer');
+            try {
+                const response = await fetch('/api/student/notifications');
+                const data = await response.json();
+
+                if (data.success && data.notifications && data.notifications.length > 0) {
+                    container.innerHTML = data.notifications.map((n, i) => {
+                        const iconType = n.type || 'system';
+                        const iconName = {
+                            quiz: 'file-text',
+                            class: 'book-open',
+                            grade: 'award',
+                            system: 'info',
+                            join: 'user-plus'
+                        }[iconType] || 'info';
+                        const timeAgo = getTimeAgo(n.createdAt);
+                        return `
+                            <div class="notif-card ${n.read ? '' : 'unread'}">
+                                <div class="notif-icon ${iconType}">
+                                    <i data-lucide="${iconName}" style="width:20px;height:20px"></i>
+                                </div>
+                                <div class="notif-body">
+                                    <div class="notif-title">${n.title}</div>
+                                    <div class="notif-desc">${n.message}</div>
+                                    <div class="notif-time">
+                                        <i data-lucide="clock" style="width:12px;height:12px"></i> ${timeAgo}
+                                    </div>
+                                </div>
+                                ${!n.read ? '<div class="notif-dot"></div>' : ''}
+                            </div>
+                        `;
+                    }).join('');
+                    lucide.createIcons();
+                } else {
+                    showEmptyState();
+                }
+            } catch (error) {
+                showEmptyState();
             }
-            setTimeout(() => toast.classList.add('show'), 50);
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 2500);
+        }
+
+        function showEmptyState() {
+            document.getElementById('notifContainer').innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i data-lucide="bell-off" style="width:36px;height:36px"></i>
+                    </div>
+                    <h3>No Notifications Yet</h3>
+                    <p>You're all caught up! We'll notify you when something important happens.</p>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        function getTimeAgo(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diff = Math.floor((now - date) / 1000);
+            if (diff < 60) return 'Just now';
+            if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+            if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+            if (diff < 604800) return Math.floor(diff / 86400) + 'd ago';
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         }
     </script>
 </body>
