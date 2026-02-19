@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "AI-Powered Quiz Management System",
   "main": "src/index.js",
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
@@ -18,9 +21,6 @@
   ],
   "author": "QuizAI Team",
   "license": "MIT",
-  "engines": {
-    "node": ">=16.0.0"
-  },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@sendinblue/client": "^3.3.1",
