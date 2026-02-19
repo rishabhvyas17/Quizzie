@@ -25,6 +25,8 @@ const VERIFICATION_TOKEN_EXPIRY = 24 * 60 * 60 * 1000;
 // Student dashboard
 router.get('/homeStudent', isAuthenticated, async (req, res) => {
     try {
+        const studentId = req.session.userId;
+
         // Get class context from query params (when redirected from class routes)
         const classContext = {
             classId: req.query.class || null,
@@ -32,16 +34,49 @@ router.get('/homeStudent', isAuthenticated, async (req, res) => {
             message: req.query.message || null
         };
 
-        console.log('Student dashboard loaded with class-focused design');
+        // 1. Get Enrolled Classes Count
+        const enrolledClassesCount = await classStudentCollection.countDocuments({
+            studentId: studentId,
+            isActive: true
+        });
+
+        // 2. Get Quiz Statistics (Total Attempts & Overall Average)
+        const quizResults = await quizResultCollection.find({ studentId: studentId }).lean();
+        const totalQuizAttempts = quizResults.length;
+
+        let overallAverage = 0;
+        let activeClassesCount = 0;
+
+        if (totalQuizAttempts > 0) {
+            const totalScore = quizResults.reduce((sum, result) => sum + (result.score || 0), 0);
+            overallAverage = Math.round(totalScore / totalQuizAttempts);
+
+            // Calculate active classes (classes with quiz activity)
+            const uniqueActiveClasses = new Set(quizResults.map(r => r.classId ? r.classId.toString() : null).filter(id => id !== null));
+            activeClassesCount = uniqueActiveClasses.size;
+        }
+
+        console.log('Student dashboard loaded:', {
+            student: req.session.userName,
+            enrolled: enrolledClassesCount,
+            avg: overallAverage,
+            attempts: totalQuizAttempts
+        });
 
         res.render("homeStudent", {
             userType: req.session.userType || "student",
             userName: req.session.userName || "Student",
             studentId: req.session.userId, // Pass studentId for socket connections
+            initials: (req.session.userName || "Student").split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase(),
             classContext: classContext,
             message: req.query.message,
             // Pass dashboard mode
-            dashboardMode: 'class-focused'
+            dashboardMode: 'class-focused',
+            // Pass computed statistics
+            enrolledClassesCount: enrolledClassesCount,
+            overallAverage: overallAverage,
+            totalQuizAttempts: totalQuizAttempts,
+            activeClassesCount: activeClassesCount || enrolledClassesCount // Fallback to enrolled count if 0 active
         });
     } catch (error) {
         console.error('Error loading student dashboard:', error);

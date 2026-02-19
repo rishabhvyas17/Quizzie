@@ -58,7 +58,9 @@
         .logo {
             font-size: 1.6rem;
             font-weight: 800;
-            color: var(--primary);
+            background: linear-gradient(135deg, #7c5cfc, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
             letter-spacing: -0.5px;
         }
 
@@ -89,9 +91,15 @@
         }
 
         .nav-links a.active {
-            color: var(--primary);
-            background: var(--bg);
-            font-weight: 600;
+            color: white;
+            background: #1e1e2e;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
         }
 
         .profile-section {
@@ -146,13 +154,23 @@
             height: 40px;
             background: linear-gradient(135deg, #7c5cfc, #a78bfa);
             border-radius: 50%;
+            background: linear-gradient(135deg, #394867 0%, #14274E 100%);
+            color: white;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
             font-weight: 700;
             font-size: 0.9rem;
-            box-shadow: 0 0 0 3px #eef1f8, 0 0 0 5px #c4b5fd;
+            text-decoration: none;
+            margin-left: 0.75rem;
+            border: 2px solid #F1F6F9;
+            box-shadow: 0 2px 8px rgba(20, 39, 78, 0.15);
+            transition: all 0.2s;
+        }
+
+        .header-profile:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(20, 39, 78, 0.25);
         }
 
         .profile-info h3 {
