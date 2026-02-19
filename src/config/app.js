@@ -38,7 +38,7 @@ const configureApp = (app) => {
         }),
         cookie: {
             maxAge: 1000 * 60 * 60 * 24 * 14, // 14 days
-            secure: false, // Set to true in production with HTTPS
+            secure: process.env.NODE_ENV === 'production',
             httpOnly: true,
             sameSite: 'lax'
         },

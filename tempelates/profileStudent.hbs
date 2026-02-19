@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Profile - Quizzie</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -64,19 +63,23 @@
         }
 
         .nav-links {
-            list-style: none;
             display: flex;
-            gap: 0.5rem;
+            gap: 0.25rem;
+            list-style: none;
+            margin: 0;
+            padding: 4px;
+            background: #f0f2f7;
+            border-radius: 12px;
         }
 
         .nav-links a {
             text-decoration: none;
             color: var(--muted);
             font-weight: 500;
-            font-size: 0.85rem;
-            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            padding: 0.5rem 1.25rem;
             border-radius: 10px;
-            transition: all 0.2s;
+            transition: all 0.25s ease;
             cursor: pointer;
         }
 
@@ -91,10 +94,10 @@
             font-weight: 600;
         }
 
-        .header-right {
+        .profile-section {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.75rem;
         }
 
         .header-icon {
@@ -141,24 +144,49 @@
         .header-profile {
             width: 40px;
             height: 40px;
+            background: linear-gradient(135deg, #7c5cfc, #a78bfa);
             border-radius: 50%;
-            background: linear-gradient(135deg, #394867 0%, #14274E 100%);
-            color: white;
             display: flex;
             align-items: center;
             justify-content: center;
+            color: white;
             font-weight: 700;
             font-size: 0.9rem;
-            text-decoration: none;
-            margin-left: 0.75rem;
-            border: 2px solid #F1F6F9;
-            box-shadow: 0 2px 8px rgba(20, 39, 78, 0.15);
-            transition: all 0.2s;
+            box-shadow: 0 0 0 3px #eef1f8, 0 0 0 5px #c4b5fd;
         }
 
-        .header-profile:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba(20, 39, 78, 0.25);
+        .profile-info h3 {
+            margin: 0;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .profile-info p {
+            margin: 0;
+            font-size: 0.7rem;
+            color: #94a3b8;
+        }
+
+        .logout-btn {
+            background: #fee2e2;
+            color: #ef4444;
+            border: none;
+            padding: 0.45rem 1rem;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.8rem;
+            text-decoration: none;
+            margin-left: 0.5rem;
+        }
+
+        .logout-btn:hover {
+            background: #ef4444;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
         }
 
         /* ===== PROFILE PAGE ===== */
@@ -984,16 +1012,12 @@
     </div>
 
     <script>
-        const studentName = '{{{userName}}}';
         document.addEventListener('DOMContentLoaded', function () {
-            lucide.createIcons();
-            setProfileInitials();
-
             const userName = "{{userName}}";
+            const avatars = document.querySelectorAll('.profile-avatar, .avatar');
 
             if (userName) {
                 const initials = userName.split(' ').map(name => name.charAt(0)).join('').toUpperCase();
-                const avatars = document.querySelectorAll('.avatar');
                 avatars.forEach(avatar => {
                     avatar.textContent = initials.substring(0, 2);
                 });

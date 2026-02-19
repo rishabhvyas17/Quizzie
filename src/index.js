@@ -4,7 +4,6 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
-const multer = require('multer');
 const fs = require('fs');
 
 // Import configuration
@@ -29,10 +28,11 @@ const { handleUploadError, cleanupTempFiles } = require('./middleware/uploadMidd
 // Import constants
 const { HTTP_STATUS, DATABASE } = require('./utils/constants');
 
-// Import additional dependencies for quiz functionality
-const pdfParse = require("pdf-parse");
-const mammoth = require("mammoth");
-const PptxParser = require("node-pptx-parser").default;
+// Import services
+const fileService = require('./services/fileService');
+
+// Import upload middleware (includes multer config, cleanup, file type utils)
+const { upload, cleanupTempFile, getFileType } = require('./middleware/uploadMiddleware');
 
 // Google Gemini API setup
 const { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } = require('@google/generative-ai');
@@ -46,15 +46,15 @@ const server = http.createServer(app);
 // Initialize Socket.IO
 const io = socketIo(server, {
     cors: {
-        origin: "*",
+        origin: process.env.NODE_ENV === 'production'
+            ? process.env.BASE_URL
+            : "*",
         methods: ["GET", "POST"]
     },
     transports: ['polling', 'websocket']
 });
 
 const PORT = process.env.PORT || 8080;
-const TEMP_UPLOAD_DIR = './temp_uploads';
-const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
 
 // Configure app (middleware, sessions, handlebars, etc.)
 configureApp(app);
@@ -62,46 +62,7 @@ configureApp(app);
 // Add user context to all requests
 app.use(addUserContext);
 
-// ==================== MULTER CONFIGURATION ====================
-
-// Configure multer for temporary file storage
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        if (!fs.existsSync(TEMP_UPLOAD_DIR)) {
-            fs.mkdirSync(TEMP_UPLOAD_DIR)
-        }
-        cb(null, TEMP_UPLOAD_DIR)
-    },
-    filename: function (req, file, cb) {
-        const uniqueName = Date.now() + '-' + file.originalname
-        cb(null, uniqueName)
-    }
-});
-
-// File type validation
-const fileFilter = (req, file, cb) => {
-    const allowedMimes = [
-        'application/pdf',
-        'application/vnd.ms-powerpoint',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    ];
-
-    if (allowedMimes.includes(file.mimetype)) {
-        cb(null, true);
-    } else {
-        req.fileError = new Error('Invalid file type. Only PDF, PPT, PPTX, DOC, DOCX files are allowed.');
-        cb(null, false);
-    }
-};
-
-// Multer configuration
-const upload = multer({
-    storage: storage,
-    limits: { fileSize: MAX_FILE_SIZE },
-    fileFilter: fileFilter
-});
+// Note: Multer upload config imported from './middleware/uploadMiddleware'
 
 // ==================== SOCKET.IO SETUP ====================
 
@@ -130,7 +91,7 @@ io.on('connection', (socket) => {
     // Handle real-time quiz submissions
     socket.on('quiz-submitted', (data) => {
         console.log(`📊 Quiz submitted by ${socket.id}:`, data);
-        
+
         // Broadcast to class members if applicable
         if (data.classId) {
             socket.to(`class-${data.classId}`).emit('new-submission', {
@@ -169,107 +130,12 @@ io.on('connection', (socket) => {
 // Make io available to routes
 app.set('io', io);
 
-// ==================== UTILITY FUNCTIONS ====================
-
-function cleanupTempFile(filePath) {
-    try {
-        if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
-            console.log(`🗑️ Temporary file deleted: ${filePath}`);
-        }
-    } catch (error) {
-        console.error('⚠️ Error cleaning up temporary file:', error);
-    }
-}
-
-function getFileType(mimetype) {
-    const typeMap = {
-        'application/pdf': 'pdf',
-        'application/msword': 'docx',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
-        'application/vnd.ms-powerpoint': 'pptx',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'pptx'
-    };
-    return typeMap[mimetype] || 'unknown';
-}
-
-// Text extraction functions
-async function extractTextFromPDF(filePath) {
-    let extractedText = '';
-    try {
-        console.log(`📄 Starting PDF text extraction for: ${filePath}`);
-        const dataBuffer = fs.readFileSync(filePath);
-        const data = await pdfParse(dataBuffer);
-        extractedText = data.text.trim();
-        console.log('✅ PDF text extracted successfully (first 500 chars):', extractedText.substring(0, 500));
-    } catch (pdfError) {
-        console.error('❌ Error extracting text from PDF:', pdfError);
-        extractedText = "Error extracting text from PDF.";
-    }
-    return extractedText;
-}
-
-async function extractTextFromWord(filePath) {
-    let extractedText = '';
-    try {
-        console.log(`📄 Starting Word text extraction for: ${filePath}`);
-        const result = await mammoth.extractRawText({ path: filePath });
-        extractedText = result.value.trim();
-        console.log('✅ Word text extracted successfully (first 500 chars):', extractedText.substring(0, 500));
-    } catch (wordError) {
-        console.error('❌ Error extracting text from Word:', wordError);
-        extractedText = "Error extracting text from Word.";
-    }
-    return extractedText;
-}
-
-async function extractTextFromPowerPoint(filePath) {
-    let extractedText = '';
-    try {
-        console.log(`📄 Initializing PptxParser for: ${filePath}`);
-        const parser = new PptxParser(filePath);
-
-        console.log('📄 Extracting text using node-pptx-parser...');
-        const textContent = await parser.extractText();
-
-        if (textContent && textContent.length > 0) {
-            extractedText = textContent.map(slide => slide.text.join('\n')).join('\n\n').trim();
-            console.log('✅ PPTX text extracted successfully (first 500 chars):', extractedText.substring(0, 500));
-        } else {
-            console.warn('⚠️ node-pptx-parser extracted no text from the PPTX file.');
-        }
-
-        if (extractedText.length === 0) {
-            console.warn('⚠️ PPTX extraction yielded empty content after processing.');
-        }
-
-    } catch (pptxError) {
-        console.error('❌ Error extracting text from PowerPoint with node-pptx-parser:', pptxError);
-        extractedText = "Error extracting text from PowerPoint.";
-    }
-    return extractedText;
-}
-
-async function extractTextFromFile(filePath, mimetype) {
-    console.log(`📄 Starting text extraction for: ${mimetype}`);
-
-    switch (mimetype) {
-        case 'application/pdf':
-            return await extractTextFromPDF(filePath);
-        case 'application/msword':
-        case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-            return await extractTextFromWord(filePath);
-        case 'application/vnd.ms-powerpoint':
-        case 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
-            return await extractTextFromPowerPoint(filePath);
-        default:
-            throw new Error('Unsupported file type');
-    }
-}
+// Note: File extraction functions are provided by fileService
+// Note: cleanupTempFile and getFileType are provided by uploadMiddleware
 
 // Gemini AI quiz generation function
 async function generateQuizWithGemini(extractedText, customDuration, questionsToGenerate, examMode, examWindowDuration) {
-    const examModeText = examMode ? 
+    const examModeText = examMode ?
         `This quiz will be used as a timed exam with a ${examWindowDuration}-minute window. Generate challenging but fair questions appropriate for an exam setting.` :
         `This quiz will be used for regular practice and learning.`;
 
@@ -514,7 +380,7 @@ app.post("/upload_lecture", requireAuth, upload.single('lectureFile'), async (re
         }
 
         // Extract text from file
-        const extractedText = await extractTextFromFile(file.path, file.mimetype);
+        const extractedText = await fileService.extractTextFromFile(file.path, file.mimetype);
 
         console.log('📄 Text extraction completed:', {
             totalLength: extractedText.length,
@@ -632,9 +498,9 @@ app.post('/generate_quiz/:id', requireAuth, async (req, res) => {
 
         // Check ownership
         if (req.session.userType === 'teacher' && !lecture.professorId.equals(req.session.userId)) {
-            return res.status(403).json({ 
-                success: false, 
-                message: 'Access denied. You can only generate quizzes for your own lectures.' 
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied. You can only generate quizzes for your own lectures.'
             });
         }
 
@@ -794,9 +660,9 @@ app.get('/lectures/:id/text', requireAuth, async (req, res) => {
         }
 
         if (req.session.userType === 'teacher' && !lecture.professorId.equals(req.session.userId)) {
-            return res.status(403).json({ 
-                success: false, 
-                message: 'Access denied. You do not own this lecture.' 
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied. You do not own this lecture.'
             });
         }
 
@@ -832,9 +698,9 @@ app.post('/delete_lecture/:id', requireAuth, async (req, res) => {
         }
 
         if (req.session.userType === 'teacher' && !lecture.professorId.equals(req.session.userId)) {
-            return res.status(403).json({ 
-                success: false, 
-                message: 'Access denied. You can only delete your own lectures.' 
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied. You can only delete your own lectures.'
             });
         }
 
@@ -865,9 +731,9 @@ app.post('/delete_lecture/:id', requireAuth, async (req, res) => {
 app.get('/api/quiz/:quizId', requireAuth, async (req, res) => {
     try {
         if (req.session.userType !== 'student') {
-            return res.status(403).json({ 
-                success: false, 
-                message: 'Access denied. Only students can access quiz questions.' 
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied. Only students can access quiz questions.'
             });
         }
 
@@ -879,9 +745,9 @@ app.get('/api/quiz/:quizId', requireAuth, async (req, res) => {
             .lean();
 
         if (!quiz) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'Quiz not found.' 
+            return res.status(404).json({
+                success: false,
+                message: 'Quiz not found.'
             });
         }
 
@@ -923,9 +789,9 @@ app.get('/api/quiz/:quizId', requireAuth, async (req, res) => {
 
     } catch (error) {
         console.error('❌ Error fetching quiz for student:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Failed to load quiz questions.' 
+        res.status(500).json({
+            success: false,
+            message: 'Failed to load quiz questions.'
         });
     }
 });
@@ -984,7 +850,7 @@ app.get('/api/quiz/:quizId/duration', requireAuth, async (req, res) => {
 app.get('/api/quiz/:quizId/exam-status', requireAuth, async (req, res) => {
     try {
         const quizId = req.params.quizId;
-        
+
         console.log('🔍 Checking exam status:', {
             quizId: quizId,
             userType: req.session.userType,
@@ -994,7 +860,7 @@ app.get('/api/quiz/:quizId/exam-status', requireAuth, async (req, res) => {
         const quiz = await quizCollection.findById(quizId).select(
             'isExamMode examStatus examStartTime examEndTime examDurationMinutes lectureTitle classId isActive'
         );
-        
+
         if (!quiz) {
             return res.status(404).json({
                 success: false,
@@ -1031,7 +897,7 @@ app.get('/api/quiz/:quizId/exam-status', requireAuth, async (req, res) => {
                 canTakeQuiz = false;
                 statusMessage = 'Exam has not started yet. Please wait for your teacher to start the exam.';
                 break;
-                
+
             case 'active':
                 if (quiz.examEndTime && now <= quiz.examEndTime) {
                     canTakeQuiz = true;
@@ -1045,12 +911,12 @@ app.get('/api/quiz/:quizId/exam-status', requireAuth, async (req, res) => {
                     statusMessage = 'Exam time has expired.';
                 }
                 break;
-                
+
             case 'ended':
                 canTakeQuiz = false;
                 statusMessage = 'This exam has ended.';
                 break;
-                
+
             default:
                 canTakeQuiz = false;
                 statusMessage = 'Exam status unknown.';
@@ -1137,14 +1003,14 @@ app.get('/take_quiz/:quizId', requireAuth, async (req, res) => {
             switch (quiz.examStatus) {
                 case 'scheduled':
                     const message = 'This exam has not started yet. Please wait for your teacher to start the exam.';
-                    const redirectUrl = classId ? 
+                    const redirectUrl = classId ?
                         `/student/class/${classId}?message=${encodeURIComponent(message)}` :
                         `/homeStudent?message=${encodeURIComponent(message)}`;
                     return res.status(403).redirect(redirectUrl);
 
                 case 'ended':
                     const endedMessage = 'This exam has ended. You can no longer take this quiz.';
-                    const endedRedirectUrl = classId ? 
+                    const endedRedirectUrl = classId ?
                         `/student/class/${classId}?message=${encodeURIComponent(endedMessage)}` :
                         `/homeStudent?message=${encodeURIComponent(endedMessage)}`;
                     return res.status(403).redirect(endedRedirectUrl);
@@ -1153,7 +1019,7 @@ app.get('/take_quiz/:quizId', requireAuth, async (req, res) => {
                     if (quiz.examEndTime && now > quiz.examEndTime) {
                         await quizCollection.findByIdAndUpdate(quizId, { examStatus: 'ended' });
                         const expiredMessage = 'The exam time has expired. You can no longer take this quiz.';
-                        const expiredRedirectUrl = classId ? 
+                        const expiredRedirectUrl = classId ?
                             `/student/class/${classId}?message=${encodeURIComponent(expiredMessage)}` :
                             `/homeStudent?message=${encodeURIComponent(expiredMessage)}`;
                         return res.status(403).redirect(expiredRedirectUrl);
@@ -1162,7 +1028,7 @@ app.get('/take_quiz/:quizId', requireAuth, async (req, res) => {
 
                 default:
                     const unknownMessage = 'This exam is not available for taking at this time.';
-                    const unknownRedirectUrl = classId ? 
+                    const unknownRedirectUrl = classId ?
                         `/student/class/${classId}?message=${encodeURIComponent(unknownMessage)}` :
                         `/homeStudent?message=${encodeURIComponent(unknownMessage)}`;
                     return res.status(403).redirect(unknownRedirectUrl);
@@ -1198,7 +1064,7 @@ app.get('/take_quiz/:quizId', requireAuth, async (req, res) => {
 
         if (existingResult) {
             const message = `You have already completed: ${quiz.lectureTitle}`;
-            const redirectUrl = classId ? 
+            const redirectUrl = classId ?
                 `/student/class/${classId}?message=${encodeURIComponent(message)}` :
                 `/quiz-results?alreadyTaken=true&quizTitle=${encodeURIComponent(quiz.lectureTitle)}`;
             return res.redirect(redirectUrl);
@@ -1213,7 +1079,7 @@ app.get('/take_quiz/:quizId', requireAuth, async (req, res) => {
                 classId: targetClassId,
                 className: classInfo?.name,
                 classSubject: classInfo?.subject,
-                examTimeRemaining: quiz.isExamMode && quiz.examEndTime ? 
+                examTimeRemaining: quiz.isExamMode && quiz.examEndTime ?
                     Math.max(0, Math.floor((new Date(quiz.examEndTime) - new Date()) / 1000)) : null
             },
             userName: req.session.userName,
@@ -1225,7 +1091,7 @@ app.get('/take_quiz/:quizId', requireAuth, async (req, res) => {
                 classSubject: classInfo?.subject,
                 isExamMode: quiz.isExamMode,
                 examStatus: quiz.examStatus,
-                breadcrumbPath: targetClassId ? 
+                breadcrumbPath: targetClassId ?
                     [
                         { label: 'Dashboard', url: '/homeStudent' },
                         { label: classInfo?.name || 'Class', url: `/student/class/${targetClassId}` },
@@ -1247,16 +1113,16 @@ app.get('/take_quiz/:quizId', requireAuth, async (req, res) => {
 app.post('/api/quiz/submit/:quizId', requireAuth, async (req, res) => {
     try {
         if (req.session.userType !== 'student') {
-            return res.status(403).json({ 
-                success: false, 
-                message: 'Access denied. Only students can submit quizzes.' 
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied. Only students can submit quizzes.'
             });
         }
 
         const quizId = req.params.quizId;
-        const { 
-            studentAnswers, 
-            timeTakenSeconds, 
+        const {
+            studentAnswers,
+            timeTakenSeconds,
             classContext,
             antiCheatData,
             navigationHints,
@@ -1281,16 +1147,16 @@ app.post('/api/quiz/submit/:quizId', requireAuth, async (req, res) => {
         // Get complete quiz data
         const quiz = await quizCollection.findById(quizId).lean();
         if (!quiz) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'Quiz not found for scoring.' 
+            return res.status(404).json({
+                success: false,
+                message: 'Quiz not found for scoring.'
             });
         }
 
         // Enhanced exam mode validation
         if (quiz.isExamMode) {
             const now = new Date();
-            
+
             if (quiz.examStatus !== 'active') {
                 return res.status(403).json({
                     success: false,
@@ -1300,7 +1166,7 @@ app.post('/api/quiz/submit/:quizId', requireAuth, async (req, res) => {
 
             if (quiz.examEndTime && now > quiz.examEndTime) {
                 await quizCollection.findByIdAndUpdate(quizId, { examStatus: 'ended' });
-                
+
                 const graceTimeMs = 5000; // 5 seconds grace period
                 if (now - quiz.examEndTime > graceTimeMs) {
                     return res.status(403).json({
@@ -1308,7 +1174,7 @@ app.post('/api/quiz/submit/:quizId', requireAuth, async (req, res) => {
                         message: 'The exam time has expired. Submission not allowed.'
                     });
                 }
-                
+
                 console.log('⏰ Allowing submission within grace period after exam expiry');
             }
         }
@@ -1413,10 +1279,10 @@ app.post('/api/quiz/submit/:quizId', requireAuth, async (req, res) => {
                 violationCount: antiCheatData.violationCount || 0,
                 wasAutoSubmitted: antiCheatData.wasAutoSubmitted || false,
                 gracePeriodsUsed: antiCheatData.gracePeriodsUsed || 0,
-                securityStatus: antiCheatData.violationCount === 0 ? 'Clean' : 
-                              antiCheatData.violationCount === 1 ? 'Warning' : 'Violation',
-                submissionSource: quiz.isExamMode && submissionType.includes('exam') ? 'Exam-Timer-Submit' : 
-                                antiCheatData.wasAutoSubmitted ? 'Auto-Submit' : 'Manual'
+                securityStatus: antiCheatData.violationCount === 0 ? 'Clean' :
+                    antiCheatData.violationCount === 1 ? 'Warning' : 'Violation',
+                submissionSource: quiz.isExamMode && submissionType.includes('exam') ? 'Exam-Timer-Submit' :
+                    antiCheatData.wasAutoSubmitted ? 'Auto-Submit' : 'Manual'
             } : {
                 violationCount: 0,
                 wasAutoSubmitted: false,
@@ -1435,10 +1301,10 @@ app.post('/api/quiz/submit/:quizId', requireAuth, async (req, res) => {
         }
 
         const modeText = quiz.isExamMode ? 'exam' : 'quiz';
-        const securityStatus = antiCheatData && antiCheatData.violationCount > 0 
-            ? `${antiCheatData.violationCount} violations` 
+        const securityStatus = antiCheatData && antiCheatData.violationCount > 0
+            ? `${antiCheatData.violationCount} violations`
             : 'clean submission';
-            
+
         console.log(`✅ ${modeText} result saved for student ${studentName}: Score ${score}/${totalQuestions} (${securityStatus})`);
 
         // Emit real-time update via Socket.IO
@@ -1457,11 +1323,11 @@ app.post('/api/quiz/submit/:quizId', requireAuth, async (req, res) => {
         // Prepare comprehensive response
         const enhancedResponse = {
             success: true,
-            message: quiz.isExamMode ? 
-                (antiCheatData && antiCheatData.wasAutoSubmitted 
+            message: quiz.isExamMode ?
+                (antiCheatData && antiCheatData.wasAutoSubmitted
                     ? 'Exam auto-submitted and scored successfully!'
                     : 'Exam submitted and scored successfully!') :
-                (antiCheatData && antiCheatData.wasAutoSubmitted 
+                (antiCheatData && antiCheatData.wasAutoSubmitted
                     ? 'Quiz auto-submitted due to security violations and scored successfully!'
                     : 'Quiz submitted and scored successfully!'),
             score: score,
@@ -1482,10 +1348,10 @@ app.post('/api/quiz/submit/:quizId', requireAuth, async (req, res) => {
             antiCheatSummary: {
                 violationCount: antiCheatData?.violationCount || 0,
                 wasAutoSubmitted: antiCheatData?.wasAutoSubmitted || false,
-                securityStatus: antiCheatData?.violationCount === 0 ? 'Clean' : 
-                              antiCheatData?.violationCount === 1 ? 'Warning Issued' : 'Auto-Submitted',
+                securityStatus: antiCheatData?.violationCount === 0 ? 'Clean' :
+                    antiCheatData?.violationCount === 1 ? 'Warning Issued' : 'Auto-Submitted',
                 submissionType: submissionType === 'auto_exam_timer' ? 'Exam Timer Auto-Submit' :
-                              submissionType === 'auto_quiz_timer' ? 'Quiz Timer Auto-Submit' : 'Manual Submit'
+                    submissionType === 'auto_quiz_timer' ? 'Quiz Timer Auto-Submit' : 'Manual Submit'
             },
             navigationContext: {
                 hasClass: !!targetClassId,
@@ -1508,9 +1374,9 @@ app.post('/api/quiz/submit/:quizId', requireAuth, async (req, res) => {
 
     } catch (error) {
         console.error('❌ Error submitting quiz:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Failed to submit quiz: ' + error.message 
+        res.status(500).json({
+            success: false,
+            message: 'Failed to submit quiz: ' + error.message
         });
     }
 });
@@ -1605,7 +1471,7 @@ app.get('/socket-info', (req, res) => {
             features: [
                 'Real-time quiz submissions',
                 'Live class rankings',
-                'Exam timer synchronization', 
+                'Exam timer synchronization',
                 'Class room management',
                 'Instant notifications'
             ]
@@ -1624,7 +1490,7 @@ app.use((req, res) => {
     if (!req.originalUrl.includes('/socket.io/')) {
         console.log(`🔍 404 - Route not found: ${req.method} ${req.originalUrl}`);
     }
-    
+
     res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
         message: 'Route not found',
@@ -1652,13 +1518,13 @@ app.use((req, res) => {
 // Global error handler
 app.use((error, req, res, next) => {
     console.error('❌ Unhandled error:', error);
-    
+
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
         success: false,
         message: 'Internal server error',
-        ...(process.env.NODE_ENV === 'development' && { 
+        ...(process.env.NODE_ENV === 'development' && {
             error: error.message,
-            stack: error.stack 
+            stack: error.stack
         })
     });
 });
