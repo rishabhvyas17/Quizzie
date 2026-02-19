@@ -58,9 +58,10 @@
         .logo {
             font-size: 1.6rem;
             font-weight: 800;
-            background: linear-gradient(135deg, #7c5cfc, #a78bfa);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: var(--primary);
+            /* Navy color */
+            background: none;
+            -webkit-text-fill-color: initial;
             letter-spacing: -0.5px;
         }
 
@@ -822,14 +823,17 @@
             <div class="header-right">
                 <a href="/comingSoon" class="kohert-btn" title="Kohert">Kohert</a>
                 <a href="/comingSoon" class="kohert-btn mobile-kohert" title="Kohert">Kohert</a>
-                <button class="header-icon" title="Notifications"><i data-lucide="bell"
-                        style="width:18px;height:18px"></i></button>
+                <a href="/notifications" class="header-icon" title="Notifications"><i data-lucide="bell"
+                        style="width:18px;height:18px"></i></a>
                 <button class="hamburger-btn" onclick="toggleMobileNav()" title="Menu" id="hamburgerBtn">
                     <i data-lucide="menu" style="width:20px;height:20px"></i>
                 </button>
-                <a href="/profileStudent" class="header-profile" title="My Profile">
-                    <span class="profile-initials">SK</span>
-                </a>
+                <div class="profile-section">
+                    <a href="/profileStudent" class="header-profile" title="My Profile">
+                        <span class="profile-initials">{{initials}}</span>
+                    </a>
+                    <a href="/logout" class="logout-btn">Logout</a>
+                </div>
             </div>
         </div>
     </header>

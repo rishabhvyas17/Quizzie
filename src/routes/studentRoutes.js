@@ -731,4 +731,22 @@ router.post('/student/notification-settings', isAuthenticated, StudentController
 // Download Student Data
 router.get('/student/download-data', isAuthenticated, StudentController.downloadData);
 
+// Notifications page
+router.get('/notifications', isAuthenticated, async (req, res) => {
+    try {
+        // Here you would typically fetch notifications from DB
+        // const notifications = await notificationCollection.find({ userId: req.session.userId }).sort({ createdAt: -1 });
+
+        res.render("notifications", {
+            userType: req.session.userType || "student",
+            userName: req.session.userName || "Student",
+            initials: (req.session.userName || "Student").split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase(),
+            // notifications: notifications
+        });
+    } catch (error) {
+        console.error('Error loading notifications:', error);
+        res.render("notifications", { error: 'Failed to load notifications' });
+    }
+});
+
 module.exports = router;
