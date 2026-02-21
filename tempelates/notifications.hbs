@@ -535,22 +535,34 @@
             <div class="logo">Quizzie</div>
             <nav>
                 <ul class="nav-links">
+                    {{#if (eq userType 'teacher')}}
+                    <li><a href="/homeTeacher">Dashboard</a></li>
+                    <li><a href="/teacher/classes">My Classes</a></li>
+                    <li><a href="/profileTeacher">My Profile</a></li>
+                    {{else}}
                     <li><a href="/homeStudent">Dashboard</a></li>
                     <li><a href="/myClasses">My Classes</a></li>
                     <li><a href="/profileStudent">My Profile</a></li>
+                    {{/if}}
                 </ul>
             </nav>
             <div class="header-right">
+                {{#if (eq userType 'student')}}
                 <a href="/comingSoon" class="kohert-btn" title="Kohert">Kohert</a>
                 <a href="/comingSoon" class="kohert-btn mobile-kohert" title="Kohert">Kohert</a>
+                {{/if}}
                 <button class="header-icon" title="Notifications"><i data-lucide="bell"
                         style="width:18px;height:18px"></i></button>
                 <button class="hamburger-btn" onclick="toggleMobileNav()" title="Menu" id="hamburgerBtn">
                     <i data-lucide="menu" style="width:20px;height:20px"></i>
                 </button>
-                <a href="/profileStudent" class="header-profile" title="My Profile">
-                    <span class="profile-initials">SK</span>
-                </a>
+                {{#if (eq userType 'teacher')}}
+                <a href="/profileTeacher" class="header-profile" title="My Profile">
+                    {{else}}
+                    <a href="/profileStudent" class="header-profile" title="My Profile">
+                        {{/if}}
+                        <span class="profile-initials">SK</span>
+                    </a>
             </div>
         </div>
     </header>
@@ -566,9 +578,15 @@
                 <i data-lucide="x" style="width:18px;height:18px"></i>
             </button>
         </div>
+        {{#if (eq userType 'teacher')}}
+        <a href="/homeTeacher"><i data-lucide="layout-dashboard" style="width:18px;height:18px"></i> Dashboard</a>
+        <a href="/teacher/classes"><i data-lucide="library" style="width:18px;height:18px"></i> My Classes</a>
+        <a href="/profileTeacher"><i data-lucide="user" style="width:18px;height:18px"></i> My Profile</a>
+        {{else}}
         <a href="/homeStudent"><i data-lucide="layout-dashboard" style="width:18px;height:18px"></i> Dashboard</a>
         <a href="/myClasses"><i data-lucide="book-open" style="width:18px;height:18px"></i> My Classes</a>
         <a href="/profileStudent"><i data-lucide="user" style="width:18px;height:18px"></i> My Profile</a>
+        {{/if}}
         <div class="mobile-nav-divider"></div>
         <a href="/notifications" class="active"><i data-lucide="bell" style="width:18px;height:18px"></i>
             Notifications</a>
