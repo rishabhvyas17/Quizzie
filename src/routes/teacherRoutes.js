@@ -102,6 +102,34 @@ router.get('/homeTeacher', isAuthenticated, async (req, res) => {
     }
 });
 
+// Teacher classes page
+router.get('/teacher/classes', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.userType !== 'teacher') {
+            return res.status(403).redirect('/login?error=' + encodeURIComponent('Access denied. Not a teacher account.'));
+        }
+
+        const teacherId = req.session.userId;
+        const teacher = await teacherCollection.findById(teacherId).lean();
+
+        if (!teacher) {
+            return res.redirect('/login?error=Teacher profile not found. Please login again.');
+        }
+
+        const displayUserName = teacher.firstName ? `${teacher.firstName} ${teacher.lastName || ''}`.trim() : teacher.name;
+        const initials = displayUserName ? displayUserName.split(' ').map(n => n.charAt(0)).join('').toUpperCase().substring(0, 2) : '';
+
+        res.render('teacherClasses', {
+            userName: displayUserName,
+            userType: 'Professor',
+            initials: initials
+        });
+    } catch (error) {
+        console.error('Error loading teacher classes page:', error);
+        res.redirect('/homeTeacher?error=' + encodeURIComponent('Failed to load classes page.'));
+    }
+});
+
 // Teacher profile page
 router.get('/profileTeacher', isAuthenticated, async (req, res) => {
     console.log('GET /profileTeacher route hit');
@@ -112,8 +140,8 @@ router.get('/profileTeacher', isAuthenticated, async (req, res) => {
 
         // Fetch teacher with name, email, verification status, AND firstName, lastName
         const teacher = await teacherCollection.findById(req.session.userId)
-                                .select('name email isVerified firstName lastName')
-                                .lean();
+            .select('name email isVerified firstName lastName')
+            .lean();
         if (!teacher) {
             return res.redirect('/login?error=' + encodeURIComponent('Teacher profile not found. Please log in again.'));
         }

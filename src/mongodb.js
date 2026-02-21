@@ -28,7 +28,7 @@ const studentSchema = new mongoose.Schema({
     },
     firstName: {
         type: String,
-        required: true,
+        required: true, // Required for proper name handling
         trim: true
     },
     lastName: {
@@ -63,6 +63,10 @@ const studentSchema = new mongoose.Schema({
     password: {
         type: String,
         required: true
+    },
+    notificationPreferences: {
+        email: { type: Boolean, default: true },
+        marketing: { type: Boolean, default: false }
     },
     createdAt: {
         type: Date,

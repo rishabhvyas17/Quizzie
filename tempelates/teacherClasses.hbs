@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professor Dashboard - Quizzie</title>
+    <title>My Classes - Quizzie</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -885,8 +885,8 @@
             <div class="logo">Quizzie</div>
             <nav>
                 <ul class="nav-links">
-                    <li><a class="active">Dashboard</a></li>
-                    <li><a href="/teacher/classes">My Classes</a></li>
+                    <li><a href="/homeTeacher">Dashboard</a></li>
+                    <li><a class="active">My Classes</a></li>
                     <li><a href="/profileTeacher">My Profile</a></li>
                 </ul>
             </nav>
@@ -916,50 +916,14 @@
                 <i data-lucide="x" style="width:18px;height:18px"></i>
             </button>
         </div>
-        <a href="/homeTeacher" class="active"><i data-lucide="layout-dashboard" style="width:18px;height:18px"></i>
+        <a href="/homeTeacher"><i data-lucide="layout-dashboard" style="width:18px;height:18px"></i>
             Dashboard</a>
-        <a href="/teacher/classes"><i data-lucide="library" style="width:18px;height:18px"></i> My Classes</a>
+        <a href="/teacher/classes" class="active"><i data-lucide="library" style="width:18px;height:18px"></i> My
+            Classes</a>
         <a href="/profileTeacher"><i data-lucide="user" style="width:18px;height:18px"></i> My Profile</a>
     </div>
 
     <main class="main-content">
-        <h1 class="dashboard-title" id="dashboardTitle"></h1>
-
-        <!-- Stats Section (Bento Grid) -->
-        <div class="bento-grid">
-            <div class="bento-card stat-card">
-                <div class="stat-icon bg-blue">
-                    <i data-lucide="book-open"></i>
-                </div>
-                <div class="stat-value" id="totalClassesCount">{{totalClasses}}</div>
-                <div class="stat-label">Total Classes</div>
-            </div>
-
-            <div class="bento-card stat-card">
-                <div class="stat-icon bg-green">
-                    <i data-lucide="users"></i>
-                </div>
-                <div class="stat-value" id="totalStudentsCount">{{totalStudents}}</div>
-                <div class="stat-label">Total Students</div>
-            </div>
-
-            <div class="bento-card stat-card">
-                <div class="stat-icon bg-purple">
-                    <i data-lucide="presentation"></i>
-                </div>
-                <div class="stat-value" id="totalLecturesCount">{{totalLectures}}</div>
-                <div class="stat-label">Total Lectures</div>
-            </div>
-
-            <div class="bento-card stat-card">
-                <div class="stat-icon bg-orange">
-                    <i data-lucide="check-square"></i>
-                </div>
-                <div class="stat-value" id="totalQuizzesCount">{{totalQuizzes}}</div>
-                <div class="stat-label">Total Quizzes</div>
-            </div>
-        </div>
-
         <!-- My Classes Section -->
         <section id="my-classes-section">
             <div class="section-header">
@@ -1086,7 +1050,6 @@
         const professorName = '{{{userName}}}';
 
         document.addEventListener('DOMContentLoaded', function () {
-            initializeDashboard();
             loadClasses();
             setProfileInitials();
         });
@@ -1111,18 +1074,6 @@
             document.querySelectorAll('.profile-initials').forEach(el => el.textContent = initials);
         }
 
-        function initializeDashboard() {
-            const hour = new Date().getHours();
-            let greeting = 'Good evening';
-            if (hour < 12) greeting = 'Good morning';
-            else if (hour < 18) greeting = 'Good afternoon';
-
-            document.getElementById('dashboardTitle').textContent = `${greeting}, Professor ${professorName}!`;
-
-            const avatar = document.getElementById('profileAvatar');
-            const initials = professorName.split(' ').map(name => name.charAt(0)).join('').toUpperCase().substring(0, 2);
-            avatar.textContent = initials;
-        }
 
         async function loadClasses() {
             try {
@@ -1131,7 +1082,6 @@
 
                 if (result.success) {
                     displayClasses(result.classes);
-                    updateDashboardStats(result.classes);
                 } else {
                     showToast('Error', 'Failed to load classes: ' + result.message, 'error');
                 }
