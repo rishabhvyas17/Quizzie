@@ -208,13 +208,14 @@
 
         /* 🆕 NEW: Compact Join Code System */
         .join-code-container {
-            background: linear-gradient(135deg, #1072b9, #165aa3);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: white;
-            border-radius: 12px;
-            padding: 1.25rem;
+            border-radius: var(--card-radius);
+            padding: 1.5rem;
             position: relative;
             overflow: hidden;
             height: fit-content;
+            box-shadow: 0 4px 20px rgba(20, 39, 78, 0.15);
         }
 
         .join-code-container::before {
@@ -294,17 +295,18 @@
 
         /* 🆕 NEW: Compact Add Student Form */
         .add-student-card {
-            background: white;
-            border-radius: 12px;
-            padding: 1.25rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            background: var(--white);
+            border-radius: var(--card-radius);
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+            border: 1px solid rgba(155, 164, 180, 0.12);
             height: fit-content;
         }
 
         .add-student-title {
             font-size: 1rem;
-            font-weight: bold;
-            color: #1e293b;
+            font-weight: 700;
+            color: var(--primary);
             margin-bottom: 1rem;
             display: flex;
             align-items: center;
@@ -320,15 +322,15 @@
         }
 
         .pending-requests-btn {
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: white;
             border: none;
             padding: 0.75rem 1.5rem;
-            border-radius: 10px;
+            border-radius: 12px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+            box-shadow: 0 4px 12px rgba(20, 39, 78, 0.2);
             display: flex;
             align-items: center;
             gap: 0.5rem;
@@ -337,9 +339,8 @@
         }
 
         .pending-requests-btn:hover {
-            background: linear-gradient(135deg, #2563eb, #7c3aed);
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+            box-shadow: 0 6px 20px rgba(20, 39, 78, 0.3);
         }
 
         .pending-requests-btn:active {
@@ -774,15 +775,15 @@
         }
 
         .create-quiz-btn {
-            background: linear-gradient(135deg, #10b981, #16a34a);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: white;
             border: none;
             padding: 0.875rem 1.5rem;
-            border-radius: 10px;
+            border-radius: 12px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            box-shadow: 0 4px 12px rgba(20, 39, 78, 0.2);
             display: flex;
             align-items: center;
             gap: 0.5rem;
@@ -790,9 +791,8 @@
         }
 
         .create-quiz-btn:hover {
-            background: linear-gradient(135deg, #059669, #15803d);
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+            box-shadow: 0 6px 20px rgba(20, 39, 78, 0.3);
         }
 
         .create-quiz-btn:active {
@@ -808,7 +808,7 @@
             display: block;
             margin-bottom: 0.5rem;
             font-weight: 600;
-            color: #374151;
+            color: var(--primary);
         }
 
         .form-input,
@@ -826,8 +826,8 @@
         .form-textarea:focus,
         .form-select:focus {
             outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(20, 39, 78, 0.08);
         }
 
         /* 🆕 NEW: Exam Mode Toggle Styles */
@@ -1053,7 +1053,7 @@
         }
 
         .compact-btn {
-            background: #3b82f6;
+            background: var(--primary);
             color: white;
             border: none;
             width: 32px;
@@ -1066,13 +1066,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 1px 3px rgba(59, 130, 246, 0.2);
+            box-shadow: 0 1px 3px rgba(20, 39, 78, 0.2);
         }
 
         .compact-btn:hover {
-            background: #2563eb;
+            background: var(--secondary);
             transform: translateY(-1px);
-            box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
+            box-shadow: 0 2px 6px rgba(20, 39, 78, 0.3);
         }
 
         .compact-btn:active {
@@ -1089,8 +1089,8 @@
         .compact-display {
             background: white;
             padding: 0.5rem 1rem;
-            border-radius: 6px;
-            border: 2px solid #3b82f6;
+            border-radius: 8px;
+            border: 2px solid var(--primary);
             text-align: center;
             min-width: 90px;
         }
@@ -1336,11 +1336,16 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0.75rem;
-            background: #f8fafc;
-            border-radius: 8px;
-            border-left: 3px solid #e5e7eb;
+            padding: 0.75rem 1rem;
+            background: var(--bg);
+            border-radius: 10px;
+            border-left: 3px solid rgba(155, 164, 180, 0.3);
             margin-bottom: 0.75rem;
+            transition: all 0.2s ease;
+        }
+
+        .ranking-item:hover {
+            background: rgba(20, 39, 78, 0.03);
         }
 
         .ranking-item.top-3 {
@@ -1388,14 +1393,14 @@
         }
 
         .student-rank-name {
-            font-weight: 600;
-            color: #1e293b;
+            font-weight: 700;
+            color: var(--primary);
             margin-bottom: 0.25rem;
         }
 
         .student-rank-meta {
             font-size: 0.8rem;
-            color: #64748b;
+            color: var(--muted);
         }
 
         .student-rank-score {
@@ -1410,18 +1415,18 @@
 
         .student-score-sub {
             font-size: 0.75rem;
-            color: #64748b;
+            color: var(--muted);
         }
 
         /* Quiz Header Styles */
         .quiz-header-info {
-            background: #eff6ff;
-            border: 1px solid #bfdbfe;
-            border-radius: 8px;
+            background: rgba(20, 39, 78, 0.04);
+            border: 1px solid rgba(20, 39, 78, 0.1);
+            border-radius: 10px;
             padding: 0.75rem 1rem;
             margin-bottom: 1rem;
             font-size: 0.9rem;
-            color: #1e40af;
+            color: var(--primary);
         }
 
         /* Loading States */
@@ -1432,8 +1437,8 @@
         }
 
         .loading-spinner {
-            border: 4px solid #e2e8f0;
-            border-top: 4px solid #3b82f6;
+            border: 4px solid rgba(155, 164, 180, 0.2);
+            border-top: 4px solid var(--primary);
             border-radius: 50%;
             width: 40px;
             height: 40px;
@@ -1491,17 +1496,19 @@
 
         /* Quiz Item Styles */
         .quiz-item {
-            background: white;
-            border-radius: 8px;
+            background: var(--white);
+            border-radius: var(--card-radius);
             padding: 1.5rem;
-            border: 1px solid #e2e8f0;
+            border: 1px solid rgba(155, 164, 180, 0.12);
             margin-bottom: 1rem;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
+            box-shadow: var(--card-shadow);
         }
 
         .quiz-item:hover {
-            border-color: #3b82f6;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary);
+            box-shadow: 0 8px 30px rgba(20, 39, 78, 0.1);
+            transform: translateY(-2px);
         }
 
         .quiz-title {
@@ -1571,14 +1578,21 @@
 
         /* Student Item Styles */
         .student-item {
-            background: white;
-            border-radius: 8px;
-            padding: 1rem;
-            border: 1px solid #e2e8f0;
+            background: var(--white);
+            border-radius: var(--card-radius);
+            padding: 1.25rem 1.5rem;
+            border: 1px solid rgba(155, 164, 180, 0.12);
             margin-bottom: 0.75rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            transition: all 0.3s ease;
+            box-shadow: var(--card-shadow);
+        }
+
+        .student-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(20, 39, 78, 0.1);
         }
 
         .student-info {
@@ -1586,9 +1600,10 @@
         }
 
         .student-name {
-            font-weight: 600;
+            font-weight: 700;
             color: var(--primary);
             margin-bottom: 0.25rem;
+            font-size: 1rem;
         }
 
         .student-meta {
@@ -1598,39 +1613,56 @@
 
         .student-stats {
             display: flex;
-            gap: 1rem;
-            margin-right: 1rem;
+            gap: 1.5rem;
+            margin-right: 1.5rem;
         }
 
         .student-stat {
             text-align: center;
+            background: var(--bg);
+            padding: 0.5rem 1rem;
+            border-radius: 12px;
         }
 
         .student-stat-value {
-            font-weight: bold;
-            color: #3b82f6;
-            font-size: 0.9rem;
+            font-weight: 800;
+            color: var(--primary);
+            font-size: 1rem;
+        }
+
+        .student-stat-label {
+            font-size: 0.7rem;
+            color: var(--muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
         }
 
         .student-actions {
             display: flex;
-            gap: 0.5rem;
+            gap: 0.75rem;
         }
 
         .view-performance-btn {
-            background: #8b5cf6;
+            background: linear-gradient(135deg, var(--secondary), var(--primary));
             color: white;
             border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            font-size: 0.8rem;
+            padding: 0.6rem 1.2rem;
+            border-radius: 10px;
+            font-size: 0.82rem;
+            font-weight: 600;
             cursor: pointer;
             text-decoration: none;
-            transition: background-color 0.2s ease;
+            transition: all 0.25s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            box-shadow: 0 2px 8px rgba(20, 39, 78, 0.15);
         }
 
         .view-performance-btn:hover {
-            background: #7c3aed;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 14px rgba(20, 39, 78, 0.25);
         }
 
         /* Modal Overlay Styles */
@@ -2304,15 +2336,15 @@
                             <div class="stat-value" id="totalStudents">-</div>
                             <div class="stat-label">Total Students</div>
                         </div>
-                        <div class="stat-card green">
+                        <div class="stat-card blue">
                             <div class="stat-value" id="classAverage">-%</div>
                             <div class="stat-label">Class Average</div>
                         </div>
-                        <div class="stat-card purple">
+                        <div class="stat-card blue">
                             <div class="stat-value" id="totalQuizzes">-</div>
                             <div class="stat-label">Total Quizzes</div>
                         </div>
-                        <div class="stat-card orange">
+                        <div class="stat-card blue">
                             <div class="stat-value" id="totalAttempts">-</div>
                             <div class="stat-label">Total Quiz Attempts</div>
                         </div>
@@ -2448,7 +2480,7 @@
                             </div>
                             <div id="joinCodeDisplay">
                                 <div class="no-active-code">
-                                    <p>🚀 Generate a join code to let students request to join!</p>
+                                    <p>Generate a join code to let students request to join!</p>
                                     <p style="font-size: 0.8rem; margin-top: 0.5rem;">Valid for 10 minutes, up to 50
                                         requests.</p>
                                 </div>
@@ -2553,7 +2585,8 @@
                     <div class="exam-mode-toggle-container" style="margin-bottom: 1rem;">
                         <div class="exam-mode-header">
                             <h3 class="exam-mode-title">
-                                🚨 Auto-Start Exam Session
+                                <i data-lucide="alert-circle" style="width:16px;height:16px"></i> Auto-Start Exam
+                                Session
                             </h3>
                             <label class="exam-mode-switch">
                                 <input type="checkbox" id="autoStartExamToggle">
@@ -3078,7 +3111,7 @@
                         Share with students • Used: ${codeData.usageCount}/${codeData.maxUsage}
                     </div>
                     <div class="countdown-timer" id="countdownTimer">
-                        ⏰ Expires in: <span id="timeRemaining">${formatTime(remainingSeconds)}</span>
+                        Expires in: <span id="timeRemaining">${formatTime(remainingSeconds)}</span>
                     </div>
                 </div>
             `;
@@ -3112,7 +3145,7 @@
             const container = document.getElementById('joinCodeDisplay');
             container.innerHTML = `
                 <div class="no-active-code">
-                    <p>⏰ The join code has expired.</p>
+                    <p>The join code has expired.</p>
                     <p style="font-size: 0.8rem; margin-top: 0.5rem;">Generate a new code to allow more students to join.</p>
                 </div>
             `;
@@ -3129,7 +3162,7 @@
                 } else {
                     document.getElementById('joinCodeDisplay').innerHTML = `
                         <div class="no-active-code">
-                            <p>🚀 Generate a join code to let students request to join!</p>
+                            <p>Generate a join code to let students request to join!</p>
                             <p style="font-size: 0.8rem; margin-top: 0.5rem;">Valid for 10 minutes, up to 50 requests.</p>
                         </div>
                     `;
@@ -4199,7 +4232,7 @@
             const container = document.getElementById('classRankingsContainer');
 
             if (!rankings || rankings.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #64748b;">No ranking data available yet.</p>';
+                container.innerHTML = '<p style="text-align: center; color: var(--muted);">No ranking data available yet.</p>';
                 return;
             }
 
@@ -4234,7 +4267,7 @@
             const container = document.getElementById('lastQuizRankingsContainer');
 
             if (!data || !data.rankings || data.rankings.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #64748b;">No recent quiz rankings available.</p>';
+                container.innerHTML = '<p style="text-align: center; color: var(--muted);">No recent quiz rankings available.</p>';
                 return;
             }
 
@@ -4275,7 +4308,7 @@
             const container = document.getElementById('recentActivityContainer');
 
             if (!activities || activities.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #64748b;">No recent activity.</p>';
+                container.innerHTML = '<p style="text-align: center; color: var(--muted);">No recent activity.</p>';
                 return;
             }
 
@@ -4439,7 +4472,7 @@
             const container = document.getElementById('detailedAnalyticsContainer');
 
             if (!analytics) {
-                container.innerHTML = '<p style="text-align: center; color: #64748b;">No detailed analytics available yet.</p>';
+                container.innerHTML = '<p style="text-align: center; color: var(--muted);">No detailed analytics available yet.</p>';
                 return;
             }
 
