@@ -1,13 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage {{className}} - Quizzie</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        /* All your existing styles remain the same... */
+        :root {
+            --bg: #F1F6F9;
+            --primary: #14274E;
+            --secondary: #394867;
+            --muted: #9BA4B4;
+            --white: #ffffff;
+            --card-shadow: 0 2px 16px rgba(20, 39, 78, 0.07);
+            --card-radius: 18px;
+        }
+
         /* Reset and Base Styles */
         * {
             margin: 0;
@@ -16,9 +28,9 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: #f8fafc;
-            color: #334155;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--primary);
             line-height: 1.6;
         }
 
@@ -31,8 +43,8 @@
         /* Sidebar Styles */
         .sidebar {
             width: 280px;
-            background: white;
-            box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
+            background: var(--white);
+            box-shadow: 2px 0 12px rgba(20, 39, 78, 0.08);
             position: fixed;
             height: 100vh;
             overflow-y: auto;
@@ -41,8 +53,8 @@
 
         .class-info {
             padding: 2rem 1.5rem;
-            border-bottom: 1px solid #e2e8f0;
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border-bottom: 1px solid rgba(155, 164, 180, 0.15);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: white;
         }
 
@@ -92,22 +104,24 @@
             align-items: center;
             gap: 0.75rem;
             padding: 0.75rem 1.5rem;
-            color: #64748b;
+            color: var(--muted);
             text-decoration: none;
-            transition: all 0.2s ease;
+            transition: all 0.25s ease;
             border-right: 3px solid transparent;
             cursor: pointer;
+            font-weight: 500;
+            font-size: 0.95rem;
         }
 
         .nav-link:hover {
-            background: #f8fafc;
-            color: #3b82f6;
+            background: var(--bg);
+            color: var(--primary);
         }
 
         .nav-link.active {
-            background: #eff6ff;
-            color: #3b82f6;
-            border-right-color: #3b82f6;
+            background: var(--bg);
+            color: var(--primary);
+            border-right-color: var(--primary);
             font-weight: 600;
         }
 
@@ -115,20 +129,24 @@
             font-size: 1.1rem;
             width: 20px;
             text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         /* Breadcrumb */
         .breadcrumb {
             padding: 1rem 1.5rem;
-            background: white;
-            border-bottom: 1px solid #e2e8f0;
-            color: #64748b;
+            background: var(--white);
+            border-bottom: 1px solid rgba(155, 164, 180, 0.15);
+            color: var(--muted);
             font-size: 0.9rem;
         }
 
         .breadcrumb a {
-            color: #3b82f6;
+            color: var(--primary);
             text-decoration: none;
+            font-weight: 500;
         }
 
         .breadcrumb a:hover {
@@ -139,7 +157,7 @@
         .main-content {
             flex: 1;
             margin-left: 280px;
-            background: #f8fafc;
+            background: var(--bg);
             width: calc(100vw - 280px);
             max-width: calc(100vw - 280px);
             box-sizing: border-box;
@@ -167,12 +185,15 @@
 
         .section-title {
             font-size: 1.75rem;
-            font-weight: bold;
-            color: #1e293b;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .section-subtitle {
-            color: #64748b;
+            color: var(--muted);
             margin-top: 0.25rem;
             font-size: 0.9rem;
         }
@@ -348,9 +369,11 @@
             0% {
                 box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
             }
+
             70% {
                 box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
             }
+
             100% {
                 box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
             }
@@ -400,7 +423,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: white;
         }
 
@@ -526,19 +549,21 @@
 
         /* Cards and Containers */
         .card {
-            background: white;
-            border-radius: 12px;
+            background: var(--white);
+            border-radius: var(--card-radius);
             padding: 1.5rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            box-shadow: var(--card-shadow);
+            border: 1px solid rgba(155, 164, 180, 0.12);
             margin-bottom: 1.5rem;
         }
 
         /* 🔧 FIX: Perfect screen fit for recent activity card - COMPLETE SOLUTION */
         .card.recent_submit {
-            background: white;
-            border-radius: 12px;
+            background: var(--white);
+            border-radius: var(--card-radius);
             padding: 1.5rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            box-shadow: var(--card-shadow);
+            border: 1px solid rgba(155, 164, 180, 0.12);
             margin-bottom: 1.5rem;
             width: 100%;
             max-width: 100%;
@@ -653,9 +678,12 @@
 
         .card-title {
             font-size: 1.1rem;
-            font-weight: bold;
-            color: #1e293b;
+            font-weight: 700;
+            color: var(--primary);
             margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         /* Grid Layouts */
@@ -679,38 +707,62 @@
 
         /* Stats Cards */
         .stat-card {
-            background: white;
-            border-radius: 12px;
+            background: var(--white);
+            border-radius: var(--card-radius);
             padding: 1.5rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            box-shadow: var(--card-shadow);
+            border: 1px solid rgba(155, 164, 180, 0.12);
             text-align: center;
-            transition: transform 0.2s ease;
+            transition: all 0.3s ease;
         }
 
         .stat-card:hover {
-            transform: translateY(-2px);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(20, 39, 78, 0.1);
         }
 
-        .stat-card.blue { border-left: 4px solid #3b82f6; }
-        .stat-card.green { border-left: 4px solid #10b981; }
-        .stat-card.purple { border-left: 4px solid #8b5cf6; }
-        .stat-card.orange { border-left: 4px solid #f59e0b; }
+        .stat-card.blue {
+            border-left: 4px solid var(--primary);
+        }
+
+        .stat-card.green {
+            border-left: 4px solid #10b981;
+        }
+
+        .stat-card.purple {
+            border-left: 4px solid #8b5cf6;
+        }
+
+        .stat-card.orange {
+            border-left: 4px solid #f59e0b;
+        }
 
         .stat-value {
             font-size: 2rem;
-            font-weight: bold;
+            font-weight: 800;
             margin-bottom: 0.5rem;
         }
 
-        .stat-card.blue .stat-value { color: #3b82f6; }
-        .stat-card.green .stat-value { color: #10b981; }
-        .stat-card.purple .stat-value { color: #8b5cf6; }
-        .stat-card.orange .stat-value { color: #f59e0b; }
+        .stat-card.blue .stat-value {
+            color: var(--primary);
+        }
+
+        .stat-card.green .stat-value {
+            color: #10b981;
+        }
+
+        .stat-card.purple .stat-value {
+            color: #8b5cf6;
+        }
+
+        .stat-card.orange .stat-value {
+            color: #f59e0b;
+        }
 
         .stat-label {
-            color: #64748b;
+            color: var(--muted);
             font-size: 0.9rem;
-            font-weight: 500;
+            font-weight: 600;
         }
 
         /* Create Quiz Button Styles */
@@ -856,11 +908,11 @@
             border-radius: 50%;
         }
 
-        input:checked + .exam-mode-slider {
+        input:checked+.exam-mode-slider {
             background-color: rgba(255, 255, 255, 0.6);
         }
 
-        input:checked + .exam-mode-slider:before {
+        input:checked+.exam-mode-slider:before {
             -webkit-transform: translateX(26px);
             -ms-transform: translateX(26px);
             transform: translateX(26px);
@@ -1081,9 +1133,9 @@
         }
 
         .compact-preset-btn.active {
-            background: #3b82f6;
+            background: var(--primary);
             color: white;
-            border-color: #3b82f6;
+            border-color: var(--primary);
         }
 
         .compact-help {
@@ -1095,22 +1147,24 @@
 
         /* Buttons */
         .btn {
-            background: #3b82f6;
+            background: var(--primary);
             color: white;
             border: none;
             padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            font-weight: 500;
+            border-radius: 10px;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.25s ease;
             font-size: 0.9rem;
             text-decoration: none;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
             text-align: center;
         }
 
         .btn:hover {
-            background: #2563eb;
+            background: var(--secondary);
             transform: translateY(-1px);
         }
 
@@ -1224,21 +1278,22 @@
         }
 
         .table th {
-            background: #f8fafc;
+            background: var(--bg);
             font-weight: 600;
-            color: #1e293b;
+            color: var(--primary);
         }
 
         .table tr:hover {
-            background: #f8fafc;
+            background: var(--bg);
         }
 
         /* Charts */
         .chart-container {
-            background: white;
-            border-radius: 12px;
+            background: var(--white);
+            border-radius: var(--card-radius);
             padding: 1.5rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            box-shadow: var(--card-shadow);
+            border: 1px solid rgba(155, 164, 180, 0.12);
             margin-bottom: 1.5rem;
         }
 
@@ -1260,16 +1315,17 @@
         }
 
         .ranking-card {
-            background: white;
-            border-radius: 12px;
+            background: var(--white);
+            border-radius: var(--card-radius);
             padding: 1.5rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            box-shadow: var(--card-shadow);
+            border: 1px solid rgba(155, 164, 180, 0.12);
         }
 
         .ranking-card-title {
             font-size: 1.1rem;
-            font-weight: bold;
-            color: #1e293b;
+            font-weight: 700;
+            color: var(--primary);
             margin-bottom: 1rem;
             display: flex;
             align-items: center;
@@ -1307,10 +1363,25 @@
             margin-right: 0.75rem;
         }
 
-        .rank-1 { background: #ffd700; color: #1e293b; }
-        .rank-2 { background: #c0c0c0; color: #1e293b; }
-        .rank-3 { background: #cd7f32; color: white; }
-        .rank-other { background: #e2e8f0; color: #64748b; }
+        .rank-1 {
+            background: #ffd700;
+            color: #1e293b;
+        }
+
+        .rank-2 {
+            background: #c0c0c0;
+            color: #1e293b;
+        }
+
+        .rank-3 {
+            background: #cd7f32;
+            color: white;
+        }
+
+        .rank-other {
+            background: #e2e8f0;
+            color: #64748b;
+        }
 
         .student-rank-info {
             flex: 1;
@@ -1357,7 +1428,7 @@
         .loading {
             text-align: center;
             padding: 3rem;
-            color: #64748b;
+            color: var(--muted);
         }
 
         .loading-spinner {
@@ -1371,21 +1442,26 @@
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         /* Empty States */
         .empty-state {
             text-align: center;
             padding: 3rem;
-            color: #64748b;
+            color: var(--muted);
         }
 
         .empty-state h3 {
             font-size: 1.25rem;
             margin-bottom: 0.5rem;
-            color: #1e293b;
+            color: var(--primary);
         }
 
         /* Alerts */
@@ -1431,12 +1507,12 @@
         .quiz-title {
             font-size: 1.1rem;
             font-weight: 600;
-            color: #1e293b;
+            color: var(--primary);
             margin-bottom: 0.5rem;
         }
 
         .quiz-meta {
-            color: #64748b;
+            color: var(--muted);
             font-size: 0.85rem;
             margin-bottom: 1rem;
         }
@@ -1449,7 +1525,7 @@
 
         .quiz-stat {
             font-size: 0.8rem;
-            color: #64748b;
+            color: var(--muted);
         }
 
         .quiz-actions {
@@ -1483,9 +1559,11 @@
             0% {
                 box-shadow: 0 0 5px rgba(255, 107, 107, 0.5);
             }
+
             50% {
                 box-shadow: 0 0 15px rgba(255, 107, 107, 0.8);
             }
+
             100% {
                 box-shadow: 0 0 5px rgba(255, 107, 107, 0.5);
             }
@@ -1509,13 +1587,13 @@
 
         .student-name {
             font-weight: 600;
-            color: #1e293b;
+            color: var(--primary);
             margin-bottom: 0.25rem;
         }
 
         .student-meta {
             font-size: 0.8rem;
-            color: #64748b;
+            color: var(--muted);
         }
 
         .student-stats {
@@ -1594,12 +1672,11 @@
         }
 
         .modal-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid #e2e8f0;
+            padding: 1.25rem 1.5rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: linear-gradient(135deg, #10b981, #16a34a);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: white;
         }
 
@@ -1883,7 +1960,7 @@
                 top: 1rem;
                 left: 1rem;
                 z-index: 200;
-                background: #3b82f6;
+                background: var(--primary);
                 color: white;
                 border: none;
                 padding: 0.5rem;
@@ -1951,11 +2028,11 @@
                 flex-direction: column;
                 gap: 0.5rem;
             }
-            
+
             .compact-presets {
                 justify-content: center;
             }
-            
+
             .compact-preset-btn {
                 flex: 1;
                 min-width: 40px;
@@ -2078,64 +2155,64 @@
             }
         }
 
-        html, body {
+        html,
+        body {
             width: 100%;
             max-width: 100%;
             overflow-x: hidden;
         }
 
         /* 🆕 NEW: Simple Exam Session Button Styles */
-.start-exam-session-btn {
-    background: linear-gradient(135deg, #ef4444, #dc2626);
-    color: white;
-    border: none;
-    padding: 0.6rem 1.2rem;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-size: 0.9rem;
-    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
-}
+        .start-exam-session-btn {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+        }
 
-.start-exam-session-btn:hover {
-    background: linear-gradient(135deg, #dc2626, #b91c1c);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
-}
+        .start-exam-session-btn:hover {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
 
-.start-exam-session-btn:disabled {
-    background: #9ca3af;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-}
+        .start-exam-session-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
 
-/* Active Exam Timer Styles */
-.exam-timer-display {
-    background: linear-gradient(135deg, #ef4444, #dc2626);
-    color: white;
-    padding: 1rem;
-    border-radius: 8px;
-    text-align: center;
-    margin: 1rem 0;
-    font-family: 'Courier New', monospace;
-    font-size: 1.2rem;
-    font-weight: bold;
-    letter-spacing: 0.05em;
-    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
-}
+        /* Active Exam Timer Styles */
+        .exam-timer-display {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            margin: 1rem 0;
+            font-family: 'Courier New', monospace;
+            font-size: 1.2rem;
+            font-weight: bold;
+            letter-spacing: 0.05em;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+        }
 
-.exam-timer-display .timer-label {
-    font-size: 0.8rem;
-    opacity: 0.9;
-    display: block;
-    margin-bottom: 0.25rem;
-}
-
-
+        .exam-timer-display .timer-label {
+            font-size: 0.8rem;
+            opacity: 0.9;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
     </style>
 </head>
+
 <body>
     <!-- Mobile Menu Button -->
     <button class="mobile-menu-btn" onclick="toggleSidebar()" style="display: none;">☰</button>
@@ -2144,7 +2221,9 @@
     <div id="loadingOverlay" class="loading-overlay">
         <div class="loading-content">
             <div class="loading-animation">
-                <img src="/Animation-1751710786188.gif" alt="Loading Animation" id="loadingGif" onload="console.log('✅ Loading GIF loaded successfully')" onerror="console.error('❌ Failed to load GIF')">
+                <img src="/Animation-1751710786188.gif" alt="Loading Animation" id="loadingGif"
+                    onload="console.log('✅ Loading GIF loaded successfully')"
+                    onerror="console.error('❌ Failed to load GIF')">
             </div>
             <h3 class="loading-text fade-in" id="loadingText">Preparing your quiz...</h3>
             <div class="loading-progress">
@@ -2179,19 +2258,19 @@
             <!-- Navigation Menu -->
             <nav class="nav-menu">
                 <a class="nav-link active" onclick="showSection('analytics')">
-                    <span class="nav-icon">📈</span>
+                    <span class="nav-icon"><i data-lucide="bar-chart-2" style="width:18px;height:18px"></i></span>
                     <span>Analytics</span>
                 </a>
                 <a class="nav-link" onclick="showSection('quizzes')">
-                    <span class="nav-icon">🎯</span>
+                    <span class="nav-icon"><i data-lucide="target" style="width:18px;height:18px"></i></span>
                     <span>Quizzes</span>
                 </a>
                 <a class="nav-link" onclick="showSection('students')">
-                    <span class="nav-icon">👥</span>
+                    <span class="nav-icon"><i data-lucide="users" style="width:18px;height:18px"></i></span>
                     <span>Students</span>
                 </a>
                 <a class="nav-link" onclick="showSection('settings')">
-                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-icon"><i data-lucide="settings" style="width:18px;height:18px"></i></span>
                     <span>Settings</span>
                 </a>
             </nav>
@@ -2201,7 +2280,8 @@
         <main class="main-content">
             <!-- Breadcrumb -->
             <div class="breadcrumb">
-                <a href="/homeTeacher">Dashboard</a> > <a href="/homeTeacher">My Classes</a> > <span id="breadcrumbClass">{{className}}</span>
+                <a href="/homeTeacher">Dashboard</a> > <a href="/homeTeacher">My Classes</a> > <span
+                    id="breadcrumbClass">{{className}}</span>
             </div>
 
             <div class="content-wrapper">
@@ -2209,11 +2289,12 @@
                 <section id="analyticsSection" class="content-section active">
                     <div class="section-header">
                         <div>
-                            <h2 class="section-title">📈 Class Analytics & Overview</h2>
+                            <h2 class="section-title"><i data-lucide="trending-up" style="width:24px;height:24px"></i>
+                                Class Analytics & Overview</h2>
                             <p class="section-subtitle">Comprehensive performance insights and class statistics</p>
                         </div>
                         <button onclick="loadAnalytics()" class="refresh-btn">
-                            🔄 Refresh Data
+                            <i data-lucide="refresh-cw" style="width:16px;height:16px"></i> Refresh Data
                         </button>
                     </div>
 
@@ -2241,7 +2322,9 @@
                     <div class="grid-2" style="margin-bottom: 2rem;">
                         <!-- Performance Chart -->
                         <div class="chart-container">
-                            <h3 class="card-title">📊 Class Performance Trend</h3>
+                            <h3 class="card-title"><i data-lucide="bar-chart-2"
+                                    style="width:18px;height:18px;vertical-align:middle"></i> Class Performance Trend
+                            </h3>
                             <div class="chart-wrapper">
                                 <canvas id="performanceChart"></canvas>
                             </div>
@@ -2249,7 +2332,9 @@
 
                         <!-- Quiz Distribution Chart -->
                         <div class="chart-container">
-                            <h3 class="card-title">🎯 Quiz Score Distribution</h3>
+                            <h3 class="card-title"><i data-lucide="target"
+                                    style="width:18px;height:18px;vertical-align:middle"></i> Quiz Score Distribution
+                            </h3>
                             <div class="chart-wrapper">
                                 <canvas id="distributionChart"></canvas>
                             </div>
@@ -2262,8 +2347,10 @@
                             <!-- Class Rankings -->
                             <div class="ranking-card">
                                 <h3 class="ranking-card-title">
-                                    🏆 Class Rankings
-                                    <span style="font-size: 0.8rem; font-weight: normal; color: #64748b;">(Points Based)</span>
+                                    <i data-lucide="trophy" style="width:18px;height:18px;color:#f59e0b"></i> Class
+                                    Rankings
+                                    <span style="font-size: 0.8rem; font-weight: normal; color: var(--muted);"> (Points
+                                        Based)</span>
                                 </h3>
                                 <div id="classRankingsContainer">
                                     <div class="loading">Loading class rankings...</div>
@@ -2273,7 +2360,8 @@
                             <!-- Last Quiz Rankings -->
                             <div class="ranking-card">
                                 <h3 class="ranking-card-title">
-                                    🎯 Latest Quiz Rankings
+                                    <i data-lucide="target" style="width:18px;height:18px;color:#8b5cf6"></i> Latest
+                                    Quiz Rankings
                                 </h3>
                                 <div id="lastQuizRankingsContainer">
                                     <div class="loading">Loading latest quiz rankings...</div>
@@ -2283,7 +2371,8 @@
 
                         <!-- Recent Quiz Activity Below Rankings -->
                         <div class="card recent_submit">
-                            <h3 class="card-title">🏃‍♂️ Recently Submitted</h3>
+                            <h3 class="card-title"><i data-lucide="activity"
+                                    style="width:18px;height:18px;vertical-align:middle"></i> Recently Submitted</h3>
                             <div id="recentActivityContainer" class="recent-activity-container">
                                 <div class="loading">Loading recent activity...</div>
                             </div>
@@ -2292,7 +2381,8 @@
 
                     <!-- Detailed Analytics Tables -->
                     <div class="card">
-                        <h3 class="card-title">📊 Detailed Class Statistics</h3>
+                        <h3 class="card-title"><i data-lucide="bar-chart"
+                                style="width:18px;height:18px;vertical-align:middle"></i> Detailed Class Statistics</h3>
                         <div id="detailedAnalyticsContainer">
                             <div class="loading">Loading detailed analytics...</div>
                         </div>
@@ -2303,7 +2393,8 @@
                 <section id="quizzesSection" class="content-section">
                     <div class="section-header">
                         <div>
-                            <h2 class="section-title">🎯 Quiz Management</h2>
+                            <h2 class="section-title"><i data-lucide="target" style="width:24px;height:24px"></i> Quiz
+                                Management</h2>
                             <p class="section-subtitle">Create and manage quizzes for this class</p>
                         </div>
                     </div>
@@ -2311,13 +2402,14 @@
                     <!-- Create Quiz Button -->
                     <div class="create-quiz-header">
                         <button class="create-quiz-btn" onclick="openCreateQuizModal()">
-                            ➕ Create Quiz
+                            <i data-lucide="plus" style="width:16px;height:16px"></i> Create Quiz
                         </button>
                     </div>
 
                     <!-- Existing Quizzes -->
                     <div class="card">
-                        <h3 class="card-title">📝 Class Quizzes</h3>
+                        <h3 class="card-title"><i data-lucide="file-text"
+                                style="width:18px;height:18px;vertical-align:middle"></i> Class Quizzes</h3>
                         <div id="quizzesContainer">
                             <div class="loading">Loading quizzes...</div>
                         </div>
@@ -2328,14 +2420,17 @@
                 <section id="studentsSection" class="content-section">
                     <div class="section-header">
                         <div>
-                            <h2 class="section-title">👥 Student Management</h2>
+                            <h2 class="section-title"><i data-lucide="users" style="width:24px;height:24px"></i> Student
+                                Management</h2>
                             <p class="section-subtitle">Manage students enrolled in this class</p>
                         </div>
                         <!-- 🆕 NEW: Pending Requests Button in Header -->
                         <div class="pending-requests-header">
-                            <button class="pending-requests-btn" onclick="openPendingRequestsModal()" id="pendingRequestsBtn">
-                                📬 Pending Requests
-                                <span class="notification-badge" id="pendingRequestsBadge" style="display: none;">0</span>
+                            <button class="pending-requests-btn" onclick="openPendingRequestsModal()"
+                                id="pendingRequestsBtn">
+                                <i data-lucide="mail" style="width:16px;height:16px"></i> Pending Requests
+                                <span class="notification-badge" id="pendingRequestsBadge"
+                                    style="display: none;">0</span>
                             </button>
                         </div>
                     </div>
@@ -2345,15 +2440,17 @@
                         <!-- Join Code System - Left Column -->
                         <div class="join-code-container">
                             <div class="join-code-header">
-                                <h3 class="join-code-title">🔐 Class Join Code System</h3>
+                                <h3 class="join-code-title"><i data-lucide="lock" style="width:16px;height:16px"></i>
+                                    Class Join Code System</h3>
                                 <button class="generate-code-btn" onclick="generateJoinCode()">
-                                    🔄 Generate Code
+                                    <i data-lucide="refresh-cw" style="width:14px;height:14px"></i> Generate Code
                                 </button>
                             </div>
                             <div id="joinCodeDisplay">
                                 <div class="no-active-code">
                                     <p>🚀 Generate a join code to let students request to join!</p>
-                                    <p style="font-size: 0.8rem; margin-top: 0.5rem;">Valid for 10 minutes, up to 50 requests.</p>
+                                    <p style="font-size: 0.8rem; margin-top: 0.5rem;">Valid for 10 minutes, up to 50
+                                        requests.</p>
                                 </div>
                             </div>
                         </div>
@@ -2361,21 +2458,25 @@
                         <!-- Add Student Manually - Right Column -->
                         <div class="add-student-card">
                             <h3 class="add-student-title">
-                                ➕ Add Student Manually
+                                <i data-lucide="user-plus" style="width:18px;height:18px"></i> Add Student Manually
                             </h3>
                             <form id="addStudentForm">
                                 <div class="form-group">
                                     <label class="form-label">Student Enrollment Number</label>
-                                    <input type="text" id="enrollmentNumber" class="form-input" placeholder="Enter enrollment number" required>
+                                    <input type="text" id="enrollmentNumber" class="form-input"
+                                        placeholder="Enter enrollment number" required>
                                 </div>
-                                <button type="submit" class="btn btn-success" style="width: 100%;">👥 Add Student</button>
+                                <button type="submit" class="btn btn-success" style="width: 100%;"><i
+                                        data-lucide="user-plus" style="width:16px;height:16px"></i> Add
+                                    Student</button>
                             </form>
                         </div>
                     </div>
 
                     <!-- Student List -->
                     <div class="card">
-                        <h3 class="card-title">📋 Enrolled Students</h3>
+                        <h3 class="card-title"><i data-lucide="clipboard-list"
+                                style="width:18px;height:18px;vertical-align:middle"></i> Enrolled Students</h3>
                         <div id="studentsContainer">
                             <div class="loading">Loading students...</div>
                         </div>
@@ -2386,14 +2487,16 @@
                 <section id="settingsSection" class="content-section">
                     <div class="section-header">
                         <div>
-                            <h2 class="section-title">⚙️ Class Settings</h2>
+                            <h2 class="section-title"><i data-lucide="settings" style="width:24px;height:24px"></i>
+                                Class Settings</h2>
                             <p class="section-subtitle">Update class information and preferences</p>
                         </div>
                     </div>
 
                     <!-- Edit Class Form -->
                     <div class="card">
-                        <h3 class="card-title">✏️ Edit Class Information</h3>
+                        <h3 class="card-title"><i data-lucide="edit-3"
+                                style="width:18px;height:18px;vertical-align:middle"></i> Edit Class Information</h3>
                         <form id="editClassForm">
                             <div class="form-group">
                                 <label class="form-label">Class Name</label>
@@ -2407,15 +2510,19 @@
                                 <label class="form-label">Description</label>
                                 <textarea id="editClassDescription" class="form-textarea" rows="3"></textarea>
                             </div>
-                            <button type="submit" class="btn btn-warning">💾 Update Class</button>
+                            <button type="submit" class="btn btn-warning"><i data-lucide="save"
+                                    style="width:16px;height:16px"></i> Update Class</button>
                         </form>
                     </div>
 
                     <!-- Danger Zone -->
                     <div class="card" style="border-color: #ef4444;">
-                        <h3 class="card-title" style="color: #ef4444;">⚠️ Danger Zone</h3>
-                        <p style="color: #64748b; margin-bottom: 1rem;">These actions cannot be undone. Please proceed with caution.</p>
-                        <button class="btn btn-danger" onclick="archiveClass()">🗄️ Archive Class</button>
+                        <h3 class="card-title" style="color: #ef4444;"><i data-lucide="alert-triangle"
+                                style="width:18px;height:18px;vertical-align:middle"></i> Danger Zone</h3>
+                        <p style="color: #64748b; margin-bottom: 1rem;">These actions cannot be undone. Please proceed
+                            with caution.</p>
+                        <button class="btn btn-danger" onclick="archiveClass()"><i data-lucide="archive"
+                                style="width:16px;height:16px"></i> Archive Class</button>
                     </div>
                 </section>
             </div>
@@ -2426,20 +2533,22 @@
     <div id="createQuizModal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title">🎯 Create New Quiz</h3>
+                <h3 class="modal-title"><i data-lucide="target" style="width:18px;height:18px"></i> Create New Quiz</h3>
                 <button class="modal-close" onclick="closeCreateQuizModal()">&times;</button>
             </div>
             <div class="modal-body">
                 <form id="createQuizForm">
                     <div class="form-group">
                         <label class="form-label">Upload Lecture File</label>
-                        <input type="file" id="lectureFile" class="form-input" accept=".pdf,.ppt,.pptx,.doc,.docx" required>
+                        <input type="file" id="lectureFile" class="form-input" accept=".pdf,.ppt,.pptx,.doc,.docx"
+                            required>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Lecture Title</label>
-                        <input type="text" id="lectureTitle" class="form-input" placeholder="e.g., Chapter 1: Introduction to Physics" required>
+                        <input type="text" id="lectureTitle" class="form-input"
+                            placeholder="e.g., Chapter 1: Introduction to Physics" required>
                     </div>
-                    
+
                     <!-- 🆕 NEW: Exam Session Toggle - Added above Quiz Duration -->
                     <div class="exam-mode-toggle-container" style="margin-bottom: 1rem;">
                         <div class="exam-mode-header">
@@ -2452,10 +2561,11 @@
                             </label>
                         </div>
                         <div class="exam-mode-info">
-                            When enabled, an exam session will start automatically after quiz creation with the selected duration.
+                            When enabled, an exam session will start automatically after quiz creation with the selected
+                            duration.
                         </div>
                     </div>
-                    
+
                     <!-- Quiz Duration Selector -->
                     <div class="form-group">
                         <label class="form-label">Quiz Duration</label>
@@ -2470,7 +2580,8 @@
                         <div class="compact-presets">
                             <button type="button" class="compact-preset-btn" onclick="setDuration(5)">5m</button>
                             <button type="button" class="compact-preset-btn" onclick="setDuration(10)">10m</button>
-                            <button type="button" class="compact-preset-btn active" onclick="setDuration(15)">15m</button>
+                            <button type="button" class="compact-preset-btn active"
+                                onclick="setDuration(15)">15m</button>
                             <button type="button" class="compact-preset-btn" onclick="setDuration(20)">20m</button>
                             <button type="button" class="compact-preset-btn" onclick="setDuration(30)">30m</button>
                             <button type="button" class="compact-preset-btn" onclick="setDuration(45)">45m</button>
@@ -2491,15 +2602,17 @@
                         </div>
                         <div class="compact-presets">
                             <button type="button" class="compact-preset-btn" onclick="setQuestions(5)">5</button>
-                            <button type="button" class="compact-preset-btn active" onclick="setQuestions(10)">10</button>
+                            <button type="button" class="compact-preset-btn active"
+                                onclick="setQuestions(10)">10</button>
                             <button type="button" class="compact-preset-btn" onclick="setQuestions(15)">15</button>
                             <button type="button" class="compact-preset-btn" onclick="setQuestions(20)">20</button>
                             <button type="button" class="compact-preset-btn" onclick="setQuestions(25)">25</button>
                             <button type="button" class="compact-preset-btn" onclick="setQuestions(30)">30</button>
                         </div>
                     </div>
-                    
-                    <button type="submit" class="btn btn-success" style="width: 100%; margin-top: 1rem;">📤 Upload & Generate Quiz</button>
+
+                    <button type="submit" class="btn btn-success" style="width: 100%; margin-top: 1rem;">📤 Upload &
+                        Generate Quiz</button>
                 </form>
             </div>
         </div>
@@ -2522,7 +2635,8 @@
     <div id="pendingRequestsModal" class="pending-requests-modal">
         <div class="pending-requests-modal-content">
             <div class="pending-requests-modal-header">
-                <h3 class="pending-requests-modal-title">📬 Pending Join Requests</h3>
+                <h3 class="pending-requests-modal-title"><i data-lucide="mail" style="width:18px;height:18px"></i>
+                    Pending Join Requests</h3>
                 <button class="pending-requests-modal-close" onclick="closePendingRequestsModal()">&times;</button>
             </div>
             <div class="pending-requests-modal-body" id="pendingRequestsModalBody">
@@ -2534,6 +2648,9 @@
     <script>
 
 
+
+        // Initialize Lucide icons
+        lucide.createIcons();
 
         // Global variables
         const classId = '{{classId}}';
@@ -2620,7 +2737,7 @@
         async function startExamSession(quizId) {
             try {
                 console.log('🔥 Starting exam session for quiz:', quizId);
-                
+
                 if (!currentSessionDuration || currentSessionDuration < 15) {
                     showError('Session duration must be at least 15 minutes.');
                     return;
@@ -2642,20 +2759,20 @@
 
                 if (result.success) {
                     showSuccess(`🔥 Exam session started! Students have ${currentSessionDuration} minutes to complete the quiz.`);
-                    
+
                     // Store session info
                     activeExamSessions.set(quizId, {
                         sessionId: result.sessionId,
                         endsAt: new Date(result.endsAt),
                         duration: currentSessionDuration
                     });
-                    
+
                     // Start countdown timer
                     startExamSessionTimer(quizId, result.sessionId, new Date(result.endsAt));
-                    
+
                     // Refresh quiz list to show session status
                     loadQuizzes();
-                    
+
                 } else {
                     showError('Failed to start exam session: ' + result.message);
                 }
@@ -2673,7 +2790,7 @@
                 }
 
                 console.log('🛑 Ending exam session:', sessionId);
-                
+
                 const response = await fetch('/api/quiz/exam-session/end', {
                     method: 'POST',
                     headers: {
@@ -2689,17 +2806,17 @@
 
                 if (result.success) {
                     showSuccess(`🛑 Exam session ended! ${result.autoSubmittedCount || 0} submissions were auto-submitted.`);
-                    
+
                     // Clean up local tracking
                     activeExamSessions.delete(quizId);
                     if (examSessionTimers.has(quizId)) {
                         clearInterval(examSessionTimers.get(quizId));
                         examSessionTimers.delete(quizId);
                     }
-                    
+
                     // Refresh quiz list
                     loadQuizzes();
-                    
+
                 } else {
                     showError('Failed to end exam session: ' + result.message);
                 }
@@ -2731,7 +2848,7 @@
                 if (remainingSeconds <= 0) {
                     clearInterval(timer);
                     examSessionTimers.delete(quizId);
-                    
+
                     // Auto-end session
                     console.log('⏰ Session time expired, auto-ending session');
                     endExamSession(quizId, sessionId);
@@ -2747,7 +2864,7 @@
             const hours = Math.floor(seconds / 3600);
             const minutes = Math.floor((seconds % 3600) / 60);
             const secs = seconds % 60;
-            
+
             if (hours > 0) {
                 return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
             } else {
@@ -2763,14 +2880,14 @@
 
                 if (result.success && result.sessions.length > 0) {
                     console.log('🔥 Found', result.sessions.length, 'active exam sessions');
-                    
+
                     result.sessions.forEach(session => {
                         activeExamSessions.set(session.quizId, {
                             sessionId: session.sessionId,
                             endsAt: new Date(session.endsAt),
                             duration: session.sessionDurationMinutes
                         });
-                        
+
                         // Start timer for this session
                         startExamSessionTimer(session.quizId, session.sessionId, new Date(session.endsAt));
                     });
@@ -2796,7 +2913,7 @@
         async function loadPendingRequestsForModal() {
             try {
                 console.log('📬 Loading pending requests for modal');
-                
+
                 const response = await fetch(`/api/classes/${classId}/join-requests`);
                 const result = await response.json();
 
@@ -2816,11 +2933,11 @@
         // 🆕 NEW: Display pending requests in modal
         function displayPendingRequestsInModal(requests) {
             const container = document.getElementById('pendingRequestsModalBody');
-            
+
             if (requests.length === 0) {
                 container.innerHTML = `
                     <div class="no-pending-requests">
-                        <h3>📭 No Pending Requests</h3>
+                        <h3>No Pending Requests</h3>
                         <p>Students will appear here when they request to join using your class code.</p>
                     </div>
                 `;
@@ -2855,14 +2972,14 @@
         async function processJoinRequestFromModal(requestId, action) {
             try {
                 console.log(`⚖️ Processing join request from modal: ${action}`, requestId);
-                
+
                 const response = await fetch(`/api/classes/${classId}/join-requests/${requestId}/${action}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ 
-                        rejectionReason: action === 'reject' ? 'Request rejected by teacher' : '' 
+                    body: JSON.stringify({
+                        rejectionReason: action === 'reject' ? 'Request rejected by teacher' : ''
                     })
                 });
 
@@ -2904,7 +3021,7 @@
                     pendingRequestsCount = result.requests.length;
                     const badge = document.getElementById('pendingRequestsBadge');
                     const btn = document.getElementById('pendingRequestsBtn');
-                    
+
                     if (pendingRequestsCount > 0) {
                         badge.textContent = pendingRequestsCount;
                         badge.style.display = 'flex';
@@ -2913,7 +3030,7 @@
                         badge.style.display = 'none';
                         btn.innerHTML = '📬 Pending Requests';
                     }
-                    
+
                     console.log(`🔔 Updated badge: ${pendingRequestsCount} pending requests`);
                 }
             } catch (error) {
@@ -2925,7 +3042,7 @@
         async function generateJoinCode() {
             try {
                 console.log('🔐 Generating join code for class:', classId);
-                
+
                 const response = await fetch(`/api/classes/${classId}/generate-join-code`, {
                     method: 'POST',
                     headers: {
@@ -2950,10 +3067,10 @@
 
         function displayActiveJoinCode(codeData) {
             const container = document.getElementById('joinCodeDisplay');
-            
+
             const expiresAt = new Date(codeData.expiresAt);
             const remainingSeconds = Math.max(0, Math.floor((expiresAt - new Date()) / 1000));
-            
+
             container.innerHTML = `
                 <div class="active-code-display">
                     <div class="code-value">${codeData.joinCode}</div>
@@ -3029,7 +3146,7 @@
         }
 
         // Close modal when clicking outside
-        document.addEventListener('click', function(e) {
+        document.addEventListener('click', function (e) {
             const modal = document.getElementById('pendingRequestsModal');
             if (e.target === modal) {
                 closePendingRequestsModal();
@@ -3040,7 +3157,7 @@
         function formatTime(seconds) {
             const minutes = Math.floor(seconds / 60);
             const remainingSeconds = seconds % 60;
-            
+
             if (minutes > 0) {
                 return `${minutes}m ${remainingSeconds}s`;
             } else {
@@ -3062,7 +3179,7 @@
         // 🆕 NEW: Calculate time efficiency
         function calculateTimeEfficiency(timeTakenSeconds, quizDurationSeconds) {
             if (!timeTakenSeconds || !quizDurationSeconds || quizDurationSeconds <= 0) return 0;
-            
+
             // Time Efficiency = (Quiz Duration - Time Taken) / Quiz Duration * 100
             // But ensure it's not negative
             const efficiency = Math.max(0, (quizDurationSeconds - timeTakenSeconds) / quizDurationSeconds * 100);
@@ -3083,17 +3200,17 @@
             const loadingText = document.getElementById('loadingText');
             const progressBar = document.getElementById('loadingProgressBar');
             const loadingGif = document.getElementById('loadingGif');
-            
+
             // Preload and force refresh the GIF
             loadingGif.src = `/Animation-1751710786188.gif?t=${Date.now()}`;
-            
+
             loadingText.textContent = text;
             loadingText.classList.add('fade-in');
             loadingText.classList.remove('fade-out');
             progressBar.style.width = progress + '%';
-            
+
             overlay.classList.add('active');
-            
+
             // Disable all interactive elements
             document.body.style.overflow = 'hidden';
             console.log('🔄 Loading overlay shown:', text, `(${progress}%)`);
@@ -3102,7 +3219,7 @@
         function hideLoadingOverlay() {
             const overlay = document.getElementById('loadingOverlay');
             overlay.classList.remove('active');
-            
+
             // Re-enable scrolling
             document.body.style.overflow = '';
             console.log('✅ Loading overlay hidden');
@@ -3111,20 +3228,20 @@
         function updateLoadingProgress(text, progress) {
             const loadingText = document.getElementById('loadingText');
             const progressBar = document.getElementById('loadingProgressBar');
-            
+
             // Fade out current text
             loadingText.classList.add('fade-out');
             loadingText.classList.remove('fade-in');
-            
+
             // Update text after fade out completes
             setTimeout(() => {
                 loadingText.textContent = text;
                 loadingText.classList.remove('fade-out');
                 loadingText.classList.add('fade-in');
             }, 150); // Half of the CSS transition time
-            
+
             progressBar.style.width = progress + '%';
-            
+
             console.log('📈 Loading progress updated:', text, `(${progress}%)`);
         }
 
@@ -3132,12 +3249,12 @@
         function openCreateQuizModal() {
             console.log('🎯 Opening create quiz modal');
             document.getElementById('createQuizModal').classList.add('active');
-            
+
             // Reset form and values when opening
             document.getElementById('createQuizForm').reset();
             setDuration(15);
             setQuestions(10);
-            
+
             // 🆕 NEW: Reset auto-start exam toggle
             document.getElementById('autoStartExamToggle').checked = false;
         }
@@ -3148,7 +3265,7 @@
         }
 
         // Close modal when clicking outside
-        document.getElementById('createQuizModal').addEventListener('click', function(e) {
+        document.getElementById('createQuizModal').addEventListener('click', function (e) {
             if (e.target === this) {
                 closeCreateQuizModal();
             }
@@ -3162,28 +3279,28 @@
 
         function setDuration(minutes) {
             currentDuration = Math.max(2, Math.min(60, minutes));
-            
+
             // Update display
             document.getElementById('durationValue').textContent = currentDuration;
-            
+
             // Update preset buttons
             document.querySelectorAll('.compact-presets .compact-preset-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
-            
+
             // Highlight active preset if it matches
             const matchingPreset = document.querySelector(`.compact-preset-btn[onclick="setDuration(${currentDuration})"]`);
             if (matchingPreset) {
                 matchingPreset.classList.add('active');
             }
-            
+
             // Update button states
             const decreaseBtn = document.querySelector('.compact-btn[onclick="adjustDuration(-1)"]');
             const increaseBtn = document.querySelector('.compact-btn[onclick="adjustDuration(1)"]');
-            
+
             if (decreaseBtn) decreaseBtn.disabled = currentDuration <= 2;
             if (increaseBtn) increaseBtn.disabled = currentDuration >= 60;
-            
+
             console.log('🕒 Duration set to:', currentDuration, 'minutes');
         }
 
@@ -3195,43 +3312,43 @@
 
         function setQuestions(count) {
             currentQuestions = Math.max(5, Math.min(30, count));
-            
+
             // Update display
             document.getElementById('questionsValue').textContent = currentQuestions;
-            
+
             // Update preset buttons
             document.querySelectorAll('.compact-presets .compact-preset-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
-            
+
             // Highlight active preset if it matches
             const matchingPreset = document.querySelector(`.compact-preset-btn[onclick="setQuestions(${currentQuestions})"]`);
             if (matchingPreset) {
                 matchingPreset.classList.add('active');
             }
-            
+
             // Update button states
             const decreaseBtn = document.querySelector('.compact-btn[onclick="adjustQuestions(-1)"]');
             const increaseBtn = document.querySelector('.compact-btn[onclick="adjustQuestions(1)"]');
-            
+
             if (decreaseBtn) decreaseBtn.disabled = currentQuestions <= 5;
             if (increaseBtn) increaseBtn.disabled = currentQuestions >= 30;
-            
+
             console.log('📝 Questions set to:', currentQuestions);
         }
 
         // Quiz Viewer Functions
         async function viewQuiz(quizId) {
             console.log('👁️ Opening quiz viewer for:', quizId);
-            
+
             // Show modal
             document.getElementById('quizViewerModal').classList.add('active');
-            
+
             // Load quiz data
             try {
                 const response = await fetch(`/api/teacher/quiz/${quizId}/full`);
                 const data = await response.json();
-                
+
                 if (data.success) {
                     displayQuizInModal(data.quiz);
                 } else {
@@ -3253,9 +3370,9 @@
 
         function displayQuizInModal(quiz) {
             document.getElementById('modalQuizTitle').textContent = quiz.lectureTitle;
-            
+
             const questionsHTML = quiz.questions.map((question, index) => {
-                const hasExplanations = question.explanations && Object.keys(question.explanations).some(key => 
+                const hasExplanations = question.explanations && Object.keys(question.explanations).some(key =>
                     key !== question.correct_answer && question.explanations[key] && question.explanations[key].trim() !== ''
                 );
 
@@ -3278,16 +3395,16 @@
                                 </div>
                             ` : ''}
                             ${['A', 'B', 'C', 'D'].map(letter => {
-                                if (letter !== question.correct_answer && question.explanations && question.explanations[letter] && question.explanations[letter].trim() !== '') {
-                                    return `
+                        if (letter !== question.correct_answer && question.explanations && question.explanations[letter] && question.explanations[letter].trim() !== '') {
+                            return `
                                         <div class="explanation-item">
                                             <div class="explanation-label">Why ${letter} is incorrect:</div>
                                             <div class="explanation-text">${question.explanations[letter]}</div>
                                         </div>
                                     `;
-                                }
-                                return '';
-                            }).join('')}
+                        }
+                        return '';
+                    }).join('')}
                         </div>
                     `;
                 }
@@ -3322,7 +3439,7 @@
         function toggleExplanations(questionIndex) {
             const explanationsSection = document.getElementById(`explanations-${questionIndex}`);
             const toggleButton = explanationsSection.parentElement.querySelector('.explanation-toggle');
-            
+
             if (explanationsSection.classList.contains('active')) {
                 explanationsSection.classList.remove('active');
                 toggleButton.textContent = 'Show Explanations';
@@ -3337,19 +3454,19 @@
         }
 
         // Close modal when clicking outside
-        document.getElementById('quizViewerModal').addEventListener('click', function(e) {
+        document.getElementById('quizViewerModal').addEventListener('click', function (e) {
             if (e.target === this) {
                 closeQuizViewer();
             }
         });
 
         // 🔄 UPDATED: Enhanced form submission handler with loading overlay and exam session support
-        document.getElementById('createQuizForm').addEventListener('submit', async function(e) {
+        document.getElementById('createQuizForm').addEventListener('submit', async function (e) {
             e.preventDefault();
-            
+
             // Show loading overlay
             showLoadingOverlay('Uploading your file...', 0);
-            
+
             const formData = new FormData();
             formData.append('lectureFile', document.getElementById('lectureFile').files[0]);
             formData.append('title', document.getElementById('lectureTitle').value);
@@ -3362,7 +3479,7 @@
 
             try {
                 updateLoadingProgress('Uploading your file...', 10);
-                
+
                 const response = await fetch('/upload_lecture', {
                     method: 'POST',
                     body: formData
@@ -3383,27 +3500,27 @@
                 if (result.success) {
                     updateLoadingProgress('Processing data...', 35);
                     console.log('✅ File uploaded successfully, starting quiz generation...');
-                    
+
                     // Generate quiz
                     updateLoadingProgress('Generating questions...', 60);
                     const quizResult = await generateQuizFromLecture(result.lectureId, currentDuration, currentQuestions);
-                    
+
                     // 🔧 BUG FIX: Validate quiz result
                     if (quizResult && quizResult.success) {
                         updateLoadingProgress('Quiz created successfully!', 85);
-                        
+
                         // 🆕 NEW: Auto-start exam session if enabled
                         if (autoStartExam && quizResult.quizId) {
                             updateLoadingProgress('Starting exam session...', 95);
                             await startAutoExamSession(quizResult.quizId, currentDuration);
                         }
-                        
+
                         updateLoadingProgress('Complete!', 100);
-                        
+
                         setTimeout(() => {
                             hideLoadingOverlay();
                             closeCreateQuizModal();
-                            
+
                             const examMessage = autoStartExam ? ' Exam session started automatically!' : '';
                             showSuccess(`🎉 Quiz created successfully!${examMessage}`);
                             loadQuizzes();
@@ -3426,7 +3543,7 @@
         async function startAutoExamSession(quizId, durationMinutes) {
             try {
                 console.log('🚨 Auto-starting exam session for quiz:', quizId);
-                
+
                 const response = await fetch('/api/quiz/exam-session/start', {
                     method: 'POST',
                     headers: {
@@ -3456,239 +3573,242 @@
 
         // 🔄 UPDATED: Quiz generation with improved error handling
         async function generateQuizFromLecture(lectureId, durationMinutes, questionCount) {
-    try {
-        console.log('🤖 QUIZ GENERATION - Starting with settings:', {
-            lectureId: lectureId,
-            durationMinutes: durationMinutes,
-            questionCount: questionCount
-        });
-        
-        // ✅ ENSURE values are valid
-        if (!lectureId) {
-            throw new Error('Lecture ID is required');
-        }
-        
-        const safeDuration = parseInt(durationMinutes) || 15;
-        const safeQuestions = parseInt(questionCount) || 10;
-        
-        const requestBody = {
-            durationMinutes: safeDuration,
-            questionCount: safeQuestions
-        };
-        
-        console.log('📡 QUIZ GENERATION - Request body:', requestBody);
-        
-        const response = await fetch(`/generate_quiz/${lectureId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(requestBody)
-        });
+            try {
+                console.log('🤖 QUIZ GENERATION - Starting with settings:', {
+                    lectureId: lectureId,
+                    durationMinutes: durationMinutes,
+                    questionCount: questionCount
+                });
 
-        // 🔧 BUG FIX: Check response status
-        if (!response.ok) {
-            throw new Error(`Generation failed: ${response.status} ${response.statusText}`);
+                // ✅ ENSURE values are valid
+                if (!lectureId) {
+                    throw new Error('Lecture ID is required');
+                }
+
+                const safeDuration = parseInt(durationMinutes) || 15;
+                const safeQuestions = parseInt(questionCount) || 10;
+
+                const requestBody = {
+                    durationMinutes: safeDuration,
+                    questionCount: safeQuestions
+                };
+
+                console.log('📡 QUIZ GENERATION - Request body:', requestBody);
+
+                const response = await fetch(`/generate_quiz/${lectureId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                // 🔧 BUG FIX: Check response status
+                if (!response.ok) {
+                    throw new Error(`Generation failed: ${response.status} ${response.statusText}`);
+                }
+
+                const result = await response.json();
+
+                // 🔧 BUG FIX: Validate result
+                if (!result || typeof result !== 'object') {
+                    throw new Error('Invalid response from quiz generation');
+                }
+
+                console.log('📡 QUIZ GENERATION - Server response:', result);
+
+                if (result.success) {
+                    console.log('✅ Quiz generated successfully');
+                    return result; // Return the full result object
+                } else {
+                    throw new Error(result.message || 'Quiz generation failed');
+                }
+            } catch (error) {
+                console.error('❌ Quiz generation error:', error);
+                throw error; // Re-throw to be handled by caller
+            }
         }
 
-        const result = await response.json();
-        
-        // 🔧 BUG FIX: Validate result
-        if (!result || typeof result !== 'object') {
-            throw new Error('Invalid response from quiz generation');
-        }
-        
-        console.log('📡 QUIZ GENERATION - Server response:', result);
+        // 🔄 UPDATED: Simplified quiz display (remove complex exam session UI)
+        function displayQuizzes(quizzes) {
+            const container = document.getElementById('quizzesContainer');
 
-        if (result.success) {
-            console.log('✅ Quiz generated successfully');
-            return result; // Return the full result object
-        } else {
-            throw new Error(result.message || 'Quiz generation failed');
-        }
-    } catch (error) {
-        console.error('❌ Quiz generation error:', error);
-        throw error; // Re-throw to be handled by caller
-    }
-}
-
-// 🔄 UPDATED: Simplified quiz display (remove complex exam session UI)
-function displayQuizzes(quizzes) {
-    const container = document.getElementById('quizzesContainer');
-    
-    if (quizzes.length === 0) {
-        container.innerHTML = `
+            if (quizzes.length === 0) {
+                container.innerHTML = `
             <div class="empty-state">
-                <h3>📝 No Quizzes Yet</h3>
+                <h3>No Quizzes Yet</h3>
                 <p>Click the "Create Quiz" button to upload a lecture and create your first quiz!</p>
             </div>
         `;
-        return;
-    }
+                return;
+            }
 
-    const quizzesHTML = quizzes.map(quiz => {
-        const durationMinutes = quiz.durationMinutes || 15;
-        const durationText = `${durationMinutes}min`;
-        
-        let durationBadge = '';
-        if (durationMinutes <= 10) {
-            durationBadge = '⚡ Quick';
-        } else if (durationMinutes <= 30) {
-            durationBadge = '⏱️ Standard';
-        } else {
-            durationBadge = '🕐 Extended';
-        }
+            const quizzesHTML = quizzes.map(quiz => {
+                const durationMinutes = quiz.durationMinutes || 15;
+                const durationText = `${durationMinutes}min`;
 
-        // 🆕 NEW: Check for active exam session
-        let examSessionHTML = '';
-        if (quiz.hasActiveExamSession) {
-            examSessionHTML = `
+                let durationBadge = '';
+                if (durationMinutes <= 10) {
+                    durationBadge = 'Quick';
+                } else if (durationMinutes <= 30) {
+                    durationBadge = 'Standard';
+                } else {
+                    durationBadge = 'Extended';
+                }
+
+                // 🆕 NEW: Check for active exam session
+                let examSessionHTML = '';
+                if (quiz.hasActiveExamSession) {
+                    examSessionHTML = `
                 <div class="exam-timer-display">
-                    <span class="timer-label">🚨 LIVE EXAM SESSION</span>
+                    <span class="timer-label">LIVE EXAM SESSION</span>
                     <div id="quizTimer_${quiz._id}">Loading...</div>
                 </div>
             `;
-        }
+                }
 
-        return `
+                return `
             <div class="quiz-item">
                 <div class="quiz-title">
                     ${quiz.lectureTitle}
-                    ${quiz.hasActiveExamSession ? '<span style="color: #ef4444; font-weight: bold;">🚨 LIVE</span>' : ''}
+                    ${quiz.hasActiveExamSession ? '<span style="color: #ef4444; font-weight: bold;"> LIVE</span>' : ''}
                 </div>
                 <div class="quiz-meta">
-                    📝 ${quiz.totalQuestions} questions • 
-                    ⏱️ ${durationText} duration (${durationBadge}) •
-                    📅 Created ${new Date(quiz.generatedDate).toLocaleDateString()} •
-                    🆔 ${quiz._id.toString().slice(-6)}
+                    <i data-lucide="file-text" style="width:14px;height:14px;vertical-align:middle"></i> ${quiz.totalQuestions} questions • 
+                    <i data-lucide="clock" style="width:14px;height:14px;vertical-align:middle"></i> ${durationText} duration (${durationBadge}) •
+                    <i data-lucide="calendar" style="width:14px;height:14px;vertical-align:middle"></i> Created ${new Date(quiz.generatedDate).toLocaleDateString()} •
+                    <i data-lucide="hash" style="width:14px;height:14px;vertical-align:middle"></i> ${quiz._id.toString().slice(-6)}
                 </div>
                 <div class="quiz-stats">
-                    <span class="quiz-stat">📊 Avg: ${formatPercentage(quiz.averageScore || 0)}%</span>
-                    <span class="quiz-stat">🎯 High: ${formatPercentage(quiz.highestScore || 0)}%</span>
-                    <span class="quiz-stat">👥 ${quiz.totalAttempts || 0} attempts</span>
+                    <span class="quiz-stat"><i data-lucide="bar-chart-2" style="width:13px;height:13px;vertical-align:middle"></i> Avg: ${formatPercentage(quiz.averageScore || 0)}%</span>
+                    <span class="quiz-stat"><i data-lucide="target" style="width:13px;height:13px;vertical-align:middle"></i> High: ${formatPercentage(quiz.highestScore || 0)}%</span>
+                    <span class="quiz-stat"><i data-lucide="users" style="width:13px;height:13px;vertical-align:middle"></i> ${quiz.totalAttempts || 0} attempts</span>
                     <span class="quiz-stat">
-                        ${quiz.isActive ? '🟢 Active' : '🔴 Inactive'}
+                        ${quiz.isActive ? '<span style="color:#10b981">● Active</span>' : '<span style="color:#ef4444">● Inactive</span>'}
                     </span>
                 </div>
                 <div class="quiz-actions">
                     <a href="/lecture_results/${quiz.lectureId}" class="btn btn-secondary" 
                     style="font-size: 0.8rem; padding: 0.5rem 1rem;">
-                        📊 View Results
+                        <i data-lucide="bar-chart" style="width:14px;height:14px"></i> View Results
                     </a>
                     <button class="btn btn-info" onclick="viewQuiz('${quiz._id}')" 
                             style="font-size: 0.8rem; padding: 0.5rem 1rem;">
-                        👁️ View Quiz
+                        <i data-lucide="eye" style="width:14px;height:14px"></i> View Quiz
                     </button>
                     ${quiz.hasActiveExamSession ? `
                         <button class="btn" onclick="endExamSession('${quiz._id}')" 
                                 style="font-size: 0.8rem; padding: 0.5rem 1rem; background: #6b7280;">
-                            🛑 End Exam
+                            <i data-lucide="square" style="width:14px;height:14px"></i> End Exam
                         </button>
                     ` : ''}
                 </div>
                 ${examSessionHTML}
             </div>
         `;
-    }).join('');
+            }).join('');
 
-    container.innerHTML = quizzesHTML;
-    
-    // Start timers for active exam sessions
-    quizzes.forEach(quiz => {
-        if (quiz.hasActiveExamSession && quiz.examEndTime) {
-            startQuizTimer(quiz._id, new Date(quiz.examEndTime));
+            container.innerHTML = quizzesHTML;
+
+            // Re-initialize Lucide icons for dynamically generated content
+            lucide.createIcons();
+
+            // Start timers for active exam sessions
+            quizzes.forEach(quiz => {
+                if (quiz.hasActiveExamSession && quiz.examEndTime) {
+                    startQuizTimer(quiz._id, new Date(quiz.examEndTime));
+                }
+            });
         }
-    });
-}
 
-// 🆕 NEW: Quick exam session start
-async function startQuickExamSession(quizId, durationMinutes) {
-    try {
-        const response = await fetch('/api/quiz/exam-session/start', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                quizId: quizId,
-                sessionDurationMinutes: durationMinutes,
-                classId: classId
-            })
-        });
+        // 🆕 NEW: Quick exam session start
+        async function startQuickExamSession(quizId, durationMinutes) {
+            try {
+                const response = await fetch('/api/quiz/exam-session/start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        quizId: quizId,
+                        sessionDurationMinutes: durationMinutes,
+                        classId: classId
+                    })
+                });
 
-        const result = await response.json();
+                const result = await response.json();
 
-        if (result.success) {
-            showSuccess(`🚨 Exam Session Started! ${durationMinutes} minutes duration.`);
-            loadQuizzes(); // Refresh to show timer
-        } else {
-            showError('Failed to start exam session: ' + result.message);
-        }
-    } catch (error) {
-        console.error('❌ Error starting quick exam session:', error);
-        showError('Network error while starting exam session.');
-    }
-}
-
-// 🆕 NEW: Individual quiz timer
-function startQuizTimer(quizId, endsAt) {
-    const updateTimer = () => {
-        const now = new Date();
-        const remaining = Math.max(0, Math.floor((endsAt - now) / 1000));
-        const timerElement = document.getElementById(`quizTimer_${quizId}`);
-        
-        if (timerElement) {
-            if (remaining > 0) {
-                const minutes = Math.floor(remaining / 60);
-                const seconds = remaining % 60;
-                timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-            } else {
-                timerElement.textContent = 'ENDED';
-                setTimeout(() => loadQuizzes(), 2000); // Refresh after session ends
-                return;
+                if (result.success) {
+                    showSuccess(`🚨 Exam Session Started! ${durationMinutes} minutes duration.`);
+                    loadQuizzes(); // Refresh to show timer
+                } else {
+                    showError('Failed to start exam session: ' + result.message);
+                }
+            } catch (error) {
+                console.error('❌ Error starting quick exam session:', error);
+                showError('Network error while starting exam session.');
             }
         }
-    };
-    
-    updateTimer(); // Initial call
-    const interval = setInterval(updateTimer, 1000);
-    
-    // Store interval for cleanup if needed
-    if (!window.quizTimers) window.quizTimers = {};
-    window.quizTimers[quizId] = interval;
-}
 
-// 🆕 NEW: End exam session
-async function endExamSession(quizId) {
-    if (!confirm('Are you sure you want to end this exam session? This will auto-submit all active attempts.')) {
-        return;
-    }
+        // 🆕 NEW: Individual quiz timer
+        function startQuizTimer(quizId, endsAt) {
+            const updateTimer = () => {
+                const now = new Date();
+                const remaining = Math.max(0, Math.floor((endsAt - now) / 1000));
+                const timerElement = document.getElementById(`quizTimer_${quizId}`);
 
-    try {
-        const response = await fetch('/api/quiz/exam-session/end', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                quizId: quizId,
-                classId: classId
-            })
-        });
+                if (timerElement) {
+                    if (remaining > 0) {
+                        const minutes = Math.floor(remaining / 60);
+                        const seconds = remaining % 60;
+                        timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                    } else {
+                        timerElement.textContent = 'ENDED';
+                        setTimeout(() => loadQuizzes(), 2000); // Refresh after session ends
+                        return;
+                    }
+                }
+            };
 
-        const result = await response.json();
+            updateTimer(); // Initial call
+            const interval = setInterval(updateTimer, 1000);
 
-        if (result.success) {
-            showSuccess('🛑 Exam session ended successfully!');
-            loadQuizzes();
-        } else {
-            showError('Failed to end exam session: ' + result.message);
+            // Store interval for cleanup if needed
+            if (!window.quizTimers) window.quizTimers = {};
+            window.quizTimers[quizId] = interval;
         }
-    } catch (error) {
-        console.error('❌ Error ending exam session:', error);
-        showError('Network error while ending exam session.');
-    }
-}
+
+        // 🆕 NEW: End exam session
+        async function endExamSession(quizId) {
+            if (!confirm('Are you sure you want to end this exam session? This will auto-submit all active attempts.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/quiz/exam-session/end', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        quizId: quizId,
+                        classId: classId
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showSuccess('🛑 Exam session ended successfully!');
+                    loadQuizzes();
+                } else {
+                    showError('Failed to end exam session: ' + result.message);
+                }
+            } catch (error) {
+                console.error('❌ Error ending exam session:', error);
+                showError('Network error while ending exam session.');
+            }
+        }
 
 
 
@@ -3703,11 +3823,11 @@ async function endExamSession(quizId) {
         // 🆕 NEW: Start exam session for specific quiz
         function startExamSessionForQuiz(quizId) {
             const sessionDuration = parseInt(document.getElementById(`sessionDuration_${quizId}`).textContent) || 60;
-            
+
             // Temporarily set the session duration and start session
             const originalSessionDuration = currentSessionDuration;
             currentSessionDuration = sessionDuration;
-            
+
             startExamSession(quizId).then(() => {
                 // Restore original session duration
                 currentSessionDuration = originalSessionDuration;
@@ -3715,9 +3835,9 @@ async function endExamSession(quizId) {
         }
 
         // Edit class form handler
-        document.getElementById('editClassForm').addEventListener('submit', async function(e) {
+        document.getElementById('editClassForm').addEventListener('submit', async function (e) {
             e.preventDefault();
-            
+
             const formData = {
                 name: document.getElementById('editClassName').value.trim(),
                 subject: document.getElementById('editClassSubject').value.trim(),
@@ -3731,7 +3851,7 @@ async function endExamSession(quizId) {
 
             const submitButton = this.querySelector('button[type="submit"]');
             const originalText = submitButton.textContent;
-            
+
             try {
                 submitButton.textContent = '⏳ Updating...';
                 submitButton.disabled = true;
@@ -3750,15 +3870,15 @@ async function endExamSession(quizId) {
 
                 if (result.success) {
                     showSuccess(`Class "${result.class.name}" updated successfully!`);
-                    
+
                     // Update the page title and class info
                     document.getElementById('classTitle').textContent = result.class.name;
                     document.getElementById('classSubject').textContent = result.class.subject;
                     document.getElementById('breadcrumbClass').textContent = result.class.name;
-                    
+
                     // Update the browser title
                     document.title = `Manage ${result.class.name} - Quizzie`;
-                    
+
                     console.log('✅ Class updated successfully');
                 } else {
                     showError('Failed to update class: ' + result.message);
@@ -3776,18 +3896,18 @@ async function endExamSession(quizId) {
         async function loadClassSettings() {
             try {
                 console.log('⚙️ Loading class settings...');
-                
+
                 const response = await fetch(`/api/classes/${classId}`);
                 const data = await response.json();
-                
+
                 if (data.success) {
                     const classData = data.class;
-                    
+
                     // Populate the edit form with current class data
                     document.getElementById('editClassName').value = classData.name || '';
                     document.getElementById('editClassSubject').value = classData.subject || '';
                     document.getElementById('editClassDescription').value = classData.description || '';
-                    
+
                     console.log('✅ Class settings loaded');
                 } else {
                     console.error('❌ Failed to load class settings:', data.message);
@@ -3800,7 +3920,7 @@ async function endExamSession(quizId) {
         }
 
         // Initialize when DOM is loaded
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
 
             // 🆕 NEW: Preload the loading GIF for instant display
             const preloadGif = new Image();
@@ -3817,23 +3937,23 @@ async function endExamSession(quizId) {
             };
 
             console.log('🔄 DOM loaded, starting initialization...');
-            
+
             // Set initial values
             document.getElementById('classTitle').textContent = className || 'Loading...';
             document.getElementById('classSubject').textContent = classSubject || 'Loading...';
             document.getElementById('breadcrumbClass').textContent = className || 'Loading...';
-            
+
             // Check URL parameters for tab redirect
             const urlParams = new URLSearchParams(window.location.search);
             const targetTab = urlParams.get('tab');
-            
+
             if (targetTab && targetTab !== 'overview') {
                 console.log('🎯 Redirecting to tab:', targetTab);
                 setTimeout(() => {
                     showSectionByName(targetTab);
                 }, 100);
             }
-            
+
             // Load initial data
             loadAnalytics();
             loadQuizzes();
@@ -3849,18 +3969,18 @@ async function endExamSession(quizId) {
         });
 
         // Add Student Form Handler
-        document.getElementById('addStudentForm').addEventListener('submit', async function(e) {
+        document.getElementById('addStudentForm').addEventListener('submit', async function (e) {
             e.preventDefault();
-            
+
             const enrollmentNumber = document.getElementById('enrollmentNumber').value.trim();
             const submitButton = this.querySelector('button[type="submit"]');
             const originalText = submitButton.textContent;
-            
+
             console.log('📝 Adding student:', {
                 enrollmentNumber,
                 classId
             });
-            
+
             try {
                 submitButton.textContent = '⏳ Adding...';
                 submitButton.disabled = true;
@@ -3874,7 +3994,7 @@ async function endExamSession(quizId) {
                 });
 
                 console.log('📡 Response status:', response.status);
-                
+
                 const result = await response.json();
                 console.log('📡 Response data:', result);
 
@@ -3886,7 +4006,7 @@ async function endExamSession(quizId) {
                 } else {
                     console.error('❌ Failed to add student:', result);
                     showError('Failed to add student: ' + result.message);
-                    
+
                     if (result.debug) {
                         console.error('🔍 Debug info:', result.debug);
                     }
@@ -3903,7 +4023,7 @@ async function endExamSession(quizId) {
         // Navigation functions
         function showSection(sectionName) {
             console.log('📍 Switching to section:', sectionName);
-            
+
             // Update active navigation link
             document.querySelectorAll('.nav-link').forEach(link => {
                 link.classList.remove('active');
@@ -3917,7 +4037,7 @@ async function endExamSession(quizId) {
             document.getElementById(sectionName + 'Section').classList.add('active');
 
             // Load section-specific data
-            switch(sectionName) {
+            switch (sectionName) {
                 case 'analytics':
                     loadAnalytics();
                     break;
@@ -3934,12 +4054,15 @@ async function endExamSession(quizId) {
                     loadClassSettings();
                     break;
             }
+
+            // Re-initialize Lucide icons for newly visible content
+            lucide.createIcons();
         }
 
         // Programmatic tab switching
         function showSectionByName(sectionName) {
             console.log('🎯 Programmatically switching to section:', sectionName);
-            
+
             // Update active navigation link
             document.querySelectorAll('.nav-link').forEach(link => {
                 link.classList.remove('active');
@@ -3953,13 +4076,13 @@ async function endExamSession(quizId) {
             document.querySelectorAll('.content-section').forEach(section => {
                 section.classList.remove('active');
             });
-            
+
             const targetSection = document.getElementById(sectionName + 'Section');
             if (targetSection) {
                 targetSection.classList.add('active');
-                
+
                 // Load section-specific data
-                switch(sectionName) {
+                switch (sectionName) {
                     case 'analytics':
                         loadAnalytics();
                         break;
@@ -3980,14 +4103,17 @@ async function endExamSession(quizId) {
                 document.querySelector('.nav-link').classList.add('active');
                 loadAnalytics();
             }
+
+            // Re-initialize Lucide icons
+            lucide.createIcons();
         }
 
-        
+
         // 🔄 UPDATED: Enhanced analytics loading function
         async function loadAnalytics() {
             try {
                 console.log('📊 Loading comprehensive analytics data...');
-                
+
                 // Load all required data
                 const [overviewResponse, analyticsResponse, teacherRankingsResponse, lastQuizResponse] = await Promise.all([
                     fetch(`/api/classes/${classId}/overview`),
@@ -3995,17 +4121,17 @@ async function endExamSession(quizId) {
                     fetch(`/api/teacher/class/${classId}/rankings`),
                     fetch(`/api/classes/${classId}/last-quiz-rankings`)
                 ]);
-                
+
                 const overviewData = await overviewResponse.json();
                 const analyticsResponseData = await analyticsResponse.json();
                 const rankingsData = await teacherRankingsResponse.json();
                 const lastQuizData = await lastQuizResponse.json();
-                
+
                 if (overviewData.success) {
                     classData = overviewData.classData;
                     updateClassInfo();
                     updateAnalyticsStats(overviewData);
-                    
+
                     if (overviewData.performanceTrend && overviewData.performanceTrend.length > 0) {
                         createPerformanceTrendChart(overviewData.performanceTrend);
                     } else {
@@ -4013,7 +4139,7 @@ async function endExamSession(quizId) {
                         createPerformanceTrendChart([]);
                     }
                 }
-                
+
                 if (analyticsResponseData.success) {
                     analyticsData = analyticsResponseData.analytics;
                     createDistributionChart(analyticsData.performanceDistribution || {});
@@ -4036,9 +4162,9 @@ async function endExamSession(quizId) {
                 if (overviewData.recentActivity) {
                     displayRecentActivity(overviewData.recentActivity);
                 }
-                
+
                 console.log('✅ Analytics data loaded successfully');
-                
+
             } catch (error) {
                 console.error('❌ Error loading analytics:', error);
                 showError('Failed to load analytics data: ' + error.message);
@@ -4060,9 +4186,9 @@ async function endExamSession(quizId) {
                 document.getElementById('totalStudents').textContent = data.classData.studentCount || 0;
                 document.getElementById('classAverage').textContent = (parseFloat(data.classData.averageScore) || 0).toFixed(2) + '%';
                 document.getElementById('totalQuizzes').textContent = data.classData.quizCount || 0;
-                
-                const totalAttempts = analyticsData && analyticsData.totalQuizAttempts 
-                    ? analyticsData.totalQuizAttempts 
+
+                const totalAttempts = analyticsData && analyticsData.totalQuizAttempts
+                    ? analyticsData.totalQuizAttempts
                     : (data.recentActivity ? data.recentActivity.length : 0);
                 document.getElementById('totalAttempts').textContent = totalAttempts;
             }
@@ -4071,7 +4197,7 @@ async function endExamSession(quizId) {
         // Display class rankings with points-based system
         function displayClassRankings(rankings) {
             const container = document.getElementById('classRankingsContainer');
-            
+
             if (!rankings || rankings.length === 0) {
                 container.innerHTML = '<p style="text-align: center; color: #64748b;">No ranking data available yet.</p>';
                 return;
@@ -4080,7 +4206,7 @@ async function endExamSession(quizId) {
             const rankingsHTML = rankings.map((student, index) => {
                 const rankClass = index < 3 ? `rank-${index + 1}` : 'rank-other';
                 const itemClass = index < 3 ? 'ranking-item top-3' : 'ranking-item';
-                
+
                 return `
                     <div class="${itemClass}">
                         <div style="display: flex; align-items: center; gap: 0.75rem;">
@@ -4106,7 +4232,7 @@ async function endExamSession(quizId) {
         // Display last quiz rankings
         function displayLastQuizRankings(data) {
             const container = document.getElementById('lastQuizRankingsContainer');
-            
+
             if (!data || !data.rankings || data.rankings.length === 0) {
                 container.innerHTML = '<p style="text-align: center; color: #64748b;">No recent quiz rankings available.</p>';
                 return;
@@ -4114,14 +4240,14 @@ async function endExamSession(quizId) {
 
             const quizHeaderHTML = data.quizTitle ? `
                 <div class="quiz-header-info">
-                    📝 <strong>${data.quizTitle}</strong> • ${data.rankings.length} participants
+                    <i data-lucide="file-text" style="width:14px;height:14px;vertical-align:middle"></i> <strong>${data.quizTitle}</strong> • ${data.rankings.length} participants
                 </div>
             ` : '';
 
             const rankingsHTML = data.rankings.map((student, index) => {
                 const rankClass = index < 3 ? `rank-${index + 1}` : 'rank-other';
                 const itemClass = index < 3 ? 'ranking-item top-3' : 'ranking-item';
-                
+
                 return `
                     <div class="${itemClass}">
                         <div style="display: flex; align-items: center; gap: 0.75rem;">
@@ -4147,7 +4273,7 @@ async function endExamSession(quizId) {
         // Display recent activity with proper formatting
         function displayRecentActivity(activities) {
             const container = document.getElementById('recentActivityContainer');
-            
+
             if (!activities || activities.length === 0) {
                 container.innerHTML = '<p style="text-align: center; color: #64748b;">No recent activity.</p>';
                 return;
@@ -4157,9 +4283,9 @@ async function endExamSession(quizId) {
                 <div class="activity-item">
                     <div>
                         <span style="font-weight: 500;">${activity.studentName}</span>
-                        <div style="font-size: 0.8rem; color: #64748b;">${activity.submissionDate} • ${activity.timeTaken}</div>
+                        <div style="font-size: 0.8rem; color: var(--muted);">${activity.submissionDate} • ${activity.timeTaken}</div>
                     </div>
-                    <div style="font-weight: bold; color: #3b82f6;">${(parseFloat(activity.score) || 0).toFixed(2)}%</div>
+                    <div style="font-weight: bold; color: var(--primary);">${(parseFloat(activity.score) || 0).toFixed(2)}%</div>
             `).join('');
 
             container.innerHTML = activitiesHTML;
@@ -4194,12 +4320,12 @@ async function endExamSession(quizId) {
                     datasets: [{
                         label: 'Average Score (%)',
                         data: scores,
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderColor: '#14274E',
+                        backgroundColor: 'rgba(20, 39, 78, 0.08)',
                         borderWidth: 3,
                         fill: true,
                         tension: 0.4,
-                        pointBackgroundColor: '#3b82f6',
+                        pointBackgroundColor: '#14274E',
                         pointBorderColor: '#ffffff',
                         pointBorderWidth: 2,
                         pointRadius: 6,
@@ -4218,7 +4344,7 @@ async function endExamSession(quizId) {
                             mode: 'index',
                             intersect: false,
                             callbacks: {
-                                label: function(context) {
+                                label: function (context) {
                                     const dataPoint = trendData[context.dataIndex];
                                     return [
                                         `Average Score: ${context.parsed.y.toFixed(1)}%`,
@@ -4291,7 +4417,7 @@ async function endExamSession(quizId) {
                     labels: ['Excellent (90%+)', 'Good (70-89%)', 'Average (50-69%)', 'Needs Improvement (<50%)'],
                     datasets: [{
                         data: [data.excellent, data.good, data.average, data.needsImprovement],
-                        backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'],
+                        backgroundColor: ['#10b981', '#14274E', '#f59e0b', '#ef4444'],
                         borderWidth: 2,
                         borderColor: '#ffffff'
                     }]
@@ -4311,7 +4437,7 @@ async function endExamSession(quizId) {
         // Display detailed analytics with proper formatting
         function displayDetailedAnalytics(analytics) {
             const container = document.getElementById('detailedAnalyticsContainer');
-            
+
             if (!analytics) {
                 container.innerHTML = '<p style="text-align: center; color: #64748b;">No detailed analytics available yet.</p>';
                 return;
@@ -4319,22 +4445,22 @@ async function endExamSession(quizId) {
 
             const analyticsHTML = `
                 <div class="grid-3" style="margin-bottom: 1.5rem;">
-                    <div style="text-align: center; padding: 1rem; background: #f8fafc; border-radius: 8px;">
-                        <div style="font-size: 1.5rem; font-weight: bold; color: #3b82f6;">${analytics.totalParticipants || 0}</div>
-                        <div style="color: #64748b;">Participants</div>
+                    <div style="text-align: center; padding: 1rem; background: var(--bg); border-radius: 12px;">
+                        <div style="font-size: 1.5rem; font-weight: 800; color: var(--primary);">${analytics.totalParticipants || 0}</div>
+                        <div style="color: var(--muted); font-weight: 600;">Participants</div>
                     </div>
-                    <div style="text-align: center; padding: 1rem; background: #f8fafc; border-radius: 8px;">
-                        <div style="font-size: 1.5rem; font-weight: bold; color: #10b981;">${(parseFloat(analytics.classAverage) || 0).toFixed(2)}%</div>
-                        <div style="color: #64748b;">Average Score</div>
+                    <div style="text-align: center; padding: 1rem; background: var(--bg); border-radius: 12px;">
+                        <div style="font-size: 1.5rem; font-weight: 800; color: #10b981;">${(parseFloat(analytics.classAverage) || 0).toFixed(2)}%</div>
+                        <div style="color: var(--muted); font-weight: 600;">Average Score</div>
                     </div>
-                    <div style="text-align: center; padding: 1rem; background: #f8fafc; border-radius: 8px;">
-                        <div style="font-size: 1.5rem; font-weight: bold; color: #f59e0b;">${analytics.totalQuizAttempts || 0}</div>
-                        <div style="color: #64748b;">Total Attempts</div>
+                    <div style="text-align: center; padding: 1rem; background: var(--bg); border-radius: 12px;">
+                        <div style="font-size: 1.5rem; font-weight: 800; color: #f59e0b;">${analytics.totalQuizAttempts || 0}</div>
+                        <div style="color: var(--muted); font-weight: 600;">Total Attempts</div>
                     </div>
                 </div>
                 
                 ${analytics.quizPerformance && analytics.quizPerformance.length > 0 ? `
-                    <h4 style="margin-bottom: 1rem;">📝 Quiz Performance Breakdown</h4>
+                    <h4 style="margin-bottom: 1rem; display:flex; align-items:center; gap:0.5rem;"><i data-lucide="file-text" style="width:16px;height:16px"></i> Quiz Performance Breakdown</h4>
                     <table class="table">
                         <thead>
                             <tr>
@@ -4357,20 +4483,23 @@ async function endExamSession(quizId) {
                             `).join('')}
                         </tbody>
                     </table>
-                ` : '<p style="text-align: center; color: #64748b;">No quiz performance data available.</p>'}
+                ` : '<p style="text-align: center; color: var(--muted);">No quiz performance data available.</p>'}
             `;
 
             container.innerHTML = analyticsHTML;
+
+            // Re-initialize Lucide icons
+            lucide.createIcons();
         }
 
         // Load quizzes function
         async function loadQuizzes() {
             console.log('📝 Loading quizzes for class:', classId);
-            
+
             try {
                 const response = await fetch(`/api/teacher/class/${classId}/quizzes`);
                 const data = await response.json();
-                
+
                 if (data.success) {
                     console.log('✅ Quizzes loaded:', data.quizzes.length);
                     displayQuizzes(data.quizzes);
@@ -4387,11 +4516,11 @@ async function endExamSession(quizId) {
         // Load students function
         async function loadStudents() {
             console.log('👥 Loading students for class:', classId);
-            
+
             try {
                 const response = await fetch(`/api/classes/${classId}/students`);
                 const data = await response.json();
-                
+
                 if (data.success) {
                     console.log('✅ Students loaded:', data.students.length);
                     displayStudents(data.students);
@@ -4408,11 +4537,11 @@ async function endExamSession(quizId) {
         // Display students with proper formatting
         function displayStudents(students) {
             const container = document.getElementById('studentsContainer');
-            
+
             if (students.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
-                        <h3>👥 No Students Enrolled</h3>
+                        <h3>No Students Enrolled</h3>
                         <p>Add students using their enrollment numbers or share a join code.</p>
                     </div>
                 `;
@@ -4438,17 +4567,20 @@ async function endExamSession(quizId) {
                     <div class="student-actions">
                         <a href="/class/${classId}/student-analytics/${student.studentId}" 
                            class="view-performance-btn" target="_blank">
-                            📊 View Performance
+                            <i data-lucide="bar-chart-2" style="width:14px;height:14px;vertical-align:middle"></i> View Performance
                         </a>
                         <button class="btn btn-danger" onclick="removeStudent('${student.studentId}')" 
                                 style="font-size: 0.8rem; padding: 0.5rem 1rem;">
-                            Remove
+                            <i data-lucide="user-minus" style="width:14px;height:14px"></i> Remove
                         </button>
                     </div>
                 </div>
             `).join('');
 
             container.innerHTML = studentsHTML;
+
+            // Re-initialize Lucide icons for dynamically generated content
+            lucide.createIcons();
         }
 
         // Remove student
@@ -4507,9 +4639,9 @@ async function endExamSession(quizId) {
         // Utility functions
         function showSuccess(message) {
             console.log('✅', message);
-            
+
             document.querySelectorAll('.alert').forEach(alert => alert.remove());
-            
+
             const messageHTML = `
                 <div class="alert alert-success" style="position: fixed; top: 20px; right: 20px; z-index: 1000; max-width: 400px;">
                     <strong>Success!</strong> ${message}
@@ -4517,7 +4649,7 @@ async function endExamSession(quizId) {
                 </div>
             `;
             document.body.insertAdjacentHTML('afterbegin', messageHTML);
-            
+
             setTimeout(() => {
                 const alert = document.querySelector('.alert-success');
                 if (alert) alert.remove();
@@ -4526,9 +4658,9 @@ async function endExamSession(quizId) {
 
         function showError(message) {
             console.error('❌', message);
-            
+
             document.querySelectorAll('.alert').forEach(alert => alert.remove());
-            
+
             const messageHTML = `
                 <div class="alert alert-error" style="position: fixed; top: 20px; right: 20px; z-index: 1000; max-width: 400px;">
                     <strong>Error!</strong> ${message}
@@ -4536,7 +4668,7 @@ async function endExamSession(quizId) {
                 </div>
             `;
             document.body.insertAdjacentHTML('afterbegin', messageHTML);
-            
+
             setTimeout(() => {
                 const alert = document.querySelector('.alert-error');
                 if (alert) alert.remove();
@@ -4548,7 +4680,7 @@ async function endExamSession(quizId) {
         }
 
         // Keyboard shortcuts
-        document.addEventListener('keydown', function(e) {
+        document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') {
                 if (document.getElementById('createQuizModal').classList.contains('active')) {
                     closeCreateQuizModal();
@@ -4567,11 +4699,11 @@ async function endExamSession(quizId) {
         });
 
         // Cleanup function when page unloads
-        window.addEventListener('beforeunload', function() {
+        window.addEventListener('beforeunload', function () {
             if (joinCodeTimer) {
                 clearInterval(joinCodeTimer);
             }
-            
+
             // 🆕 NEW: Clean up exam session timers
             examSessionTimers.forEach((timer, quizId) => {
                 clearInterval(timer);
@@ -4580,4 +4712,5 @@ async function endExamSession(quizId) {
         });
     </script>
 </body>
+
 </html>
